@@ -25,15 +25,20 @@ def build_content_brief(
     key_points: list[str] | None = None,
 ) -> dict[str, Any]:
     required = {"goal": goal, "audience": audience, "channel": channel}
-    if any(not isinstance(value, str) or not value.strip() for value in required.values()):
-        raise ValueError("goal, audience, and channel must be non-empty strings")
+    if any(not isinstance(value, str) for value in required.values()):
+        raise TypeError("goal, audience, and channel must be strings")
+    if any(not value.strip() for value in required.values()):
+        raise ValueError("goal, audience, and channel must be non-empty")
     if not isinstance(language, str) or not isinstance(tone, str):
-        raise ValueError("language and tone must be strings")
-    if key_points is not None and (
-        not isinstance(key_points, list)
-        or any(not isinstance(point, str) or not point.strip() for point in key_points)
+        raise TypeError("language and tone must be strings")
+    if key_points is not None and not isinstance(key_points, list):
+        raise TypeError("key_points must be a list of strings")
+    if key_points is not None and any(
+        not isinstance(point, str) for point in key_points
     ):
-        raise ValueError("key_points must be a list of non-empty strings")
+        raise TypeError("key_points must contain only strings")
+    if key_points is not None and any(not point.strip() for point in key_points):
+        raise ValueError("key_points cannot contain empty strings")
 
     return ContentBrief(
         goal.strip(),
@@ -48,7 +53,7 @@ def build_content_brief(
 def assess_text(text: str) -> dict[str, Any]:
     """Structural checks only; does not establish factual accuracy."""
     if not isinstance(text, str):
-        raise ValueError("text must be a string")
+        raise TypeError("text must be a string")
     content = text.strip()
     words = content.split()
     checks = {
