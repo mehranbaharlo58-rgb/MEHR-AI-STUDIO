@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+
 class StudioStore:
     def __init__(self, path: str | Path):
         self.path = Path(path)
@@ -12,7 +13,7 @@ class StudioStore:
         self._initialize()
 
     def _connect(self):
-        connection = sqlite3.connect(self.path)
+        connection = sqlite3.connect(self.path, timeout=10)
         connection.row_factory = sqlite3.Row
         return connection
 
@@ -28,10 +29,13 @@ class StudioStore:
             )""")
 
     def save_memory(self, key: str, value: Any) -> dict:
-        key = key.strip()
-        if not key:
+        if not isinstance(key, str) or not key.strip():
             raise ValueError("memory key is required")
-        serialized = json.dumps(value, ensure_ascii=False)
+        key = key.strip()
+        try:
+            serialized = json.dumps(value, ensure_ascii=False)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("memory value must be JSON-serializable") from exc
         now = datetime.now(timezone.utc).isoformat()
         with self._connect() as db:
             db.execute(
@@ -42,15 +46,22 @@ class StudioStore:
         return {"key": key, "updated_at": now}
 
     def read_memory(self, key: str) -> dict | None:
+        if not isinstance(key, str):
+            raise ValueError("memory key must be a string")
         with self._connect() as db:
-            row = db.execute("SELECT key,value,updated_at FROM memories WHERE key=?", (key.strip(),)).fetchone()
+            row = db.execute(
+                "SELECT key,value,updated_at FROM memories WHERE key=?",
+                (key.strip(),),
+            ).fetchone()
         if row is None:
             return None
         return {"key": row["key"], "value": json.loads(row["value"]), "updated_at": row["updated_at"]}
 
     def record_feedback(self, item_type: str, rating: int, note: str = "") -> dict:
-        if not 1 <= rating <= 5:
-            raise ValueError("rating must be between 1 and 5")
+        if isinstance(rating, bool) or not isinstance(rating, int) or not 1 <= rating <= 5:
+            raise ValueError("rating must be an integer between 1 and 5")
+        if not isinstance(item_type, str) or not isinstance(note, str):
+            raise ValueError("item_type and note must be strings")
         now = datetime.now(timezone.utc).isoformat()
         with self._connect() as db:
             cursor = db.execute(
