@@ -50,9 +50,9 @@ Copy `.env.example` to `.env`. Never commit API keys, access tokens, database fi
 
 ## Roadmap
 - [x] Repository initialized
-- [ ] Core package and tests
-- [ ] MCP integration tests
-- [ ] Provider integration tests
+- [x] Core package, SQLite memory, feedback store, provider adapter, and tests
+- [ ] MCP integration tests and CI verification
+- [ ] Live provider integration tests
 - [ ] Deployment and monitoring
 - [ ] Public release review
 
