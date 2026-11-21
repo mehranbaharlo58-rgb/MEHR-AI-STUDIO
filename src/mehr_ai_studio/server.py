@@ -5,7 +5,7 @@ from .config import settings
 from .core import assess_text, build_content_brief
 from .provider import ProviderError, ProviderNotConfigured, generate_text
 from .store import StudioStore
-from .workflow import run_content_workflow
+from .workflow import run_content_workflow as execute_content_workflow
 
 app = FastMCP("MEHR AI STUDIO")
 store = StudioStore(settings.database_path)
@@ -80,7 +80,7 @@ def run_content_workflow(goal: str, audience: str, channel: str,
                          tone: str = "clear and professional",
                          context_key: str = "brand") -> dict:
     """Load saved context, build a brief, generate content, and assess structure."""
-    return run_content_workflow(store, goal, audience, channel, language, tone, context_key)
+    return execute_content_workflow(store, goal, audience, channel, language, tone, context_key)
 
 
 def main() -> None:
