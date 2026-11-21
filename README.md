@@ -2,28 +2,28 @@
 
 An extensible AI production studio built around reusable workflows, project memory, quality checks, and provider-independent model adapters.
 
-> Status: early development. This repository is the source of truth. Features are complete only after tests and integration checks pass.
+> Status: early development. The repository is the source of truth. Features are considered complete only after automated tests and integration checks pass.
 
 ## Product direction
 - Store explicit project and brand context in a local database.
 - Convert briefs into structured content plans and production prompts.
-- Assess output against configurable quality criteria.
+- Assess output against configurable structural quality criteria.
 - Record human feedback to improve workflow decisions.
 - Connect compatible AI providers through replaceable adapters.
 - Expose capabilities through an MCP server.
 
 Feedback storage is **not** model training. The system does not silently train or fine-tune a model.
 
-## Milestone 0.4 — reliable foundation
-1. Modular Python package and configuration.
-2. Persistent SQLite storage for project context and feedback.
-3. Provider adapter with safe failure handling.
-4. MCP tools for status, memory, content planning, and quality review.
-5. Automated tests and documented local setup.
+## Current foundation — 0.4.1
+- Modular Python package and environment-based configuration.
+- Persistent SQLite storage for project context and human feedback.
+- OpenAI-compatible chat-completions adapter with response validation.
+- MCP tools for status, memory, content planning, quality review, generation, and workflow orchestration.
+- Automated tests, lint checks, and package-build verification in GitHub Actions.
 
 ## Requirements
 - Python 3.11+
-- Install: `pip install -e ".[dev]"`
+- Install development dependencies: `pip install -e ".[dev]"`
 
 ## Local development
 ```bash
@@ -31,30 +31,41 @@ python -m venv .venv
 # Windows: .venv\\Scripts\\activate
 # macOS/Linux: source .venv/bin/activate
 pip install -e ".[dev]"
+ruff check src tests
 pytest -q
+python -m build
 ```
 
-Run: `python -m mehr_ai_studio`
+Run the MCP server with `python -m mehr_ai_studio`. It uses stdio by default.
 
-The server uses stdio by default. Do not expose an HTTP endpoint publicly without authentication, TLS, and deployment hardening.
+## AI provider configuration
+Copy `.env.example` to `.env`, then set:
+- `AI_BASE_URL`: provider API base URL, normally ending in `/v1`.
+- `AI_API_KEY`: provider secret key.
+- `AI_MODEL`: model identifier supported by that provider.
+- `AI_TIMEOUT_SECONDS`: request timeout in seconds.
 
-## Configuration
-Copy `.env.example` to `.env`. Never commit API keys, access tokens, database files, or private user data.
+The adapter appends `/chat/completions` unless the supplied base URL already ends with that path. Provider compatibility must be verified against the selected service. Never commit `.env`, API keys, access tokens, database files, or private user data.
 
-## Security
-- Secrets are read from environment variables.
-- User data remains local by default.
-- No automatic publication, payments, or irreversible actions.
-- Human approval is required before external actions.
-- Logs must avoid secrets and sensitive prompt content.
+## Security and limitations
+- Secrets are read from environment variables and are never intentionally included in error messages.
+- Project memory is stored in local SQLite by default; it is not encrypted at rest by this application.
+- The MCP server uses stdio. Do not expose a network endpoint publicly without authentication, TLS, and deployment hardening.
+- No automatic publication, payments, or irreversible external actions are performed.
+- Content assessment is structural only; it does not verify factual accuracy, originality, or legal compliance.
+- Feedback is analytics data, not model training.
+- Sending a prompt to a configured external provider transmits that prompt and any included context to that provider. Do not include confidential data unless the provider and data handling are approved.
 
 ## Roadmap
-- [x] Repository initialized
-- [x] Core package, SQLite memory, feedback store, provider adapter, and tests
-- [ ] MCP integration tests and CI verification
-- [ ] Live provider integration tests
-- [ ] Deployment and monitoring
-- [ ] Public release review
+- [x] Repository and modular package
+- [x] SQLite memory and feedback store
+- [x] Optional AI provider adapter
+- [x] MCP tools and content workflow
+- [x] Unit and workflow tests
+- [x] CI lint, test, and package-build checks
+- [ ] Live provider integration test with a real configured provider
+- [ ] Deployment, authentication, monitoring, and operational hardening
+- [ ] Public release review and installation validation
 
 ## License
 No open-source license has been selected. All rights remain with the project owner unless a license is added.
