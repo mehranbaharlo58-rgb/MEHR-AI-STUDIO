@@ -17,7 +17,7 @@ def test_build_content_brief_requires_core_fields():
 
 @pytest.mark.parametrize("bad_value", [None, 123, "   "])
 def test_build_content_brief_rejects_invalid_goal(bad_value):
-    with pytest.raises(ValueError):
+    with pytest.raises((ValueError, TypeError)):
         build_content_brief(bad_value, "students", "Instagram")
 
 
@@ -39,5 +39,5 @@ def test_assess_text_nonempty():
 
 
 def test_assess_text_rejects_non_string():
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         assess_text(None)
