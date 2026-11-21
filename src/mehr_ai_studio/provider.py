@@ -47,13 +47,13 @@ def generate_text(
             data = response.json()
 
         if not isinstance(data, dict):
-            raise ValueError("Provider response must be a JSON object")
+            raise TypeError("Provider response must be a JSON object")
         choices = data.get("choices")
         if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
-            raise ValueError("Provider response has no valid choices")
+            raise TypeError("Provider response has no valid choices")
         message = choices[0].get("message")
         if not isinstance(message, dict):
-            raise ValueError("Provider response has no valid message")
+            raise TypeError("Provider response has no valid message")
         content = message.get("content")
         if not isinstance(content, str) or not content.strip():
             raise ValueError("Provider returned empty content")
