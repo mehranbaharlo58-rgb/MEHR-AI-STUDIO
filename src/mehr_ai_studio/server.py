@@ -1,5 +1,6 @@
 """MCP server entry point and tool registry."""
 from mcp.server.fastmcp import FastMCP
+
 from . import __version__
 from .config import settings
 from .core import assess_text, build_content_brief
