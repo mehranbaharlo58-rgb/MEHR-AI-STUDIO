@@ -1,16 +1,30 @@
 """Optional OpenAI-compatible chat-completions adapter."""
 import httpx
+
 from .config import settings
 
+
 class ProviderNotConfigured(RuntimeError):
-    pass
+    """Raised when no complete provider configuration is available."""
+
 
 class ProviderError(RuntimeError):
-    pass
+    """Raised when the provider request or response is invalid."""
 
-def generate_text(prompt: str, system: str = "You are MEHR AI STUDIO, a precise content production assistant.") -> dict:
+
+def generate_text(
+    prompt: str,
+    system: str = "You are MEHR AI STUDIO, a precise content production assistant.",
+) -> dict:
     if not settings.provider_base_url or not settings.provider_api_key or not settings.provider_model:
-        raise ProviderNotConfigured("Configure AI_BASE_URL, AI_API_KEY, and AI_MODEL to enable generation.")
+        raise ProviderNotConfigured(
+            "Configure AI_BASE_URL, AI_API_KEY, and AI_MODEL to enable generation."
+        )
+    if not isinstance(prompt, str) or not prompt.strip():
+        raise ValueError("prompt must be a non-empty string")
+    if not isinstance(system, str) or not system.strip():
+        raise ValueError("system must be a non-empty string")
+
     url = settings.provider_base_url.rstrip("/")
     if not url.endswith("/chat/completions"):
         url += "/chat/completions"
@@ -25,14 +39,24 @@ def generate_text(prompt: str, system: str = "You are MEHR AI STUDIO, a precise 
     try:
         with httpx.Client(timeout=settings.request_timeout) as client:
             response = client.post(
-                url, json=payload,
+                url,
+                json=payload,
                 headers={"Authorization": f"Bearer {settings.provider_api_key}"},
             )
             response.raise_for_status()
             data = response.json()
-        content = data["choices"][0]["message"]["content"]
+
+        if not isinstance(data, dict):
+            raise ValueError("Provider response must be a JSON object")
+        choices = data.get("choices")
+        if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+            raise ValueError("Provider response has no valid choices")
+        message = choices[0].get("message")
+        if not isinstance(message, dict):
+            raise ValueError("Provider response has no valid message")
+        content = message.get("content")
         if not isinstance(content, str) or not content.strip():
             raise ValueError("Provider returned empty content")
         return {"text": content, "model": data.get("model", settings.provider_model)}
-    except (httpx.HTTPError, KeyError, IndexError, ValueError) as exc:
+    except (httpx.HTTPError, KeyError, IndexError, TypeError, AttributeError, ValueError) as exc:
         raise ProviderError(f"AI provider request failed: {type(exc).__name__}") from exc
