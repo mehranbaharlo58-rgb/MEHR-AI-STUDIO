@@ -1,10 +1,12 @@
 """Environment-based configuration."""
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 load_dotenv()
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -14,5 +16,6 @@ class Settings:
     provider_api_key: str = os.getenv("AI_API_KEY", "")
     provider_model: str = os.getenv("AI_MODEL", "")
     request_timeout: float = float(os.getenv("AI_TIMEOUT_SECONDS", "45"))
+
 
 settings = Settings()
