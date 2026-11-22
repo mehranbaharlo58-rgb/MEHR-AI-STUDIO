@@ -58,7 +58,8 @@ def test_legacy_database_migrates_without_losing_data(tmp_path):
     assert store.read_memory("brand")["value"] == {"voice": "classic"}
     assert store.feedback_insights()["feedback_count"] == 1
     store.save_memory("brand", {"voice": "new"}, tenant_id="another")
-    assert store.read_memory("brand")["value"] == {"voice": "new"}
+    assert store.read_memory("brand")["value"] == {"voice": "classic"}
+    assert store.read_memory("brand", tenant_id="another")["value"] == {"voice": "new"}
 
 
 def test_memory_rejects_empty_key(tmp_path):
