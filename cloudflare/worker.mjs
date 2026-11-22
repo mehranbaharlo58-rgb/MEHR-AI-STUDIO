@@ -98,11 +98,11 @@ export default {
 
     let raw;
     try {
-      raw = await request.text();
+      raw = await readLimitedText(request, MAX_BODY_BYTES);
     } catch {
       return response({ ok: false, error: "invalid_request" }, 400, cors);
     }
-    if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
+    if (raw === null) {
       return response({ ok: false, error: "request_too_large" }, 413, cors);
     }
 
