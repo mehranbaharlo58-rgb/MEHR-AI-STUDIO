@@ -131,6 +131,7 @@ def test_streamable_http_rejects_missing_and_invalid_bearer_tokens(monkeypatch):
         issuer_url="https://identity.example.test/",
         resource_server_url="https://studio.example.test/mcp",
         required_scopes=["studio:access"],
+        validate_token_resource=True,
     )
     mcp = build_authenticated_server(
         token_verifier=verifier,
