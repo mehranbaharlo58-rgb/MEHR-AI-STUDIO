@@ -4,6 +4,8 @@ on:
     paths:
       - "cloudflare/**"
       - "tests/cloudflare-worker.test.mjs"
+      - "tests/ui-script.test.mjs"
+      - "ui/**"
       - "wrangler.jsonc"
       - ".github/workflows/cloudflare-worker.yml"
   pull_request:
@@ -25,4 +27,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: node --test tests/cloudflare-worker.test.mjs
+      - run: node --test tests/cloudflare-worker.test.mjs tests/ui-script.test.mjs

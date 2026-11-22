@@ -165,6 +165,16 @@ body.dark .ready{background:#294438;color:#a8d2b3}
 }
 @media(max-width:390px){.welcome h1{font-size:23px}.welcome .primary{font-size:9px}.grid{grid-template-columns:1fr}.card{min-height:112px}.symbol{margin-bottom:8px}}
 
+
+/* API connection and generated response */
+.connection-form{width:min(100%,560px);display:flex;flex-direction:column;gap:9px;text-align:start;margin:20px auto;padding:22px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow)}
+.connection-form label{font-size:11px;font-weight:700;color:var(--text);margin-top:6px}
+.connection-form input{width:100%;height:42px;border:1px solid var(--line);border-radius:9px;padding:0 12px;background:var(--surface2);color:var(--text);font:inherit;font-size:12px}
+.connection-actions{display:flex;gap:10px;align-items:center;margin-top:8px}
+#connectionStatus{font-size:11px;color:var(--muted);line-height:1.7;overflow-wrap:anywhere}
+#resultPanel{display:none;margin-top:14px;padding:18px 20px;border:1px solid #d9e7dc;border-radius:14px;background:#f2f6ef;color:#2e463a;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.85;font-size:12px}
+#resultPanel.show{display:block}
+body.dark #resultPanel{background:#233a32;border-color:#3b5145;color:#e5eee5}
 </style></head>
 <body><div class="shell">
 <aside class="sidebar" id="sidebar"><a class="brand" href="#"><span class="mark">M</span><span class="brandcopy"><b>MEHR</b><small>AI STUDIO</small></span></a>
@@ -181,7 +191,7 @@ body.dark .ready{background:#294438;color:#a8d2b3}
 <section class="content" id="home">
 <div class="welcome"><div><div class="eyebrow" data-k="goodDay">YOUR WORKSPACE</div><h1 data-k="welcome">Make room for <em>great work.</em></h1><p class="sub" data-k="welcomeSub">What would you like to get done today?</p></div><button class="primary" id="new">＋ <span data-k="newProject">New project</span></button></div>
 <div class="composer"><div class="comptop"><div class="orb">✳</div><div><b data-k="askMehr">Ask MEHR</b><p data-k="askSub">Describe a task. Your AI workspace will help you move it forward.</p></div><span class="model"><i></i> <span data-k="workspacePreview">Workspace preview</span></span></div>
-<form id="form"><label for="prompt" hidden>Prompt</label><textarea id="prompt" rows="2" data-placeholder="promptPlaceholder" placeholder="Tell MEHR what you need..."></textarea><div class="compbottom"><div class="tools"><label class="toolbtn" for="upload">＋ <span data-k="addFile">Add file</span></label><input id="upload" type="file" hidden multiple><button class="toolbtn" type="button" id="template">▤ <span data-k="useTemplate">Use a template</span></button></div><button class="send" type="submit"><span data-k="startTask">Start task</span> ↗</button></div></form><div class="files" id="files"></div></div>
+<form id="form"><label for="prompt" hidden>Prompt</label><textarea id="prompt" rows="2" data-placeholder="promptPlaceholder" placeholder="Tell MEHR what you need..."></textarea><div class="compbottom"><div class="tools"><label class="toolbtn" for="upload">＋ <span data-k="addFile">Add file</span></label><input id="upload" type="file" hidden multiple><button class="toolbtn" type="button" id="template">▤ <span data-k="useTemplate">Use a template</span></button></div><button class="send" type="submit"><span data-k="startTask">Start task</span> ↗</button></div></form><div class="files" id="files"></div></div><div id="resultPanel" aria-live="polite"></div>
 <div class="section"><div><h2 data-k="quickStart">A good place to start</h2><p data-k="quickSub">Purpose-built tools for your everyday work.</p></div><button class="linkbtn" data-goto="automations" data-k="viewAll">View all ↗</button></div>
 <div class="grid">
 <button class="card" data-template="report"><span class="symbol violet">▤</span><span class="cardtitle" data-k="dailyReport">Daily site report</span><span class="desc" data-k="dailyReportSub">Turn site notes into a clear report.</span><span class="arrow">↗</span></button>
@@ -191,6 +201,21 @@ body.dark .ready{background:#294438;color:#a8d2b3}
 <div class="section recent"><div><h2 data-k="recentProjects">Recent projects</h2><p data-k="recentSub">Pick up where you left off.</p></div><button class="linkbtn" data-goto="projects" data-k="allProjects">All projects ↗</button></div>
 <div class="list"><div class="row"><span class="projecticon">▤</span><div class="projectinfo"><b data-k="sampleProject">Construction reporting pilot</b><small data-k="updatedToday">Updated just now</small></div><span class="state" data-k="draft">Draft</span></div><div class="row"><span class="projecticon" style="background:#e9f3ff;color:#4385d0">▧</span><div class="projectinfo"><b data-k="sampleProject2">Project document review</b><small data-k="updatedYesterday">Updated yesterday</small></div><span class="state ready" data-k="ready">Ready</span></div></div>
 <div class="footer"><span>MEHR AI STUDIO · <span data-k="previewLabel">Early access preview</span></span><span data-k="humanReview">AI outputs should be reviewed before use.</span></div></section>
+<section class="content placeholder" id="settingsPanel" hidden>
+<div class="orb" style="width:58px;height:58px;font-size:25px">⚙</div>
+<div class="eyebrow">MEHR AI STUDIO</div>
+<h1>API connection / اتصال موتور</h1>
+<p>Enter your private Worker URL and owner token. These values stay in this browser session and are not committed to GitHub.</p>
+<form id="connectionForm" class="connection-form">
+<label for="apiUrl">Worker URL / نشانی Worker</label>
+<input id="apiUrl" type="url" inputmode="url" placeholder="https://your-worker.workers.dev" autocomplete="url" required>
+<label for="apiToken">Private access token / توکن خصوصی</label>
+<input id="apiToken" type="password" autocomplete="off" placeholder="Paste the owner token" required minlength="32">
+<div class="connection-actions"><button class="primary" type="submit">Save connection / ذخیره اتصال</button><button class="smallbtn" type="button" id="testConnection">Test / آزمایش</button></div>
+<p id="connectionStatus" role="status" aria-live="polite">No connection configured / هنوز اتصالی تنظیم نشده است.</p>
+</form>
+<button class="primary" id="settingsBack" type="button">Back to overview / بازگشت</button>
+</section>
 <section class="content placeholder" id="other" hidden><div class="orb" style="width:58px;height:58px;font-size:25px">✳</div><div class="eyebrow">MEHR AI STUDIO</div><h1 id="otherTitle">Projects</h1><p data-k="pageText">This section is part of the interface prototype.</p><button class="primary" id="back" data-k="backHome">Back to overview</button></section>
 </main></div><div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
@@ -201,15 +226,21 @@ fa:{workspace:"فضای کاری شخصی",workspacePreview:"پیش‌نمایش
 let lang="en",timer;const $=s=>document.querySelector(s);function tr(k){return words[lang][k]||k}
 function say(msg){$("#toast").textContent=msg;$("#toast").classList.add("show");clearTimeout(timer);timer=setTimeout(()=>$("#toast").classList.remove("show"),2700)}
 function language(next){lang=next;document.documentElement.lang=lang;document.documentElement.dir=lang==="fa"?"rtl":"ltr";document.querySelectorAll("[data-k]").forEach(el=>{const v=tr(el.dataset.k);el.innerHTML=v});document.querySelectorAll("[data-placeholder]").forEach(el=>el.placeholder=tr(el.dataset.placeholder));$("#lang").textContent=lang==="en"?"فا":"EN";$("#crumb").textContent=tr($("#crumb").dataset.key||"home")}
-function page(p){$("#home").hidden=p!=="home";$("#other").hidden=p==="home";document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===p));$("#crumb").textContent=tr(p);$("#crumb").dataset.key=p;if(p!=="home")$("#otherTitle").textContent=tr(p)}
+function page(p){$("#home").hidden=p!=="home";$("#settingsPanel").hidden=p!=="settings";$("#other").hidden=p==="home"||p==="settings";document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===p));$("#crumb").textContent=tr(p);$("#crumb").dataset.key=p;if(p!=="home"&&p!=="settings")$("#otherTitle").textContent=tr(p);if(p==="settings"){const c=getConnection();$("#apiUrl").value=c.url;$("#apiToken").value=c.token;}}
 document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>{page(b.dataset.page);$("#sidebar").classList.remove("open")}));
-document.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>page(b.dataset.goto)));$("#back").onclick=()=>page("home");$("#menu").onclick=()=>$("#sidebar").classList.toggle("open");
+document.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>page(b.dataset.goto)));$("#back").onclick=()=>page("home");$("#settingsBack").onclick=()=>page("home");$("#menu").onclick=()=>$("#sidebar").classList.toggle("open");
 $("#lang").onclick=()=>language(lang==="en"?"fa":"en");$("#theme").onclick=()=>{document.body.classList.toggle("dark");localStorage.setItem("mehr-theme",document.body.classList.contains("dark")?"dark":"light")};if(localStorage.getItem("mehr-theme")==="dark")document.body.classList.add("dark");
 $("#new").onclick=()=>say(tr("newProjectToast"));$("#guide").onclick=()=>say(tr("guideToast"));
 const templates={report:{en:"Create a structured daily construction site report. Organize activities, manpower, equipment, delays, safety observations and pending actions. Flag missing information for human review.",fa:"یک گزارش روزانه ساختاریافته از کارگاه تهیه کن. فعالیت‌ها، نیروی انسانی، تجهیزات، تأخیرها، مشاهدات ایمنی و اقدامات باقی‌مانده را دسته‌بندی کن و اطلاعات ناقص را برای بررسی انسانی مشخص کن."},documents:{en:"Review these project documents. Summarize key points, risks and missing information: ",fa:"این اسناد پروژه را بررسی کن و نکات کلیدی، ریسک‌ها و اطلاعات ناقص را خلاصه کن: "},actions:{en:"Extract decisions, action owners, due dates and next steps from: ",fa:"تصمیم‌ها، مسئول هر اقدام، موعد و گام بعدی را از این متن استخراج کن: "},custom:{en:"Help me design a repeatable workflow for: ",fa:"برای این کار یک گردش‌کار تکرارپذیر طراحی کن: "}};
 function insertTemplate(k){$("#prompt").value=templates[k][lang];$("#prompt").focus();say(tr("templateAdded"))}
 document.querySelectorAll("[data-template]").forEach(b=>b.addEventListener("click",()=>insertTemplate(b.dataset.template)));$("#template").onclick=()=>insertTemplate("report");
-$("#upload").addEventListener("change",e=>{$("#files").innerHTML=[...e.target.files].map(f=>'<span class="filechip">'+f.name.replace(/[&<>"']/g,"")+'</span>').join("");if(e.target.files.length)say(e.target.files.length+" "+tr("filesAdded"))});
-$("#form").addEventListener("submit",e=>{e.preventDefault();if(!$("#prompt").value.trim()){say(tr("empty"));$("#prompt").focus();return}say(tr("captured"))});
+$("#upload").addEventListener("change",e=>{$("#files").innerHTML=[...e.target.files].map(f=>'<span class="filechip">'+f.name.replace(/[&<>"\']/g,"")+"</span>").join("");if(e.target.files.length)say("File names shown only; upload/content processing is not implemented yet.");});
+function getConnection(){return {url:sessionStorage.getItem("mehr-api-url")||"",token:sessionStorage.getItem("mehr-api-token")||""}}
+function showResult(message,isError=false){const panel=$("#resultPanel");panel.textContent=message;panel.classList.add("show");panel.style.borderColor=isError?"#d9a7a0":"#d9e7dc";}
+async function callHealth(){const c=getConnection();if(!c.url||!c.token)throw new Error("Configure the Worker URL and private token in Settings first.");const base=c.url.replace(/\/+$/,"");const r=await fetch(base+"/api/health",{headers:{Authorization:"Bearer "+c.token}});if(!r.ok)throw new Error("Health check failed (HTTP "+r.status+").");return await r.json();}
+$("#connectionForm").addEventListener("submit",e=>{e.preventDefault();const url=$("#apiUrl").value.trim().replace(/\/+$/,"");const token=$("#apiToken").value.trim();try{const parsed=new URL(url);if(parsed.protocol!=="https:")throw new Error("HTTPS is required.");if(token.length<32)throw new Error("Token must contain at least 32 characters.");sessionStorage.setItem("mehr-api-url",url);sessionStorage.setItem("mehr-api-token",token);$("#connectionStatus").textContent="Saved in this browser session. Use Test to verify.";say("Connection settings saved for this session.");}catch(err){$("#connectionStatus").textContent=err.message;}});
+$("#testConnection").addEventListener("click",async()=>{const status=$("#connectionStatus");status.textContent="Testing connection…";try{const url=$("#apiUrl").value.trim().replace(/\/+$/,"");const token=$("#apiToken").value.trim();const parsed=new URL(url);if(parsed.protocol!=="https:"||token.length<32)throw new Error("Enter a valid HTTPS Worker URL and a token of at least 32 characters.");const r=await fetch(url+"/api/health",{headers:{Authorization:"Bearer "+token}});if(!r.ok)throw new Error("Health check failed (HTTP "+r.status+").");const data=await r.json();status.textContent=data.provider_configured?"Connected. Provider settings detected.":"Worker reachable, but AI provider secrets are not configured.";if(data.provider_configured)document.querySelector(".status span").textContent="API connected";}catch(err){status.textContent=err.message;}});
+$("#form").addEventListener("submit",async e=>{e.preventDefault();const prompt=$("#prompt").value.trim();if(!prompt){say(tr("empty"));$("#prompt").focus();return;}const c=getConnection();if(!c.url||!c.token){page("settings");say("Configure the private API connection first.");return;}const send=$("#form button[type=submit]");send.disabled=true;send.style.opacity=".6";showResult("Working…");try{const r=await fetch(c.url+"/api/generate",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+c.token},body:JSON.stringify({prompt})});const data=await r.json();if(!r.ok||!data.ok)throw new Error(data.error||("Request failed (HTTP "+r.status+")."));showResult(data.generated.text);document.querySelector(".status span").textContent="API connected";say("Generation completed.");}catch(err){showResult("Connection error: "+err.message,true);say("The request could not be completed.");}finally{send.disabled=false;send.style.opacity="";}});
+
 language("en");
 </script></body></html>
