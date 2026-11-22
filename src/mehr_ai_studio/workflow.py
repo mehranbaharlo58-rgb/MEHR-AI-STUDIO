@@ -11,9 +11,13 @@ from .contracts import (
     ProviderResultContract,
     QualityReportContract,
 )
+from .config import settings
 from .core import assess_text, build_content_brief
 from .provider import ProviderError, ProviderNotConfigured, generate_text
 from .store import DEFAULT_TENANT_ID, StudioStore
+
+
+CONTENT_PROMPT_VERSION = "content-v1"
 
 
 def run_content_workflow(
@@ -51,7 +55,8 @@ def run_content_workflow(
                 "attempt": attempt,
                 "created_at": created_at,
                 "updated_at": datetime.now(UTC).isoformat(),
-                "model": model,
+                "model": model or settings.provider_model or None,
+                "prompt_version": CONTENT_PROMPT_VERSION,
                 "error_code": error_code,
                 "result": result,
             },
@@ -219,7 +224,8 @@ def resume_content_workflow(
                 "attempt": attempt,
                 "created_at": created_at,
                 "updated_at": datetime.now(UTC).isoformat(),
-                "model": model,
+                "model": model or settings.provider_model or None,
+                "prompt_version": CONTENT_PROMPT_VERSION,
                 "error_code": error_code,
                 "result": result,
             },
