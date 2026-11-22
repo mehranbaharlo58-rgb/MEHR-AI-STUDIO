@@ -22,6 +22,8 @@ def test_workflow_loads_memory_generates_and_assesses(tmp_path, monkeypatch):
     saved_run = store.read_workflow_run(result["run_id"], "default")
     assert saved_run["status"] == "succeeded"
     assert saved_run["result"]["generated"]["model"] == "test"
+    assert saved_run["prompt_version"] == workflow.CONTENT_PROMPT_VERSION
+    assert saved_run["model"] == "test"
 
 
 def test_workflow_uses_only_requested_tenant_memory(tmp_path, monkeypatch):
@@ -144,3 +146,22 @@ def test_workflow_resume_rejects_missing_or_non_failed_run(tmp_path):
     store.save_workflow_run(monkeypatch_run, tenant_id="default")
     active = workflow.resume_content_workflow(store, "active-run")
     assert active["error"] == "run_not_resumable"
+
+
+
+def test_failed_run_records_prompt_and_configured_model_versions(tmp_path, monkeypatch):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    monkeypatch.setattr(workflow, "settings", type("Settings", (), {"provider_model": "configured-model"})())
+
+    def temporary_failure(prompt):
+        raise workflow.ProviderError("temporary")
+
+    monkeypatch.setattr(workflow, "generate_text", temporary_failure)
+    result = workflow.run_content_workflow(
+        store, "Explain a service", "small businesses", "website"
+    )
+    saved = store.read_workflow_run(result["run_id"], "default")
+
+    assert saved["status"] == "failed"
+    assert saved["prompt_version"] == "content-v1"
+    assert saved["model"] == "configured-model"
