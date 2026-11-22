@@ -5,7 +5,7 @@ from . import __version__
 from .config import settings
 from .core import assess_text, build_content_brief
 from .provider import ProviderError, ProviderNotConfigured, generate_text
-from .store import StudioStore
+from .store import DEFAULT_TENANT_ID, StudioStore
 from .workflow import run_content_workflow as execute_content_workflow
 
 app = FastMCP("MEHR AI STUDIO")
@@ -62,6 +62,19 @@ def record_content_feedback(item_type: str, rating: int, note: str = "") -> dict
 def get_feedback_insights() -> dict:
     """Summarize stored ratings. This is analytics, not model training."""
     return store.feedback_insights()
+
+
+@app.tool()
+def read_workflow_run(run_id: str) -> dict:
+    """Read a saved workflow run from the local single-user store."""
+    result = store.read_workflow_run(run_id, tenant_id=DEFAULT_TENANT_ID)
+    return result or {"found": False, "run_id": run_id}
+
+
+@app.tool()
+def list_workflow_runs(limit: int = 20) -> dict:
+    """List recent workflow runs from the local single-user store."""
+    return {"runs": store.list_workflow_runs(DEFAULT_TENANT_ID, limit=limit)}
 
 
 @app.tool()
