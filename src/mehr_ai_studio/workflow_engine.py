@@ -52,6 +52,8 @@ def transition_status(
     """Validate and return a legal workflow lifecycle transition."""
     current_status = WorkflowStatus(current)
     target_status = WorkflowStatus(target)
+    if target_status == current_status:
+        return target_status
     if target_status not in _ALLOWED_TRANSITIONS[current_status]:
         raise ValueError(
             f"invalid workflow transition: {current_status.value} -> {target_status.value}"
