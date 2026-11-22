@@ -26,6 +26,11 @@ def test_workflow_loads_memory_generates_and_assesses(tmp_path, monkeypatch):
     assert saved_run["result"]["generated"]["model"] == "test"
     assert saved_run["prompt_version"] == workflow.CONTENT_PROMPT_VERSION
     assert saved_run["model"] == "test"
+    stage_outputs = store.list_stage_outputs(result["run_id"], tenant_id="default")
+    assert [item["stage_name"] for item in stage_outputs] == [
+        "brief", "context", "prompt", "generation", "asset_validation", "assessment"
+    ]
+    assert all(item["attempt"] == 1 for item in stage_outputs)
 
 
 def test_workflow_uses_only_requested_tenant_memory(tmp_path, monkeypatch):
@@ -63,6 +68,11 @@ def test_workflow_reports_missing_provider(tmp_path, monkeypatch):
     assert result["error"] == "provider_not_configured"
     assert result["brief"]["goal"] == "Explain a service"
     assert store.read_workflow_run(result["run_id"], "default")["status"] == "failed"
+    stage_names = [
+        item["stage_name"]
+        for item in store.list_stage_outputs(result["run_id"], tenant_id="default")
+    ]
+    assert stage_names == ["brief", "context", "prompt"]
 
 
 def test_workflow_returns_contract_normalized_asset_and_report(tmp_path, monkeypatch):
@@ -138,6 +148,10 @@ def test_failed_workflow_resumes_from_checkpoint(tmp_path, monkeypatch):
     assert saved["prompt_version"] == workflow.CONTENT_PROMPT_VERSION
     assert saved["model"] == "test-model"
     assert "dimensions" in saved["result"]["assessment"]
+    resumed_stages = store.list_stage_outputs(first["run_id"], attempt=2)
+    assert [item["stage_name"] for item in resumed_stages] == [
+        "brief", "context", "prompt", "generation", "asset_validation", "assessment"
+    ]
 
 
 def test_workflow_resume_rejects_missing_or_non_failed_run(tmp_path):
