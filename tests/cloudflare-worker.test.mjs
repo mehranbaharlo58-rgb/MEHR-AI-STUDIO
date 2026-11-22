@@ -118,3 +118,26 @@ test("rejects non-JSON provider responses", async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+test("rejects oversized streamed request bodies without Content-Length", async () => {
+  let cancelled = false;
+  const body = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode("x".repeat(20 * 1024)));
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
+  const request = new Request("https://worker.test/api/generate", {
+    method: "POST",
+    headers: { ...origin, Authorization: `Bearer ${env.MEHR_API_TOKEN}`, "Content-Type": "application/json" },
+    body,
+    duplex: "half",
+  });
+  const response = await worker.fetch(request, env);
+  const result = await response.json();
+  assert.equal(response.status, 413);
+  assert.equal(result.error, "request_too_large");
+  assert.equal(cancelled, true);
+});
