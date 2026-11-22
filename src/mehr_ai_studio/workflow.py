@@ -57,10 +57,10 @@ def run_content_workflow(
             tenant_id=tenant_id,
         )
 
-    persist("running", "brief")
     brief = ContentBriefContract.model_validate(
         build_content_brief(goal, audience, channel, language, tone)
     ).model_dump()
+    persist("running", "brief")
     memory = (
         store.read_memory(context_key, tenant_id=tenant_id)
         if context_key.strip()
