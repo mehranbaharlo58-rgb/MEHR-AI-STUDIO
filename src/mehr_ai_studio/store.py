@@ -1,7 +1,7 @@
 """SQLite store for tenant-scoped project memory and human feedback."""
 import json
 import sqlite3
-from datetime import UTC, datetime
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
