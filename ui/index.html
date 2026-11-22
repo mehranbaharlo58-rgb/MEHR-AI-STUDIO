@@ -51,13 +51,127 @@ body.dark .count{background:#2a403e;color:#c3e0d1}
 body.dark .model{background:#24343a}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
+
+/* Dashboard redesign v2 — warm editorial workspace */
+:root{
+ --bg:#f4f1e9;--surface:#fffdf8;--surface2:#f1eee5;--text:#26352f;--muted:#78847b;
+ --line:#e6e2d8;--accent:#386d60;--soft:#e6eee8;
+ --shadow:0 18px 48px rgba(43,62,52,.075);
+}
+html{scroll-behavior:smooth}
+body{background:linear-gradient(135deg,#f6f3ec 0%,#f0f2eb 54%,#f5f0e7 100%);font-size:14px}
+.shell{max-width:1800px;margin:0 auto}
+.sidebar{width:260px;padding:28px 18px 18px;background:rgba(255,253,248,.88);backdrop-filter:blur(18px);border-color:#e5e0d5}
+.brand{padding:0 10px 30px;gap:12px}
+.mark{width:42px;height:42px;border-radius:14px;background:linear-gradient(145deg,#244b42,#6b9a83);box-shadow:0 9px 20px #315e4d2b}
+.brandcopy b{font-size:16px;letter-spacing:1.5px}
+.brandcopy small{font-size:9px;letter-spacing:3px}
+.workspace{height:46px;border-radius:12px;background:#f7f5ef;border-color:#e9e4d9}
+.navlabel{padding:29px 12px 11px;color:#a0a69b;font-size:9px;letter-spacing:1.8px}
+.nav{gap:5px}
+.nav button{height:43px;border-radius:11px;padding:0 12px;font-size:12px;color:#68766d;transition:background .18s,color .18s,transform .18s}
+.nav button:hover{background:#f0f2eb;transform:translateX(2px)}
+.nav button.active{background:#e7efe8;color:#315f52;box-shadow:inset 3px 0 #568574}
+html[dir=rtl] .nav button.active{box-shadow:inset -3px 0 #568574}
+.help{border-radius:15px;padding:16px;background:linear-gradient(145deg,#eff3eb,#f7f5ed);border-color:#e4e9de}
+.help b{font-size:12px;color:#395a4d}
+.help p{font-size:10px;line-height:1.8}
+.profile{padding-top:18px}
+.avatar{background:#e7eee6;color:#386d60}
+.top{height:74px;padding:0 clamp(24px,4.2vw,64px);background:rgba(255,253,248,.74);backdrop-filter:blur(16px);border-color:#e7e2d8}
+.crumb{font-size:11px;letter-spacing:.1px}
+.smallbtn{width:35px;height:35px;border-radius:11px;background:#fffdf8;border-color:#e8e3d9}
+.smallbtn:hover{background:#edf2eb;border-color:#cddbd0}
+.content{max-width:1240px;padding:48px clamp(24px,4.2vw,64px) 32px}
+.welcome{margin-bottom:30px;align-items:center}
+.eyebrow{color:#71877a;font-size:9px;letter-spacing:2px;margin-bottom:12px}
+.welcome h1{font-size:clamp(29px,3.4vw,41px);line-height:1.25;letter-spacing:-1.5px;font-weight:600;color:#263a32}
+.welcome h1 em{color:#4e806c}
+.sub{font-size:12px;line-height:1.8;color:#7b877d;margin-top:10px}
+.primary{height:43px;border-radius:12px;padding:0 17px;background:#3d7565;box-shadow:0 8px 18px #3d756522;font-size:11px}
+.primary:hover{background:#2e6254;transform:translateY(-1px)}
+.composer{position:relative;overflow:hidden;border:1px solid #e5e4d9;border-radius:20px;padding:24px 25px 17px;background:linear-gradient(120deg,#fffefa 0%,#fffefa 66%,#f0f4ed 100%);box-shadow:0 18px 45px rgba(46,65,53,.075)}
+.composer:before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:4px;background:linear-gradient(#6f9c83,#3d7565)}
+.comptop{margin-bottom:18px;gap:13px}
+.orb{width:41px;height:41px;border-radius:14px;background:#e8f0e8;color:#3d7565;font-size:20px}
+.comptop b{font-size:13px;color:#2d4339}
+.comptop p{font-size:10px;line-height:1.7;color:#829087}
+.model{border:1px solid #e1e8df;background:#f7f8f2;color:#6c7d70;padding:8px 11px;font-size:9px}
+.composer textarea{min-height:82px;font-size:13px;line-height:1.9;color:#30453a}
+.composer textarea::placeholder{color:#a2aaa0}
+.compbottom{padding-top:13px;border-color:#ece9df}
+.toolbtn{font-size:10px;color:#718276}
+.toolbtn:hover{color:#356c5c}
+.send{height:37px;border-radius:10px;padding:0 15px;background:#3d7565;font-size:10px}
+.section{margin:39px 0 16px}
+.section h2{font-size:16px;letter-spacing:-.2px;color:#2d4036}
+.section p{font-size:10px;line-height:1.7;color:#879188}
+.linkbtn{color:#477b68}
+.grid{gap:14px}
+.card{min-height:154px;padding:18px;border:1px solid #e8e5db;border-radius:16px;background:rgba(255,253,248,.93);box-shadow:0 5px 18px rgba(54,68,55,.035);transition:transform .2s,border-color .2s,box-shadow .2s}
+.card:hover{transform:translateY(-3px);border-color:#c8d8cb;box-shadow:0 16px 30px rgba(54,68,55,.09)}
+.symbol{width:36px;height:36px;border-radius:12px;margin-bottom:16px;font-size:16px}
+.violet{background:#f0edf3;color:#82718f}.blue{background:#eaf1ef;color:#56847c}.amber{background:#f5efe3;color:#ad8952}.green{background:#e8f0e8;color:#56836a}
+.cardtitle{font-size:12px;color:#30443a}
+.desc{font-size:10px;line-height:1.7;color:#879188;margin-top:6px}
+.arrow{color:#a6b0a4}
+.recent{margin-top:40px}
+.list{border:1px solid #e7e4da;border-radius:16px;background:rgba(255,253,248,.9);box-shadow:0 5px 18px rgba(54,68,55,.03)}
+.row{min-height:68px;padding:14px 18px;gap:13px}
+.row+.row{border-color:#efede5}
+.projecticon{width:35px;height:35px;border-radius:11px;background:#edf1e9;color:#5b806c}
+.projectinfo b{font-size:11px;color:#34483d}
+.projectinfo small{font-size:9px;color:#939b91}
+.state{border-radius:8px;background:#f4eee1;color:#9a7949}
+.ready{background:#eaf1e9;color:#5d8065}
+.footer{padding-top:27px;color:#98a095;font-size:9px}
+.placeholder{min-height:70vh}
+.toast{background:#294f45;border-radius:12px;padding:12px 17px}
+button:focus-visible,textarea:focus-visible,label:focus-visible{outline:3px solid #91b6a1;outline-offset:3px}
+body.dark{--bg:#141e1d;--surface:#1c2a27;--surface2:#23342f;--text:#edf2eb;--muted:#aab9ad;--line:#354640;--soft:#2b4037;--accent:#83b59d;--shadow:0 18px 48px #0003;background:linear-gradient(135deg,#141e1d,#182722)}
+body.dark .sidebar,body.dark .top{background:rgba(28,42,39,.94);border-color:#354640}
+body.dark .workspace,body.dark .smallbtn{background:#23342f;border-color:#354640}
+body.dark .nav button:hover,body.dark .nav button.active{background:#2b4037;color:#c7e0d0}
+body.dark .help{background:#233a32;border-color:#354d42}
+body.dark .help b,body.dark .welcome h1,body.dark .section h2,body.dark .cardtitle,body.dark .projectinfo b,body.dark .comptop b{color:#e5eee5}
+body.dark .composer,body.dark .card,body.dark .list{background:#1d2d29;border-color:#394b42}
+body.dark .composer{background:linear-gradient(120deg,#1d2d29,#21362e)}
+body.dark .model{background:#253a32;border-color:#3b5145;color:#b8cbbd}
+body.dark .composer textarea{color:#e5eee5}
+body.dark .composer textarea::placeholder{color:#82958a}
+body.dark .row+.row{border-color:#354640}
+body.dark .projectinfo small,body.dark .desc,body.dark .sub,body.dark .section p{color:#a3b2a7}
+body.dark .orb,body.dark .avatar{background:#2b4037;color:#b8d9c3}
+body.dark .state{background:#453a27;color:#e3c58f}
+body.dark .ready{background:#294438;color:#a8d2b3}
+@media(max-width:1000px){.sidebar{width:230px}.content{padding-top:36px}.grid{gap:11px}}
+@media(max-width:700px){
+ .top{height:62px;padding:0 16px}
+ .content{padding:30px 16px 24px}
+ .welcome{gap:14px;margin-bottom:23px}
+ .welcome h1{font-size:27px;line-height:1.35}
+ .sub{font-size:11px;max-width:245px}
+ .welcome .primary{height:39px;padding:0 11px}
+ .composer{padding:18px 17px 14px;border-radius:17px}
+ .comptop{align-items:flex-start}
+ .comptop p{max-width:230px}
+ .composer textarea{min-height:90px}
+ .section{margin-top:30px}
+ .grid{gap:10px}
+ .card{min-height:143px;padding:14px}
+ .symbol{margin-bottom:12px}
+ .recent{margin-top:31px}
+ .row{padding:12px;min-height:65px}
+}
+@media(max-width:390px){.welcome h1{font-size:23px}.welcome .primary{font-size:9px}.grid{grid-template-columns:1fr}.card{min-height:112px}.symbol{margin-bottom:8px}}
+
 </style></head>
 <body><div class="shell">
 <aside class="sidebar" id="sidebar"><a class="brand" href="#"><span class="mark">M</span><span class="brandcopy"><b>MEHR</b><small>AI STUDIO</small></span></a>
 <div class="workspace"><i class="dot"></i><span data-k="workspace">Personal workspace</span><span class="chev">⌄</span></div>
 <div class="navlabel" data-k="workspaceNav">WORKSPACE</div><nav class="nav">
 <button class="active" data-page="home"><span class="ico">⌂</span><span data-k="home">Overview</span></button>
-<button data-page="projects"><span class="ico">▦</span><span data-k="projects">Projects</span><span class="count">3</span></button>
+<button data-page="projects"><span class="ico">▦</span><span data-k="projects">Projects</span></button>
 <button data-page="automations"><span class="ico">⌘</span><span data-k="automations">Automations</span></button>
 <button data-page="agents"><span class="ico">✳</span><span data-k="agents">AI assistants</span></button>
 <button data-page="files"><span class="ico">▤</span><span data-k="files">Files</span></button></nav>
@@ -66,7 +180,7 @@ body.dark .model{background:#24343a}
 <main class="main"><header class="top"><button class="menu" id="menu">☰</button><div class="crumb"><span data-k="workspace">Personal workspace</span><span>/</span><b id="crumb">Overview</b></div><div class="actions"><span class="status"><i></i><span data-k="allSystems">All systems operational</span></span><button class="smallbtn" id="theme" title="Theme">◐</button><button class="smallbtn lang" id="lang">فا</button><div class="avatar" style="width:30px;height:30px">M</div></div></header>
 <section class="content" id="home">
 <div class="welcome"><div><div class="eyebrow" data-k="goodDay">YOUR WORKSPACE</div><h1 data-k="welcome">Make room for <em>great work.</em></h1><p class="sub" data-k="welcomeSub">What would you like to get done today?</p></div><button class="primary" id="new">＋ <span data-k="newProject">New project</span></button></div>
-<div class="composer"><div class="comptop"><div class="orb">✳</div><div><b data-k="askMehr">Ask MEHR</b><p data-k="askSub">Describe a task. Your AI workspace will help you move it forward.</p></div><span class="model"><i></i> MEHR Assistant</span></div>
+<div class="composer"><div class="comptop"><div class="orb">✳</div><div><b data-k="askMehr">Ask MEHR</b><p data-k="askSub">Describe a task. Your AI workspace will help you move it forward.</p></div><span class="model"><i></i> <span data-k="workspacePreview">Workspace preview</span></span></div>
 <form id="form"><label for="prompt" hidden>Prompt</label><textarea id="prompt" rows="2" data-placeholder="promptPlaceholder" placeholder="Tell MEHR what you need..."></textarea><div class="compbottom"><div class="tools"><label class="toolbtn" for="upload">＋ <span data-k="addFile">Add file</span></label><input id="upload" type="file" hidden multiple><button class="toolbtn" type="button" id="template">▤ <span data-k="useTemplate">Use a template</span></button></div><button class="send" type="submit"><span data-k="startTask">Start task</span> ↗</button></div></form><div class="files" id="files"></div></div>
 <div class="section"><div><h2 data-k="quickStart">A good place to start</h2><p data-k="quickSub">Purpose-built tools for your everyday work.</p></div><button class="linkbtn" data-goto="automations" data-k="viewAll">View all ↗</button></div>
 <div class="grid">
@@ -81,8 +195,8 @@ body.dark .model{background:#24343a}
 </main></div><div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 const words={
-en:{workspace:"Personal workspace",workspaceNav:"WORKSPACE",home:"Overview",projects:"Projects",automations:"Automations",agents:"AI assistants",files:"Files",manage:"MANAGE",activity:"Activity",settings:"Settings",needHelp:"Need a hand?",helpText:"A calm place to start. You can explore at your own pace.",openGuide:"Open quick guide ↗",owner:"Workspace owner",allSystems:"Preview mode · backend not connected",goodDay:"YOUR WORKSPACE",welcome:"Make room for <em>great work.</em>",welcomeSub:"Take a breath. Tell us what you need, and we’ll help you shape the next step.",newProject:"New project",askMehr:"Ask MEHR",askSub:"Start with a rough idea. You do not need the perfect prompt — we’ll help you organize it.",promptPlaceholder:"Tell MEHR what you need...",addFile:"Add file",useTemplate:"Use a template",startTask:"Start task",quickStart:"A good place to start",quickSub:"Simple starting points. Choose one, or describe your own task above.",viewAll:"View all ↗",dailyReport:"Daily site report",dailyReportSub:"Turn site notes into a clear report.",documentReview:"Document review",documentReviewSub:"Summarize and organize project files.",actionTracker:"Action tracker",actionTrackerSub:"Extract decisions, owners and next steps.",customWorkflow:"Custom workflow",customWorkflowSub:"Build a process around your needs.",recentProjects:"Recent projects",recentSub:"Pick up where you left off.",allProjects:"All projects ↗",sampleProject:"Example · Construction reporting",updatedToday:"Updated just now",draft:"Draft",sampleProject2:"Example · Project document review",updatedYesterday:"Updated yesterday",ready:"Ready",previewLabel:"Early access preview",humanReview:"AI outputs should be reviewed before use.",backHome:"Back to overview",pageText:"This section is included in the navigation prototype. Its real data view will be connected in a later step.",empty:"Describe the task first.",captured:"Demo only: task text captured. The workflow engine is not connected yet.",filesAdded:"file(s) attached",templateAdded:"Template inserted into the prompt.",newProjectToast:"Project creation will be connected in the next integration step.",guideToast:"Quick guide will be added during onboarding."},
-fa:{workspace:"فضای کاری شخصی",workspaceNav:"فضای کاری",home:"نمای کلی",projects:"پروژه‌ها",automations:"اتوماسیون‌ها",agents:"دستیارهای هوشمند",files:"فایل‌ها",manage:"مدیریت",activity:"فعالیت‌ها",settings:"تنظیمات",needHelp:"راهنما می‌خواهید؟",helpText:"اینجا می‌توانید بدون عجله و به‌سادگی شروع کنید.",openGuide:"مشاهده راهنمای سریع ↗",owner:"مدیر فضای کاری",allSystems:"حالت پیش‌نمایش · موتور هنوز متصل نیست",goodDay:"فضای کاری شما",welcome:"برای <em>کارهای بزرگ</em> آماده‌اید؟",welcomeSub:"با خیال راحت شروع کنید؛ درخواستتان را بنویسید تا قدم بعدی را با هم مشخص کنیم.",newProject:"پروژه جدید",askMehr:"از مهر بپرسید",askSub:"لازم نیست درخواستتان از ابتدا کامل باشد؛ ایده خام را بنویسید تا آن را مرتب و روشن کنیم.",promptPlaceholder:"درخواست خود را برای مهر بنویسید...",addFile:"افزودن فایل",useTemplate:"استفاده از الگو",startTask:"شروع کار",quickStart:"از اینجا شروع کنید",quickSub:"برای شروع یکی را انتخاب کنید یا درخواست دلخواهتان را در کادر بالا بنویسید.",viewAll:"مشاهده همه ↗",dailyReport:"گزارش روزانه کارگاه",dailyReportSub:"یادداشت‌های کارگاه را به گزارش تبدیل کنید.",documentReview:"بررسی اسناد",documentReviewSub:"اسناد پروژه را خلاصه و دسته‌بندی کنید.",actionTracker:"پیگیری اقدامات",actionTrackerSub:"تصمیم‌ها، مسئولان و گام‌های بعدی را استخراج کنید.",customWorkflow:"گردش‌کار اختصاصی",customWorkflowSub:"فرایندی متناسب با نیاز خود بسازید.",recentProjects:"پروژه‌های اخیر",recentSub:"کارهای قبلی خود را ادامه دهید.",allProjects:"همه پروژه‌ها ↗",sampleProject:"نمونه · گزارش کارگاه",updatedToday:"همین الان به‌روزرسانی شد",draft:"پیش‌نویس",sampleProject2:"نمونه · بررسی اسناد پروژه",updatedYesterday:"به‌روزرسانی دیروز",ready:"آماده",previewLabel:"پیش‌نمایش دسترسی زودهنگام",humanReview:"خروجی هوش مصنوعی پیش از استفاده باید بررسی شود.",backHome:"بازگشت به نمای کلی",pageText:"این بخش در نمونه رابط قرار دارد و در مرحله بعد به داده‌های واقعی متصل می‌شود.",empty:"ابتدا درخواست خود را بنویسید.",captured:"فقط نمونه رابط: درخواست ثبت شد؛ موتور گردش‌کار هنوز متصل نیست.",filesAdded:"فایل پیوست شد",templateAdded:"الگو به متن درخواست اضافه شد.",newProjectToast:"ایجاد پروژه در مرحله اتصال بعدی فعال می‌شود.",guideToast:"راهنمای سریع در مرحله راه‌اندازی اضافه خواهد شد."}
+en:{workspace:"Personal workspace",workspacePreview:"Workspace preview",workspaceNav:"WORKSPACE",home:"Overview",projects:"Projects",automations:"Automations",agents:"AI assistants",files:"Files",manage:"MANAGE",activity:"Activity",settings:"Settings",needHelp:"Need a hand?",helpText:"A calm place to start. You can explore at your own pace.",openGuide:"Open quick guide ↗",owner:"Workspace owner",allSystems:"Preview mode · backend not connected",goodDay:"YOUR WORKSPACE",welcome:"Make room for <em>great work.</em>",welcomeSub:"Take a breath. Tell us what you need, and we’ll help you shape the next step.",newProject:"New project",askMehr:"Ask MEHR",askSub:"Start with a rough idea. You do not need the perfect prompt — we’ll help you organize it.",promptPlaceholder:"Tell MEHR what you need...",addFile:"Add file",useTemplate:"Use a template",startTask:"Start task",quickStart:"A good place to start",quickSub:"Simple starting points. Choose one, or describe your own task above.",viewAll:"View all ↗",dailyReport:"Daily site report",dailyReportSub:"Turn site notes into a clear report.",documentReview:"Document review",documentReviewSub:"Summarize and organize project files.",actionTracker:"Action tracker",actionTrackerSub:"Extract decisions, owners and next steps.",customWorkflow:"Custom workflow",customWorkflowSub:"Build a process around your needs.",recentProjects:"Recent projects",recentSub:"Pick up where you left off.",allProjects:"All projects ↗",sampleProject:"Example · Construction reporting",updatedToday:"Sample data · not connected",draft:"Draft",sampleProject2:"Example · Project document review",updatedYesterday:"Sample data · not connected",ready:"Ready",previewLabel:"Early access preview",humanReview:"AI outputs should be reviewed before use.",backHome:"Back to overview",pageText:"This section is included in the navigation prototype. Its real data view will be connected in a later step.",empty:"Describe the task first.",captured:"Demo only: task text captured. The workflow engine is not connected yet.",filesAdded:"file(s) attached",templateAdded:"Template inserted into the prompt.",newProjectToast:"Project creation will be connected in the next integration step.",guideToast:"Quick guide will be added during onboarding."},
+fa:{workspace:"فضای کاری شخصی",workspacePreview:"پیش‌نمایش فضای کاری",workspaceNav:"فضای کاری",home:"نمای کلی",projects:"پروژه‌ها",automations:"اتوماسیون‌ها",agents:"دستیارهای هوشمند",files:"فایل‌ها",manage:"مدیریت",activity:"فعالیت‌ها",settings:"تنظیمات",needHelp:"راهنما می‌خواهید؟",helpText:"اینجا می‌توانید بدون عجله و به‌سادگی شروع کنید.",openGuide:"مشاهده راهنمای سریع ↗",owner:"مدیر فضای کاری",allSystems:"حالت پیش‌نمایش · موتور هنوز متصل نیست",goodDay:"فضای کاری شما",welcome:"برای <em>کارهای بزرگ</em> آماده‌اید؟",welcomeSub:"با خیال راحت شروع کنید؛ درخواستتان را بنویسید تا قدم بعدی را با هم مشخص کنیم.",newProject:"پروژه جدید",askMehr:"از مهر بپرسید",askSub:"لازم نیست درخواستتان از ابتدا کامل باشد؛ ایده خام را بنویسید تا آن را مرتب و روشن کنیم.",promptPlaceholder:"درخواست خود را برای مهر بنویسید...",addFile:"افزودن فایل",useTemplate:"استفاده از الگو",startTask:"شروع کار",quickStart:"از اینجا شروع کنید",quickSub:"برای شروع یکی را انتخاب کنید یا درخواست دلخواهتان را در کادر بالا بنویسید.",viewAll:"مشاهده همه ↗",dailyReport:"گزارش روزانه کارگاه",dailyReportSub:"یادداشت‌های کارگاه را به گزارش تبدیل کنید.",documentReview:"بررسی اسناد",documentReviewSub:"اسناد پروژه را خلاصه و دسته‌بندی کنید.",actionTracker:"پیگیری اقدامات",actionTrackerSub:"تصمیم‌ها، مسئولان و گام‌های بعدی را استخراج کنید.",customWorkflow:"گردش‌کار اختصاصی",customWorkflowSub:"فرایندی متناسب با نیاز خود بسازید.",recentProjects:"پروژه‌های اخیر",recentSub:"کارهای قبلی خود را ادامه دهید.",allProjects:"همه پروژه‌ها ↗",sampleProject:"نمونه · گزارش کارگاه",updatedToday:"داده نمونه · متصل نیست",draft:"پیش‌نویس",sampleProject2:"نمونه · بررسی اسناد پروژه",updatedYesterday:"داده نمونه · متصل نیست",ready:"آماده",previewLabel:"پیش‌نمایش دسترسی زودهنگام",humanReview:"خروجی هوش مصنوعی پیش از استفاده باید بررسی شود.",backHome:"بازگشت به نمای کلی",pageText:"این بخش در نمونه رابط قرار دارد و در مرحله بعد به داده‌های واقعی متصل می‌شود.",empty:"ابتدا درخواست خود را بنویسید.",captured:"فقط نمونه رابط: درخواست ثبت شد؛ موتور گردش‌کار هنوز متصل نیست.",filesAdded:"فایل پیوست شد",templateAdded:"الگو به متن درخواست اضافه شد.",newProjectToast:"ایجاد پروژه در مرحله اتصال بعدی فعال می‌شود.",guideToast:"راهنمای سریع در مرحله راه‌اندازی اضافه خواهد شد."}
 };
 let lang="en",timer;const $=s=>document.querySelector(s);function tr(k){return words[lang][k]||k}
 function say(msg){$("#toast").textContent=msg;$("#toast").classList.add("show");clearTimeout(timer);timer=setTimeout(()=>$("#toast").classList.remove("show"),2700)}
