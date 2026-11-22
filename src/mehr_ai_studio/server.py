@@ -6,7 +6,10 @@ from .config import settings
 from .core import assess_text, build_content_brief
 from .provider import ProviderError, ProviderNotConfigured, generate_text
 from .store import DEFAULT_TENANT_ID, StudioStore
-from .workflow import run_content_workflow as execute_content_workflow
+from .workflow import (
+    resume_content_workflow as execute_resume_content_workflow,
+    run_content_workflow as execute_content_workflow,
+)
 
 app = FastMCP("MEHR AI STUDIO")
 store = StudioStore(settings.database_path)
@@ -75,6 +78,14 @@ def read_workflow_run(run_id: str) -> dict:
 def list_workflow_runs(limit: int = 20) -> dict:
     """List recent workflow runs from the local single-user store."""
     return {"runs": store.list_workflow_runs(DEFAULT_TENANT_ID, limit=limit)}
+
+
+@app.tool()
+def resume_content_workflow(run_id: str) -> dict:
+    """Resume a failed local workflow from its saved checkpoint."""
+    return execute_resume_content_workflow(
+        store, run_id, tenant_id=DEFAULT_TENANT_ID
+    )
 
 
 @app.tool()
