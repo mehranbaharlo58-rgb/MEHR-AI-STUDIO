@@ -143,3 +143,37 @@ def test_workflow_run_storage_rejects_invalid_contract_and_limit(tmp_path):
         store.save_workflow_run(_workflow_run(status="unknown"), tenant_id="tenant-a")
     with pytest.raises(ValueError):
         store.list_workflow_runs("tenant-a", limit=0)
+
+
+def test_stage_outputs_are_immutable_and_attempt_scoped(tmp_path):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    first = {"brief": {"goal": "build"}}
+    store.save_stage_output("run-1", 1, "brief", first, tenant_id="alpha")
+    # Replaying the exact checkpoint is idempotent.
+    store.save_stage_output("run-1", 1, "brief", first, tenant_id="alpha")
+
+    with pytest.raises(ValueError, match="immutable"):
+        store.save_stage_output(
+            "run-1", 1, "brief", {"brief": {"goal": "changed"}}, tenant_id="alpha"
+        )
+
+    store.save_stage_output(
+        "run-1", 2, "brief", {"brief": {"goal": "revised"}}, tenant_id="alpha"
+    )
+    store.save_stage_output(
+        "run-1", 1, "brief", {"brief": {"goal": "other tenant"}}, tenant_id="beta"
+    )
+
+    assert len(store.list_stage_outputs("run-1", tenant_id="alpha")) == 2
+    assert len(store.list_stage_outputs("run-1", tenant_id="alpha", attempt=1)) == 1
+    assert store.list_stage_outputs("run-1", tenant_id="beta")[0]["output"] == {
+        "brief": {"goal": "other tenant"}
+    }
+
+
+def test_stage_output_rejects_invalid_attempt_and_non_json_payload(tmp_path):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    with pytest.raises(ValueError):
+        store.save_stage_output("run-1", 0, "brief", {})
+    with pytest.raises(ValueError, match="JSON-serializable"):
+        store.save_stage_output("run-1", 1, "brief", {"bad": object()})
