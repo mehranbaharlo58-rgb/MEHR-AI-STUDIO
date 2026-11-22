@@ -157,3 +157,50 @@ def test_rejects_non_finite_or_unsafe_claim_values(verifier, rsa_keys, claims):
     private_key, _ = rsa_keys
     token = make_token(private_key, **claims)
     assert asyncio.run(verifier.verify_token(token)) is None
+
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("issuer_url", "https://user:pass@issuer.example.test/"),
+        ("issuer_url", "https://issuer.example.test/?token=leak"),
+        ("jwks_url", "https://issuer.example.test/jwks#fragment"),
+        ("resource_server_url", "https://issuer.example.test/path#fragment"),
+    ],
+)
+def test_rejects_unsafe_oidc_urls(field, value):
+    config = {
+        "issuer_url": ISSUER,
+        "jwks_url": "https://issuer.example.test/.well-known/jwks.json",
+        "audience": AUDIENCE,
+        "resource_server_url": RESOURCE,
+        "required_scopes": ["studio:access"],
+    }
+    config[field] = value
+    with pytest.raises(OIDCConfigurationError):
+        OIDCJWTTokenVerifier(**config)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"audience": None},
+        {"required_scopes": ["studio:access", 3]},
+        {"required_scopes": "studio:access"},
+        {"tenant_claim": None},
+        {"jwks_cache_seconds": True},
+        {"leeway_seconds": 1.5},
+    ],
+)
+def test_rejects_malformed_oidc_configuration(overrides):
+    config = {
+        "issuer_url": ISSUER,
+        "jwks_url": "https://issuer.example.test/.well-known/jwks.json",
+        "audience": AUDIENCE,
+        "resource_server_url": RESOURCE,
+        "required_scopes": ["studio:access"],
+    }
+    config.update(overrides)
+    with pytest.raises(OIDCConfigurationError):
+        OIDCJWTTokenVerifier(**config)
