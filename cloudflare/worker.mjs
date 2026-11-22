@@ -29,6 +29,12 @@ function equalSecret(a, b) {
   return diff === 0;
 }
 
+function trimTrailingSlashes(value) {
+  let result = value;
+  while (result.endsWith("/")) result = result.slice(0, -1);
+  return result;
+}
+
 function authorized(request, env) {
   const configured = env.MEHR_API_TOKEN;
   const header = request.headers.get("Authorization") || "";
@@ -150,7 +156,8 @@ export default {
         return response({ ok: false, error: "provider_request_failed", provider_status: upstream.status }, 502, cors);
       }
       const contentType = upstream.headers.get("Content-Type") || "";
-      if (!/^application\\/(?:[a-z0-9.+-]*\\+)?json(?:\\s*;|$)/i.test(contentType)) {
+      const mediaType = contentType.toLowerCase().split(";")[0].trim();
+      if (mediaType !== "application/json" && !mediaType.endsWith("+json")) {
         return response({ ok: false, error: "provider_response_invalid" }, 502, cors);
       }
       const rawResult = await readLimitedText(upstream, MAX_PROVIDER_RESPONSE_BYTES);
