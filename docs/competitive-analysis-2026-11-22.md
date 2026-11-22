@@ -130,8 +130,8 @@ The ten are selected for architectural coverage. Popularity is a discovery signa
 
 | Area | Current repository evidence | Gap |
 |---|---|---|
-| Model adapter | One OpenAI-compatible synchronous HTTP adapter | Retry/backoff, async/streaming, provider capability metadata, usage and cost telemetry |
-| Workflow | Linear content path plus tenant-scoped run records, validated snapshots, retry/resume checkpoints | Step registry, branching, cancellation, immutable per-stage snapshots and bounded provider retry/backoff |
+| Model adapter | OpenAI-compatible synchronous adapter with bounded exponential retry for transient transport/HTTP failures | Async/streaming, provider capability metadata, usage and cost telemetry |
+| Workflow | Linear content path, tenant-scoped run snapshots, checkpoint resume, prompt-version and model metadata | Step registry, branching, cancellation, immutable per-stage snapshots and per-stage evaluation evidence |
 | Memory | SQLite key/value records with tenant partition | Typed memories, provenance, expiry/forgetting, search, versioning and stronger storage controls |
 | Quality | Non-empty, punctuation/bullet and word-count score | Rubric-based evaluation, evidence/citation checks, calibration and test datasets |
 | Feedback | Rating and note analytics | Link feedback to exact output, prompt/model/rubric versions; use for offline evaluation, not silent training |
@@ -145,10 +145,11 @@ The ten are selected for architectural coverage. Popularity is a discovery signa
 - [x] Add strict Pydantic contracts for content briefs, generated assets, quality reports, provider results and workflow runs.
 - [x] Persist tenant-scoped workflow lifecycle states and validated run snapshots; support checkpoint-based resume.
 - [x] Add deterministic contract, persistence, lifecycle, resume and tenant-isolation unit tests.
-- [ ] Add bounded provider retry/backoff with classified transient and permanent errors.
-- [ ] Add immutable per-stage snapshots and prompt/model version capture.
+- [x] Add bounded exponential provider retries for transient transport failures and selected HTTP status codes; do not retry permanent client errors or malformed payloads.
+- [x] Record prompt version and configured/actual model identifiers in initial, failed, successful and resumed workflow snapshots.
+- [ ] Add immutable per-stage snapshots and per-stage prompt/model version capture.
 
-**Evidence on 2026-11-22:** PR #1 head `9c2a6d2615894e620664bdb9cfe561d1f740efff`; GitHub Actions run #152 succeeded, including Ruff, pytest, package build and distribution upload. The suite count recorded in PR validation is 104 passed, 1 skipped.
+**Evidence on 2026-11-22:** PR #1 head `ed82fbb7faeb23ebaaadf95ca65c958bcd8c4be0`; GitHub Actions run #173 succeeded: Ruff passed, pytest reported 108 passed and 1 skipped, package build passed, and the installable distribution artifact was uploaded.
 
 ### P1 — production workflow core
 - Replace the one-shot function with a small step registry and explicit state machine.
