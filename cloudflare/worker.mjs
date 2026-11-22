@@ -1,6 +1,7 @@
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
 const MAX_BODY_BYTES = 16 * 1024;
 const MAX_PROMPT_CHARS = 12000;
+const MAX_PROVIDER_RESPONSE_BYTES = 1024 * 1024;
 
 function response(data, status, cors = {}) {
   return new Response(JSON.stringify(data), { status, headers: { ...JSON_HEADERS, ...cors } });
@@ -28,12 +29,44 @@ function equalSecret(a, b) {
   return diff === 0;
 }
 
+function trimTrailingSlashes(value) {
+  let result = value;
+  while (result.endsWith("/")) result = result.slice(0, -1);
+  return result;
+}
+
 function authorized(request, env) {
   const configured = env.MEHR_API_TOKEN;
   const header = request.headers.get("Authorization") || "";
   const supplied = header.startsWith("Bearer ") ? header.slice(7) : "";
   return typeof configured === "string" && configured.length >= 32 &&
     equalSecret(supplied, configured);
+}
+
+async function readLimitedText(response, limit) {
+  const declaredLength = Number(response.headers.get("Content-Length") || 0);
+  if (declaredLength > limit) return null;
+  if (!response.body) return "";
+  const reader = response.body.getReader();
+  const chunks = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(merged);
 }
 
 export default {
@@ -90,10 +123,12 @@ export default {
 
     let endpoint;
     try {
-      endpoint = new URL(env.AI_BASE_URL.replace(/\/+$/, ""));
-      if (endpoint.protocol !== "https:") throw new Error("https_required");
+      endpoint = new URL(trimTrailingSlashes(env.AI_BASE_URL));
+      if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password) {
+        throw new Error("https_required");
+      }
       if (!endpoint.pathname.endsWith("/chat/completions")) {
-        endpoint.pathname = endpoint.pathname.replace(/\/+$/, "") + "/chat/completions";
+        endpoint.pathname = trimTrailingSlashes(endpoint.pathname) + "/chat/completions";
       }
     } catch {
       return response({ ok: false, error: "provider_configuration_invalid" }, 503, cors);
@@ -102,6 +137,7 @@ export default {
     try {
       const upstream = await fetch(endpoint.toString(), {
         method: "POST",
+        redirect: "manual",
         headers: {
           "authorization": `Bearer ${env.AI_API_KEY}`,
           "content-type": "application/json",
@@ -119,7 +155,21 @@ export default {
       if (!upstream.ok) {
         return response({ ok: false, error: "provider_request_failed", provider_status: upstream.status }, 502, cors);
       }
-      const result = await upstream.json();
+      const contentType = upstream.headers.get("Content-Type") || "";
+      const mediaType = contentType.toLowerCase().split(";")[0].trim();
+      if (mediaType !== "application/json" && !mediaType.endsWith("+json")) {
+        return response({ ok: false, error: "provider_response_invalid" }, 502, cors);
+      }
+      const rawResult = await readLimitedText(upstream, MAX_PROVIDER_RESPONSE_BYTES);
+      if (rawResult === null) {
+        return response({ ok: false, error: "provider_response_too_large" }, 502, cors);
+      }
+      let result;
+      try {
+        result = JSON.parse(rawResult);
+      } catch {
+        return response({ ok: false, error: "provider_response_invalid" }, 502, cors);
+      }
       const text = result?.choices?.[0]?.message?.content;
       if (typeof text !== "string" || !text.trim()) {
         return response({ ok: false, error: "provider_response_invalid" }, 502, cors);
