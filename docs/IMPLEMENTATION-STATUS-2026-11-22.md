@@ -2,12 +2,12 @@
 
 **Verified:** 2026-11-22  
 **Branch:** `feat/p0-typed-contracts`  
-**Code head (validated):** `920c207af6060c5fc4b6881fbf573cadc0217b06`  
+**PR head (validated):** `12a4c63f90f06c71e0fd241a363f8d71418d4156`  
 **Pull request:** [#1](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/pull/1)
 
 ## Verified delivery
 
-GitHub Actions runs [#226](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45014646451) and [#227](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45014651525) completed successfully on code head `920c207af6060c5fc4b6881fbf573cadc0217b06`. Both runs passed all 12 validation and delivery steps:
+GitHub Actions run [#247](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45020522625) completed successfully on PR head `12a4c63f90f06c71e0fd241a363f8d71418d4156`. All 12 validation and delivery steps passed:
 
 - Ruff lint
 - pytest
@@ -17,7 +17,7 @@ GitHub Actions runs [#226](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO
 - installed `python -m mehr_ai_studio.selfcheck` module check
 - artifact upload
 
-The installable distribution artifacts were uploaded by both successful runs. Actions artifacts are temporary CI outputs, not permanent releases.
+Verified current artifact: ID `14754015341`, SHA-256 `7a2575c35cecef19a1c809ef030816ff02bc24f9b14ba537de6a908208192cd9`, size 58,233 bytes, expires 2026-12-06 12:06:16 UTC. It is a temporary Actions artifact, not a permanent release.
 
 ## P0 status
 
@@ -54,7 +54,7 @@ The earlier competitive review document contains historical baseline statements.
 
 ## Next execution milestone
 
-1. Complete the customer handoff package: verify the current CI artifact link, exact install commands, MCP client launch configuration, and a sample end-to-end workflow.
+1. Execute a customer-side install and MCP client launch, then run a sample end-to-end workflow; CI clean-venv installation is verified, but external device/client execution is not.
 2. Add cancellation and explicit approval gates before any external publishing or account-changing action.
 3. Extend quality evaluation beyond structural checks with brief adherence, source support, audience fit, tone, and format validity; keep factual verification claims disabled until separately evidenced.
 
