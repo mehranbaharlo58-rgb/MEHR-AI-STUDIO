@@ -15,6 +15,7 @@ dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.6", "build>=1.2"]
 
 [project.scripts]
 mehr-ai-studio = "mehr_ai_studio.server:main"
+mehr-ai-studio-check = "mehr_ai_studio.selfcheck:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
