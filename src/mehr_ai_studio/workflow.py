@@ -100,8 +100,8 @@ def _build_content_registry(store: StudioStore, tenant_id: str) -> StageRegistry
             PromptStageOutput,
             lambda data: {
                 "prompt": (
-                    "Create content using this structured brief.\\n"
-                    f"BRIEF: {data.brief.model_dump()}\\n"
+                    "Create content using this structured brief.\n"
+                    f"BRIEF: {data.brief.model_dump()}\n"
                     f"SAVED CONTEXT ({data.context.context_key}): "
                     f"{data.context.value if data.context.context_loaded else 'not provided'}"
                 )
