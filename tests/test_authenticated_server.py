@@ -80,6 +80,13 @@ def test_authenticated_factory_injects_verifier_and_registers_tenant_tools(monke
     monkeypatch.setattr(
         authenticated_server, "current_request_tenant_id", lambda: "tenant-from-token"
     )
+    monkeypatch.setattr(
+        authenticated_server,
+        "execute_resume_content_workflow",
+        lambda store, run_id, tenant_id: {
+            "run_id": run_id, "tenant_id": tenant_id
+        },
+    )
 
     app = authenticated_server.build_authenticated_server(
         token_verifier=FakeVerifier(),
@@ -95,6 +102,7 @@ def test_authenticated_factory_injects_verifier_and_registers_tenant_tools(monke
     assert app.tools["get_feedback_insights"]()["tenant_id"] == "tenant-from-token"
     assert app.tools["read_workflow_run"]("run-1")["tenant_id"] == "tenant-from-token"
     assert app.tools["list_workflow_runs"](5)["runs"][0]["tenant_id"] == "tenant-from-token"
+    assert app.tools["resume_content_workflow"]("run-1")["tenant_id"] == "tenant-from-token"
 
 
 def test_authenticated_tool_signatures_never_accept_tenant_id(monkeypatch):
@@ -113,6 +121,7 @@ def test_authenticated_tool_signatures_never_accept_tenant_id(monkeypatch):
         "get_feedback_insights",
         "read_workflow_run",
         "list_workflow_runs",
+        "resume_content_workflow",
         "run_content_workflow",
     ):
         assert "tenant_id" not in inspect.signature(app.tools[name]).parameters
