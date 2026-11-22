@@ -202,3 +202,43 @@ def test_streamable_http_rejects_missing_and_invalid_bearer_tokens(monkeypatch):
 def test_authenticated_factory_rejects_unsafe_auth_configuration(settings, message):
     with pytest.raises(ValueError, match=message):
         authenticated_server._validate_auth_configuration(FakeVerifier(), settings)
+
+
+
+def test_authenticated_http_tool_partitioning_prevents_cross_tenant_memory_reads(
+    monkeypatch, tmp_path
+):
+    """Exercise the real SQLite tenant boundary through authenticated tool handlers."""
+    from mehr_ai_studio.store import StudioStore
+
+    monkeypatch.setattr(authenticated_server, "FastMCP", FakeMCP)
+    active_tenant = {"id": "tenant-alpha"}
+    monkeypatch.setattr(
+        authenticated_server,
+        "current_request_tenant_id",
+        lambda: active_tenant["id"],
+    )
+    store = StudioStore(tmp_path / "tenant-isolation.sqlite3")
+    app = authenticated_server.build_authenticated_server(
+        token_verifier=FakeVerifier(),
+        auth_settings=valid_auth_settings(),
+        store=store,
+    )
+
+    alpha_save = app.tools["save_project_memory"]("private", "alpha-secret")
+    assert alpha_save["tenant_id"] == "tenant-alpha"
+    assert app.tools["read_project_memory"]("private")["value"] == "alpha-secret"
+
+    active_tenant["id"] = "tenant-beta"
+    assert app.tools["read_project_memory"]("private") == {
+        "found": False,
+        "key": "private",
+    }
+    beta_save = app.tools["save_project_memory"]("private", "beta-secret")
+    assert beta_save["tenant_id"] == "tenant-beta"
+    assert app.tools["read_project_memory"]("private")["value"] == "beta-secret"
+
+    active_tenant["id"] = "tenant-alpha"
+    assert app.tools["read_project_memory"]("private")["value"] == "alpha-secret"
+    assert store.feedback_insights(tenant_id="tenant-alpha")["feedback_count"] == 0
+    assert store.feedback_insights(tenant_id="tenant-beta")["feedback_count"] == 0
