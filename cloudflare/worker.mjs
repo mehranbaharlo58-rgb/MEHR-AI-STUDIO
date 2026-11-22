@@ -80,6 +80,9 @@ export default {
     }
 
     if (url.pathname === "/api/health" && request.method === "GET") {
+      if (!authorized(request, env)) {
+        return response({ ok: false, error: "unauthorized" }, 401, cors);
+      }
       return response({ ok: true, service: "MEHR AI STUDIO API", provider_configured: Boolean(env.AI_BASE_URL && env.AI_API_KEY && env.AI_MODEL) }, 200, cors);
     }
 
