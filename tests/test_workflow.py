@@ -21,6 +21,26 @@ def test_workflow_loads_memory_generates_and_assesses(tmp_path, monkeypatch):
     assert result["assessment"]["score"] == 100
 
 
+def test_workflow_uses_only_requested_tenant_memory(tmp_path, monkeypatch):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    store.save_memory("brand", {"voice": "Alpha"}, tenant_id="alpha")
+    store.save_memory("brand", {"voice": "Beta"}, tenant_id="beta")
+    captured = {}
+
+    def fake_generate(prompt):
+        captured["prompt"] = prompt
+        return {"text": "A sufficiently useful generated content sample. " * 5, "model": "test"}
+
+    monkeypatch.setattr(workflow, "generate_text", fake_generate)
+    result = workflow.run_content_workflow(
+        store, "Explain a service", "small businesses", "website", tenant_id="alpha"
+    )
+
+    assert result["context_loaded"] is True
+    assert "Alpha" in captured["prompt"]
+    assert "Beta" not in captured["prompt"]
+
+
 def test_workflow_reports_missing_provider(tmp_path, monkeypatch):
     store = StudioStore(tmp_path / "studio.sqlite3")
 
