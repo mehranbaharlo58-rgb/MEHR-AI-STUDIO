@@ -43,12 +43,19 @@ The MCP Python SDK documents OAuth bearer-token verification for Streamable HTTP
 - Existing tenant-aware SQLite storage remains useful, but is not represented as a security boundary on its own.
 - Selecting an authorization provider and its issuer/resource URLs is a deployment decision that must be made before enabling HTTP.
 
+## Implementation progress — 2026-11-22
+
+- Added `build_authenticated_server()` as an opt-in factory. It requires an injected SDK-compatible verifier and AuthSettings, enforces HTTPS issuer/resource URLs and non-empty required scopes, and never starts a listener itself.
+- The factory registers tenant-aware memory, feedback, and workflow tools. Each protected operation derives tenant scope from the verified request token; no tool accepts a tenant ID argument.
+- Added unit tests for injected verifier/configuration and server-side tenant binding, plus an ASGI transport test for missing and rejected bearer tokens.
+- This is an integration seam, not a production identity integration. No issuer-specific verifier, token issuance, real account-to-tenant mapping, expiry/audience verification against a live issuer, or production deployment is configured.
+
 ## Implementation gates
 
 - [ ] Select and configure an OAuth 2.1 authorization server.
 - [ ] Implement and test the SDK token verifier against that issuer.
 - [ ] Define a stable, immutable principal-to-tenant mapping.
-- [ ] Inject server-derived tenant context into all store and workflow operations.
+- [x] Inject server-derived tenant context into all memory, feedback, and workflow operations in the opt-in authenticated server factory.
 - [ ] Add negative tests for missing, invalid, expired, wrong-audience, and insufficient-scope tokens.
 - [ ] Add cross-tenant isolation tests through the actual HTTP transport (not only direct function calls).
 - [ ] Configure TLS, secret management, logging redaction, rate limiting, and deployment hardening.
