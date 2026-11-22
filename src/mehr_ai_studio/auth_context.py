@@ -6,7 +6,7 @@ from typing import Any
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import AccessToken
 
-from .store import _validate_tenant_id
+from .store import validate_tenant_id
 
 
 class AuthenticationRequired(PermissionError):
@@ -32,7 +32,7 @@ def tenant_id_from_access_token(access_token: AccessToken | None) -> str:
         raise AuthenticationRequired("The verified token has no tenant_id claim")
 
     try:
-        return _validate_tenant_id(tenant_id)
+        return validate_tenant_id(tenant_id)
     except (TypeError, ValueError) as exc:
         raise AuthenticationRequired("The verified tenant_id claim is invalid") from exc
 
