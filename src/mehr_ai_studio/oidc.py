@@ -43,15 +43,35 @@ class OIDCJWTTokenVerifier(TokenVerifier):
             ("resource_server_url", resource_server_url),
         ):
             parsed = urlparse(value)
-            if parsed.scheme != "https" or not parsed.netloc:
-                raise OIDCConfigurationError(f"{name} must be an absolute HTTPS URL")
-        if not audience.strip():
-            raise OIDCConfigurationError("audience must not be empty")
-        if not required_scopes or any(not s.strip() for s in required_scopes):
+            if (
+                parsed.scheme != "https"
+                or not parsed.hostname
+                or parsed.username is not None
+                or parsed.password is not None
+                or parsed.query
+                or parsed.fragment
+            ):
+                raise OIDCConfigurationError(
+                    f"{name} must be an absolute HTTPS URL without credentials, query, or fragment"
+                )
+        if not isinstance(audience, str) or not audience.strip():
+            raise OIDCConfigurationError("audience must be a non-empty string")
+        if (
+            not isinstance(required_scopes, list)
+            or not required_scopes
+            or any(not isinstance(scope, str) or not scope.strip() for scope in required_scopes)
+        ):
             raise OIDCConfigurationError("At least one non-empty required scope is mandatory")
-        if not tenant_claim.strip():
-            raise OIDCConfigurationError("tenant_claim must not be empty")
-        if jwks_cache_seconds < 1 or leeway_seconds < 0:
+        if not isinstance(tenant_claim, str) or not tenant_claim.strip():
+            raise OIDCConfigurationError("tenant_claim must be a non-empty string")
+        if (
+            isinstance(jwks_cache_seconds, bool)
+            or not isinstance(jwks_cache_seconds, int)
+            or isinstance(leeway_seconds, bool)
+            or not isinstance(leeway_seconds, int)
+            or jwks_cache_seconds < 1
+            or leeway_seconds < 0
+        ):
             raise OIDCConfigurationError("JWKS cache must be positive and leeway non-negative")
 
         self.issuer_url = issuer_url
