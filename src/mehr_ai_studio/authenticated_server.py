@@ -9,12 +9,11 @@ from mcp.server.auth.provider import TokenVerifier
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
 
-from .oidc import OIDCJWTTokenVerifier
-
 from . import __version__
 from .auth_context import current_request_tenant_id
 from .config import settings
 from .core import assess_text, build_content_brief
+from .oidc import OIDCJWTTokenVerifier
 from .provider import ProviderError, ProviderNotConfigured, generate_text
 from .store import StudioStore
 from .workflow import run_content_workflow as execute_content_workflow
