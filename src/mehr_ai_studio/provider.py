@@ -67,10 +67,12 @@ def generate_text(
         try:
             return _request_once(url, payload, headers)
         except httpx.HTTPStatusError as exc:
+            last_error = exc
             status = exc.response.status_code
             retryable = status in _RETRYABLE_STATUS_CODES
             error_name = f"http_{status}"
         except (httpx.TimeoutException, httpx.TransportError) as exc:
+            last_error = exc
             retryable = True
             error_name = type(exc).__name__
         except (httpx.HTTPError, KeyError, IndexError, TypeError, AttributeError, ValueError) as exc:
@@ -79,7 +81,7 @@ def generate_text(
             ) from exc
 
         if not retryable or attempt >= max_attempts:
-            raise ProviderError(f"AI provider request failed: {error_name}") from exc
+            raise ProviderError(f"AI provider request failed: {error_name}") from last_error
         delay = settings.provider_retry_backoff * (2 ** (attempt - 1))
         if delay:
             time.sleep(delay)
