@@ -127,6 +127,9 @@ def test_workflow_runs_persist_and_are_tenant_isolated(tmp_path):
 def test_workflow_run_upsert_updates_status_without_cross_tenant_write(tmp_path):
     store = StudioStore(tmp_path / "studio.sqlite3")
     store.save_workflow_run(_workflow_run(), tenant_id="tenant-a")
+    running = _workflow_run(status="running")
+    running["updated_at"] = "2026-11-22T08:04:00Z"
+    store.save_workflow_run(running, tenant_id="tenant-a")
     updated = _workflow_run(status="succeeded")
     updated["updated_at"] = "2026-11-22T08:05:00Z"
     store.save_workflow_run(updated, tenant_id="tenant-a")
