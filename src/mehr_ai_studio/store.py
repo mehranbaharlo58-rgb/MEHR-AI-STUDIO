@@ -243,6 +243,7 @@ class StudioStore:
                    ) VALUES(?,?,?,?,?,?)
                    ON CONFLICT(tenant_id, run_id) DO UPDATE SET
                        status=excluded.status,
+                       created_at=excluded.created_at,
                        updated_at=excluded.updated_at,
                        payload=excluded.payload""",
                 (
