@@ -37,7 +37,9 @@ pytest -q
 python -m build
 ```
 
-Run the MCP server with `python -m mehr_ai_studio`. It uses stdio by default.
+Run the MCP server with `python -m mehr_ai_studio` or the installed `mehr-ai-studio` command. It uses stdio by default.
+
+For installation from the tested GitHub Actions wheel artifact and local MCP setup, see [Local MVP Quick Start](docs/LOCAL-MVP-QUICKSTART.md).
 
 Run the offline installation check with `python -m mehr_ai_studio.selfcheck`. It verifies SQLite write/read, content-brief creation, and structural assessment without an API key or network connection. A successful offline check does not claim that a live AI provider or hosted HTTP authentication has been tested.
 
