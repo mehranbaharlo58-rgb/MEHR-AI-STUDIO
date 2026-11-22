@@ -14,7 +14,7 @@ The MCP Python SDK documents OAuth bearer-token verification for Streamable HTTP
 
 1. Keep `stdio` as the only enabled/default transport for the current single-user local product.
 2. Do not expose a network transport or claim multi-user security until a real authorization-server integration is configured and tested.
-3. For a future HTTP deployment, use Streamable HTTP with an external OAuth 2.1 authorization server and an SDK `TokenVerifier`. The server must derive the tenant from a verified, stable identity claim; it must never accept a tenant ID from tool arguments as proof of identity.
+3. For a future HTTP deployment, use Streamable HTTP with an external OAuth 2.1 authorization server and an SDK `TokenVerifier`. The server must derive the tenant from a verified, stable identity claim; it must never accept a tenant ID from tool arguments as proof of identity. The verifier must also populate the SDK `AccessToken.subject` field; the application rejects tokens with a missing/blank subject or missing/invalid `tenant_id` claim.
 4. Bind the verified principal to every memory, feedback, and workflow store operation on the server side. Fail closed when the request has no verified principal or required identity claim.
 5. Keep local `stdio` explicitly single-user. Do not infer an HTTP identity from environment variables or a caller-provided argument.
 6. Add transport-level integration tests that prove unauthenticated requests are rejected before tools run, invalid/expired tokens are rejected, and two authenticated principals cannot read or alter each other's data.
