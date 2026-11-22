@@ -205,7 +205,7 @@ def test_authenticated_factory_rejects_unsafe_auth_configuration(settings, messa
 
 
 
-def test_authenticated_http_tool_partitioning_prevents_cross_tenant_memory_reads(
+def test_authenticated_tool_handlers_enforce_sqlite_tenant_partitioning(
     monkeypatch, tmp_path
 ):
     """Exercise the real SQLite tenant boundary through authenticated tool handlers."""
