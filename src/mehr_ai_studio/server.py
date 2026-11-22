@@ -7,9 +7,9 @@ from .core import assess_text, build_content_brief
 from .provider import ProviderError, ProviderNotConfigured, generate_text
 from .store import DEFAULT_TENANT_ID, StudioStore
 from .workflow import (
-    resume_content_workflow as execute_resume_content_workflow,
     run_content_workflow as execute_content_workflow,
 )
+from .workflow import resume_content_workflow as execute_resume_content_workflow
 
 app = FastMCP("MEHR AI STUDIO")
 store = StudioStore(settings.database_path)
