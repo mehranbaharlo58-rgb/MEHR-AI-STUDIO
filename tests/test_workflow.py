@@ -55,3 +55,39 @@ def test_workflow_reports_missing_provider(tmp_path, monkeypatch):
     assert result["ok"] is False
     assert result["error"] == "provider_not_configured"
     assert result["brief"]["goal"] == "Explain a service"
+
+
+def test_workflow_returns_contract_normalized_asset_and_report(tmp_path, monkeypatch):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    monkeypatch.setattr(
+        workflow,
+        "generate_text",
+        lambda prompt: {"text": "A validated generated content sample. " * 5, "model": "test-model"},
+    )
+
+    result = workflow.run_content_workflow(
+        store, "Explain a service", "small businesses", "website"
+    )
+
+    assert result["generated"] == {
+        "text": "A validated generated content sample. " * 5,
+        "model": "test-model",
+        "format": "text",
+    }
+    assert 0 <= result["assessment"]["score"] <= 100
+    assert result["assessment"]["checks"]["non_empty"] is True
+
+
+def test_workflow_rejects_malformed_provider_contract(tmp_path, monkeypatch):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    monkeypatch.setattr(
+        workflow, "generate_text", lambda prompt: {"text": "", "model": "test-model"}
+    )
+
+    import pytest
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        workflow.run_content_workflow(
+            store, "Explain a service", "small businesses", "website"
+        )
