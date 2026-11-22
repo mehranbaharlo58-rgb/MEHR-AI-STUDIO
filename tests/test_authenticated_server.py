@@ -129,15 +129,14 @@ def test_streamable_http_rejects_missing_and_invalid_bearer_tokens(monkeypatch):
     asgi_app = mcp.streamable_http_app()
 
     async def exercise():
-        async with mcp.session_manager.run():
-            async with httpx.AsyncClient(
-                transport=httpx.ASGITransport(app=asgi_app),
-                base_url="http://127.0.0.1",
-            ) as client:
-                missing = await client.get("/mcp")
-                invalid = await client.get(
-                    "/mcp", headers={"Authorization": "Bearer invalid-token"}
-                )
-                return missing.status_code, invalid.status_code
+        async with mcp.session_manager.run(), httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=asgi_app),
+            base_url="http://127.0.0.1",
+        ) as client:
+            missing = await client.get("/mcp")
+            invalid = await client.get(
+                "/mcp", headers={"Authorization": "Bearer invalid-token"}
+            )
+            return missing.status_code, invalid.status_code
 
     assert asyncio.run(exercise()) == (401, 401)
