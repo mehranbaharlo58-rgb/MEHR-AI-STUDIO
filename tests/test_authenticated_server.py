@@ -106,3 +106,38 @@ def test_authenticated_tool_signatures_never_accept_tenant_id(monkeypatch):
         "run_content_workflow",
     ):
         assert "tenant_id" not in inspect.signature(app.tools[name]).parameters
+
+
+def test_streamable_http_rejects_missing_and_invalid_bearer_tokens(monkeypatch):
+    import asyncio
+
+    import httpx
+    from mcp.server.auth.settings import AuthSettings
+
+    from mehr_ai_studio.authenticated_server import build_authenticated_server
+
+    verifier = FakeVerifier()
+    auth = AuthSettings(
+        issuer_url="https://identity.example.test/",
+        resource_server_url="https://studio.example.test/mcp",
+        required_scopes=["studio:access"],
+    )
+    mcp = build_authenticated_server(
+        token_verifier=verifier,
+        auth_settings=auth,
+    )
+    asgi_app = mcp.streamable_http_app()
+
+    async def exercise():
+        async with mcp.session_manager.run():
+            async with httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=asgi_app),
+                base_url="http://127.0.0.1",
+            ) as client:
+                missing = await client.get("/mcp")
+                invalid = await client.get(
+                    "/mcp", headers={"Authorization": "Bearer invalid-token"}
+                )
+                return missing.status_code, invalid.status_code
+
+    assert asyncio.run(exercise()) == (401, 401)
