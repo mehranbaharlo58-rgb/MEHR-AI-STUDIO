@@ -131,7 +131,7 @@ class StudioStore:
     def read_memory(
         self, key: str, tenant_id: str = DEFAULT_TENANT_ID
     ) -> dict | None:
-        tenant_id = _validate_tenant_id(tenant_id)
+        tenant_id = validate_tenant_id(tenant_id)
         if not isinstance(key, str):
             raise TypeError("memory key must be a string")
         with self._connect() as db:
@@ -156,7 +156,7 @@ class StudioStore:
         note: str = "",
         tenant_id: str = DEFAULT_TENANT_ID,
     ) -> dict:
-        tenant_id = _validate_tenant_id(tenant_id)
+        tenant_id = validate_tenant_id(tenant_id)
         if isinstance(rating, bool) or not isinstance(rating, int) or not 1 <= rating <= 5:
             raise ValueError("rating must be an integer between 1 and 5")
         if not isinstance(item_type, str) or not isinstance(note, str):
@@ -177,7 +177,7 @@ class StudioStore:
         }
 
     def feedback_insights(self, tenant_id: str = DEFAULT_TENANT_ID) -> dict:
-        tenant_id = _validate_tenant_id(tenant_id)
+        tenant_id = validate_tenant_id(tenant_id)
         with self._connect() as db:
             row = db.execute(
                 """SELECT COUNT(*) AS count, AVG(rating) AS average
