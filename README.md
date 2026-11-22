@@ -23,7 +23,7 @@ Feedback storage is **not** model training. The system does not silently train o
 
 ## Requirements
 - Python 3.11+
-- Install development dependencies: `pip install -e ".[dev]"`
+- Install development dependencies: `pip install -e ".[dev]"`\n- For a normal local installation: `pip install .`
 
 ## Local development
 ```bash
@@ -36,7 +36,7 @@ pytest -q
 python -m build
 ```
 
-Run the MCP server with `python -m mehr_ai_studio`. It uses stdio by default.
+Run the MCP server with `python -m mehr_ai_studio`. It uses stdio by default.\n\nRun the offline installation check with `python -m mehr_ai_studio.selfcheck`. It verifies SQLite write/read, content-brief creation, and structural assessment without an API key or network connection. A successful offline check does not claim that a live AI provider or hosted HTTP authentication has been tested.
 
 ## AI provider configuration
 Copy `.env.example` to `.env`, then set:
