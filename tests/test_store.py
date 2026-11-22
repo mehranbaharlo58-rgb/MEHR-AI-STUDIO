@@ -177,3 +177,39 @@ def test_stage_output_rejects_invalid_attempt_and_non_json_payload(tmp_path):
         store.save_stage_output("run-1", 0, "brief", {})
     with pytest.raises(ValueError, match="JSON-serializable"):
         store.save_stage_output("run-1", 1, "brief", {"bad": object()})
+
+
+def test_workflow_status_transitions_are_enforced_at_persistence_boundary(tmp_path):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    store.save_workflow_run(_workflow_run(status="queued"), tenant_id="tenant-a")
+
+    running = _workflow_run(status="running")
+    running["updated_at"] = "2026-11-22T08:01:00Z"
+    store.save_workflow_run(running, tenant_id="tenant-a")
+
+    # Repeated persistence of the current state is idempotently permitted.
+    running["updated_at"] = "2026-11-22T08:02:00Z"
+    store.save_workflow_run(running, tenant_id="tenant-a")
+
+    succeeded = _workflow_run(status="succeeded")
+    succeeded["updated_at"] = "2026-11-22T08:03:00Z"
+    store.save_workflow_run(succeeded, tenant_id="tenant-a")
+
+    failed = _workflow_run(status="failed")
+    failed["updated_at"] = "2026-11-22T08:04:00Z"
+    with pytest.raises(ValueError, match="invalid workflow transition"):
+        store.save_workflow_run(failed, tenant_id="tenant-a")
+
+    assert store.read_workflow_run("run-1", "tenant-a")["status"] == "succeeded"
+
+
+def test_failed_workflow_can_transition_to_running_for_resume(tmp_path):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    store.save_workflow_run(_workflow_run(status="failed"), tenant_id="tenant-a")
+
+    resumed = _workflow_run(status="running")
+    resumed["attempt"] = 2
+    resumed["updated_at"] = "2026-11-22T08:05:00Z"
+    store.save_workflow_run(resumed, tenant_id="tenant-a")
+
+    assert store.read_workflow_run("run-1", "tenant-a")["status"] == "running"
