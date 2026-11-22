@@ -3,7 +3,7 @@ from typing import Any
 
 from .core import assess_text, build_content_brief
 from .provider import ProviderError, ProviderNotConfigured, generate_text
-from .store import StudioStore
+from .store import DEFAULT_TENANT_ID, StudioStore
 
 
 def run_content_workflow(
@@ -14,13 +14,19 @@ def run_content_workflow(
     language: str = "Persian",
     tone: str = "clear and professional",
     context_key: str = "brand",
+    tenant_id: str = DEFAULT_TENANT_ID,
 ) -> dict[str, Any]:
-    """Build a brief, load optional saved context, generate, and assess output.
+    """Build a brief, load optional tenant-scoped context, generate, and assess.
 
-    The workflow never invents feedback ratings or claims factual verification.
+    The tenant ID must be supplied by trusted server-side authentication code.
+    This function does not authenticate callers or establish an access boundary.
     """
     brief = build_content_brief(goal, audience, channel, language, tone)
-    memory = store.read_memory(context_key) if context_key.strip() else None
+    memory = (
+        store.read_memory(context_key, tenant_id=tenant_id)
+        if context_key.strip()
+        else None
+    )
     context = memory["value"] if memory else None
     prompt = (
         "Create content using this structured brief.\n"
@@ -48,12 +54,12 @@ def run_content_workflow(
             "context_loaded": memory is not None,
         }
 
-    text = generated["text"]
+    generated_text = generated["text"]
     return {
         "ok": True,
         "brief": brief,
         "context_loaded": memory is not None,
         "generated": generated,
-        "assessment": assess_text(text),
+        "assessment": assess_text(generated_text),
         "assessment_scope": "Structural checks only; factual accuracy is not verified.",
     }
