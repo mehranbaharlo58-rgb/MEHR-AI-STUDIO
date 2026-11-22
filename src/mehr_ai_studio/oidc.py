@@ -130,5 +130,5 @@ class OIDCJWTTokenVerifier(TokenVerifier):
                 subject=subject,
                 claims=claims,
             )
-        except Exception:
+        except (jwt.PyJWTError, ValueError, TypeError, KeyError, OSError, TimeoutError):
             return None
