@@ -8,7 +8,7 @@ from mehr_ai_studio import auth_context
 
 
 def test_verified_tenant_claim_is_normalized():
-    token = SimpleNamespace(claims={"tenant_id": "  customer-a  "})
+    token = SimpleNamespace(subject="user-a", claims={"tenant_id": "  customer-a  "})
     assert auth_context.tenant_id_from_access_token(token) == "customer-a"
 
 
@@ -16,12 +16,12 @@ def test_verified_tenant_claim_is_normalized():
     "token",
     [
         None,
-        SimpleNamespace(claims=None),
-        SimpleNamespace(claims=[]),
-        SimpleNamespace(claims={"sub": "user-a"}),
-        SimpleNamespace(claims={"tenant_id": ""}),
-        SimpleNamespace(claims={"tenant_id": "x" * 129}),
-        SimpleNamespace(claims={"tenant_id": 123}),
+        SimpleNamespace(subject="user-a", claims=None),
+        SimpleNamespace(subject="user-a", claims=[]),
+        SimpleNamespace(subject="user-a", claims={"sub": "user-a"}),
+        SimpleNamespace(subject="user-a", claims={"tenant_id": ""}),
+        SimpleNamespace(subject="user-a", claims={"tenant_id": "x" * 129}),
+        SimpleNamespace(subject="user-a", claims={"tenant_id": 123}),
     ],
 )
 def test_missing_or_invalid_tenant_claim_fails_closed(token):
@@ -36,6 +36,13 @@ def test_current_request_tenant_requires_sdk_auth_context(monkeypatch):
 
 
 def test_current_request_tenant_uses_verified_token_claim(monkeypatch):
-    token = SimpleNamespace(claims={"tenant_id": "tenant-b"})
+    token = SimpleNamespace(subject="user-b", claims={"tenant_id": "tenant-b"})
     monkeypatch.setattr(auth_context, "get_access_token", lambda: token)
     assert auth_context.current_request_tenant_id() == "tenant-b"
+
+
+@pytest.mark.parametrize("subject", [None, "", "   ", 123])
+def test_missing_or_invalid_subject_fails_closed(subject):
+    token = SimpleNamespace(subject=subject, claims={"tenant_id": "tenant-a"})
+    with pytest.raises(auth_context.AuthenticationRequired):
+        auth_context.tenant_id_from_access_token(token)
