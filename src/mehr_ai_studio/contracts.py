@@ -55,3 +55,4 @@ class WorkflowRunContract(StrictContract):
     prompt_version: str | None = Field(default=None, max_length=100)
     model: str | None = Field(default=None, max_length=200)
     error_code: str | None = Field(default=None, max_length=100)
+    result: dict[str, Any] | None = None
