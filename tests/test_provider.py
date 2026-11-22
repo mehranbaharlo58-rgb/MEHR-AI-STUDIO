@@ -174,3 +174,115 @@ def test_provider_wraps_http_errors_without_leaking_response_body(monkeypatch):
         provider.generate_text("hello")
 
     assert "sensitive provider response" not in str(error.value)
+
+
+def test_provider_retries_transient_status_then_succeeds(monkeypatch):
+    calls = {"count": 0}
+    sleeps = []
+
+    class FakeResponse:
+        def __init__(self, status):
+            self.status = status
+
+        def raise_for_status(self):
+            if self.status >= 400:
+                request = httpx.Request("POST", "https://api.example.test/v1/chat/completions")
+                response = httpx.Response(self.status, request=request)
+                raise httpx.HTTPStatusError("temporary", request=request, response=response)
+
+        def json(self):
+            return {"choices": [{"message": {"content": "recovered"}}]}
+
+    class FakeClient:
+        def __init__(self, timeout):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def post(self, url, json, headers):
+            calls["count"] += 1
+            return FakeResponse(503 if calls["count"] == 1 else 200)
+
+    monkeypatch.setattr(provider, "settings", configured_settings(
+        provider_max_attempts=3, provider_retry_backoff=0.25
+    ))
+    monkeypatch.setattr(provider.httpx, "Client", FakeClient)
+    monkeypatch.setattr(provider.time, "sleep", sleeps.append)
+
+    result = provider.generate_text("hello")
+
+    assert result["text"] == "recovered"
+    assert calls["count"] == 2
+    assert sleeps == [0.25]
+
+
+def test_provider_does_not_retry_permanent_client_error(monkeypatch):
+    calls = {"count": 0}
+
+    class FakeResponse:
+        def raise_for_status(self):
+            request = httpx.Request("POST", "https://api.example.test/v1/chat/completions")
+            response = httpx.Response(401, request=request)
+            raise httpx.HTTPStatusError("unauthorized", request=request, response=response)
+
+    class FakeClient:
+        def __init__(self, timeout):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def post(self, url, json, headers):
+            calls["count"] += 1
+            return FakeResponse()
+
+    monkeypatch.setattr(provider, "settings", configured_settings(
+        provider_max_attempts=4, provider_retry_backoff=0
+    ))
+    monkeypatch.setattr(provider.httpx, "Client", FakeClient)
+
+    with pytest.raises(provider.ProviderError):
+        provider.generate_text("hello")
+
+    assert calls["count"] == 1
+
+
+def test_provider_stops_after_bounded_transient_failures(monkeypatch):
+    calls = {"count": 0}
+
+    class FakeResponse:
+        def raise_for_status(self):
+            request = httpx.Request("POST", "https://api.example.test/v1/chat/completions")
+            response = httpx.Response(429, request=request)
+            raise httpx.HTTPStatusError("rate limited", request=request, response=response)
+
+    class FakeClient:
+        def __init__(self, timeout):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def post(self, url, json, headers):
+            calls["count"] += 1
+            return FakeResponse()
+
+    monkeypatch.setattr(provider, "settings", configured_settings(
+        provider_max_attempts=2, provider_retry_backoff=0
+    ))
+    monkeypatch.setattr(provider.httpx, "Client", FakeClient)
+
+    with pytest.raises(provider.ProviderError):
+        provider.generate_text("hello")
+
+    assert calls["count"] == 2
