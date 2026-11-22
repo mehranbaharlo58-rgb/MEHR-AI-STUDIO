@@ -4,16 +4,17 @@ MEHR AI STUDIO 0.4.1 is currently distributed as a GitHub Actions artifact, not 
 
 ## 1. Download the tested package
 
-1. Open the [successful CI run for the current PR head](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45021258641).
+1. Open the [successful CI run for the current PR head](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45021476184).
 2. Download the `mehr-ai-studio-distributions` artifact and extract the ZIP.
 3. Use the `.whl` file inside the extracted folder.
 
 Verified artifact metadata:
-- Artifact ID: `14753334896`
-- SHA-256: `5968e71509d7f68892ec9aa42ba9808cccb007f27afb6f56fe26802681d26a7e`
-- CI run: `45021258641`
-- CI commit: `1d331826ccfc615f6fbb4c6bef613b445824d4f2`
-- Expires: `2026-12-06 12:15:13 UTC`
+- Artifact ID: `14754111037`
+- SHA-256: `a4ffb9b3271bef30454fae52a3eaaf7311dc26549cd955d5cdbff4f5332c1f23`
+- CI run: `45021476184` (run #257)
+- CI commit: `ae8aedc25058d8dc6b94fc24fd9fb64f94338b43`
+- Size: 58,203 bytes
+- Expires: `2026-12-06 12:17:35 UTC`
 
 After downloading the ZIP, verify its integrity before extracting:
 
