@@ -22,8 +22,16 @@ test("rejects unapproved browser origins", async () => {
   assert.equal(response.status, 403);
 });
 
-test("health reports configuration without exposing secrets", async () => {
+test("health rejects requests without the owner token", async () => {
   const request = new Request("https://worker.test/api/health", { headers: origin });
+  const response = await worker.fetch(request, env);
+  assert.equal(response.status, 401);
+});
+
+test("health reports configuration without exposing secrets", async () => {
+  const request = new Request("https://worker.test/api/health", {
+    headers: { ...origin, Authorization: `Bearer ${env.MEHR_API_TOKEN}` },
+  });
   const response = await worker.fetch(request, env);
   const body = await response.json();
   assert.equal(response.status, 200);
