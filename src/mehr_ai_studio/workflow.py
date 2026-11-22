@@ -16,7 +16,6 @@ from .core import assess_text, build_content_brief
 from .provider import ProviderError, ProviderNotConfigured, generate_text
 from .store import DEFAULT_TENANT_ID, StudioStore
 
-
 CONTENT_PROMPT_VERSION = "content-v1"
 
 
