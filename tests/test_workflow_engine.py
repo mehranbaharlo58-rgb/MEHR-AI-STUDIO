@@ -1,5 +1,5 @@
 import pytest
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from mehr_ai_studio.workflow_engine import (
     StageDefinition,
@@ -10,7 +10,7 @@ from mehr_ai_studio.workflow_engine import (
 
 
 class BriefInput(BaseModel):
-    topic: str
+    topic: str = Field(min_length=1)
 
 
 class PromptOutput(BaseModel):
