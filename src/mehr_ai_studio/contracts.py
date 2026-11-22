@@ -35,6 +35,7 @@ class GeneratedAssetContract(StrictContract):
 
 class QualityReportContract(StrictContract):
     score: int = Field(ge=0, le=100)
+    dimensions: dict[str, int] = Field(default_factory=dict)
     checks: dict[str, bool | int | float | str]
     limitations: list[str] = Field(default_factory=list)
 
