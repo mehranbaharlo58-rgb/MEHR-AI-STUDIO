@@ -150,7 +150,7 @@ def test_custom_tenant_claim_is_normalized_for_request_context(rsa_keys):
         {"exp": float("inf")},
         {"iat": float("nan")},
         {"exp": int(time.time()) + 90000},
-        {"tenant_id": "../other-tenant"},
+        {"tenant_id": "t" * 129},
     ],
 )
 def test_rejects_non_finite_or_unsafe_claim_values(verifier, rsa_keys, claims):
