@@ -70,6 +70,12 @@ def test_authenticated_factory_injects_verifier_and_registers_tenant_tools(monke
             "tenant_id": tenant_id, "rating": rating
         },
         feedback_insights=lambda tenant_id: {"tenant_id": tenant_id},
+        read_workflow_run=lambda run_id, tenant_id: {
+            "run_id": run_id, "tenant_id": tenant_id
+        },
+        list_workflow_runs=lambda tenant_id, limit: [
+            {"tenant_id": tenant_id, "limit": limit}
+        ],
     )
     monkeypatch.setattr(
         authenticated_server, "current_request_tenant_id", lambda: "tenant-from-token"
@@ -87,6 +93,8 @@ def test_authenticated_factory_injects_verifier_and_registers_tenant_tools(monke
     assert app.tools["read_project_memory"]("k")["tenant_id"] == "tenant-from-token"
     assert app.tools["record_content_feedback"]("draft", 5)["tenant_id"] == "tenant-from-token"
     assert app.tools["get_feedback_insights"]()["tenant_id"] == "tenant-from-token"
+    assert app.tools["read_workflow_run"]("run-1")["tenant_id"] == "tenant-from-token"
+    assert app.tools["list_workflow_runs"](5)["runs"][0]["tenant_id"] == "tenant-from-token"
 
 
 def test_authenticated_tool_signatures_never_accept_tenant_id(monkeypatch):
@@ -103,6 +111,8 @@ def test_authenticated_tool_signatures_never_accept_tenant_id(monkeypatch):
         "read_project_memory",
         "record_content_feedback",
         "get_feedback_insights",
+        "read_workflow_run",
+        "list_workflow_runs",
         "run_content_workflow",
     ):
         assert "tenant_id" not in inspect.signature(app.tools[name]).parameters
