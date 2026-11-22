@@ -9,6 +9,8 @@ from mcp.server.auth.provider import TokenVerifier
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
 
+from .oidc import OIDCJWTTokenVerifier
+
 from . import __version__
 from .auth_context import current_request_tenant_id
 from .config import settings
@@ -150,3 +152,58 @@ def build_authenticated_server(
         )
 
     return mcp
+
+
+
+def build_oidc_authenticated_server_from_env(
+    *, store: StudioStore | None = None
+) -> FastMCP:
+    """Build an authenticated server from explicit OIDC environment settings.
+
+    Required variables: MEHR_OIDC_ISSUER_URL, MEHR_OIDC_JWKS_URL,
+    MEHR_OIDC_AUDIENCE, and MEHR_MCP_RESOURCE_URL. This function never starts
+    a listener; deployment code must choose and secure its HTTP hosting layer.
+    """
+    import os
+
+    issuer_url = os.getenv("MEHR_OIDC_ISSUER_URL", "").strip()
+    jwks_url = os.getenv("MEHR_OIDC_JWKS_URL", "").strip()
+    audience = os.getenv("MEHR_OIDC_AUDIENCE", "").strip()
+    resource_url = os.getenv("MEHR_MCP_RESOURCE_URL", "").strip()
+    required_scopes = os.getenv(
+        "MEHR_OIDC_REQUIRED_SCOPES", "studio:access"
+    ).split()
+    tenant_claim = os.getenv("MEHR_OIDC_TENANT_CLAIM", "tenant_id").strip()
+
+    missing = [
+        name
+        for name, value in (
+            ("MEHR_OIDC_ISSUER_URL", issuer_url),
+            ("MEHR_OIDC_JWKS_URL", jwks_url),
+            ("MEHR_OIDC_AUDIENCE", audience),
+            ("MEHR_MCP_RESOURCE_URL", resource_url),
+        )
+        if not value
+    ]
+    if missing:
+        raise ValueError("Missing OIDC configuration: " + ", ".join(missing))
+
+    verifier = OIDCJWTTokenVerifier(
+        issuer_url=issuer_url,
+        jwks_url=jwks_url,
+        audience=audience,
+        resource_server_url=resource_url,
+        required_scopes=required_scopes,
+        tenant_claim=tenant_claim,
+    )
+    auth_settings = AuthSettings(
+        issuer_url=issuer_url,
+        resource_server_url=resource_url,
+        required_scopes=required_scopes,
+        validate_token_resource=True,
+    )
+    return build_authenticated_server(
+        token_verifier=verifier,
+        auth_settings=auth_settings,
+        store=store,
+    )
