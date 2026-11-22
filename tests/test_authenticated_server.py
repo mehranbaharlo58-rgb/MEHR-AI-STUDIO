@@ -160,3 +160,45 @@ def test_streamable_http_rejects_missing_and_invalid_bearer_tokens(monkeypatch):
             return missing.status_code, invalid.status_code
 
     assert asyncio.run(exercise()) == (401, 401)
+
+
+@pytest.mark.parametrize(
+    "settings, message",
+    [
+        (
+            SimpleNamespace(
+                issuer_url="https://user:password@identity.example.test/",
+                resource_server_url="https://studio.example.test/mcp",
+                required_scopes=["studio:access"],
+            ),
+            "issuer_url",
+        ),
+        (
+            SimpleNamespace(
+                issuer_url="https://identity.example.test/",
+                resource_server_url="https://",
+                required_scopes=["studio:access"],
+            ),
+            "resource_server_url",
+        ),
+        (
+            SimpleNamespace(
+                issuer_url="https://identity.example.test/",
+                resource_server_url="https://studio.example.test/mcp",
+                required_scopes=["   "],
+            ),
+            "scope",
+        ),
+        (
+            SimpleNamespace(
+                issuer_url="https://identity.example.test/",
+                resource_server_url="https://studio.example.test/mcp",
+                required_scopes=[None],
+            ),
+            "scope",
+        ),
+    ],
+)
+def test_authenticated_factory_rejects_unsafe_auth_configuration(settings, message):
+    with pytest.raises(ValueError, match=message):
+        authenticated_server._validate_auth_configuration(FakeVerifier(), settings)
