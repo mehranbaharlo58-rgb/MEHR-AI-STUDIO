@@ -25,10 +25,10 @@ The non-secret `ALLOWED_ORIGIN` is already set to the current GitHub Pages origi
 - `GET /api/health`: returns service and provider-configuration status; it does not expose secrets.
 - `POST /api/generate`: requires `Authorization: Bearer <MEHR_API_TOKEN>` and JSON `{"prompt":"..." }`.
 
-The API rejects other browser origins, requires HTTPS for the upstream provider, limits request size and prompt length, does not log prompt contents, and never returns provider credentials. The owner token is an access credential: do not publish it or embed it in a public source file.
+The API rejects other browser origins, requires HTTPS for the upstream provider, limits request size and prompt length, does not log prompt contents, and never returns provider credentials. Provider redirects are not followed, preventing the bearer credential from being forwarded to a redirect destination. Provider responses must be JSON and are capped at 1 MiB. The owner token is an access credential: do not publish it or embed it in a public source file.
 
 ## Deployment boundary
 
 Connect this repository to Cloudflare Workers Builds and select `wrangler.jsonc` as the Wrangler configuration. Deploy only after setting the four required variables/secrets. Verify the health endpoint, then test generation using the owner token. Do not enable public multi-user access: this initial adapter is single-owner only and has no account lifecycle, durable rate limiting, or persistent workflow database.
 
-The existing GitHub Pages UI is not yet wired to this API. UI integration is a separate step and must keep the owner token out of committed frontend code.
+The GitHub Pages UI is connected to this API, but the Worker itself must still be deployed and configured separately. File upload/content processing is not implemented in the UI/API integration.
