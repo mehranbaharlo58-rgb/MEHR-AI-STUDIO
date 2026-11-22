@@ -2,12 +2,12 @@
 
 **Verified:** 2026-11-22  
 **Branch:** `feat/p0-typed-contracts`  
-**Head:** `3bf4937833af2fb6ce24b62ae04119125fecb028`  
+**Code head (before this status update):** `7d79d57d9a45646096e238e60103e541c2255d3f`  
 **Pull request:** [#1](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/pull/1)
 
 ## Verified delivery
 
-GitHub Actions run [#199](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45012933878) completed successfully on the current PR head. All 12 job steps passed:
+GitHub Actions run [#214](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45013521811) completed successfully on code head `7d79d57d9a45646096e238e60103e541c2255d3f`. All 12 validation and delivery steps passed:
 
 - Ruff lint
 - pytest
@@ -17,7 +17,7 @@ GitHub Actions run [#199](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/
 - installed `python -m mehr_ai_studio.selfcheck` module check
 - artifact upload
 
-The installable distribution artifact is Actions artifact `14749659503` (50,209 bytes), SHA-256 `8d0377dc558ab53ec980a7244230e93d0d2c638fe133f1b41db9269a202bf9ca`. It is temporary and expires 2026-12-06.
+The installable distribution artifact `14749659503` (50,209 bytes; SHA-256 `8d0377dc558ab53ec980a7244230e93d0d2c638fe133f1b41db9269a202bf9ca`) belongs to an earlier validated build and expires 2026-12-06. Run #214 uploaded a fresh artifact for the current code head.
 
 ## P0 status
 
@@ -29,6 +29,8 @@ Implemented and CI-validated:
 - prompt version and configured/actual model provenance in workflow snapshots
 - offline self-check and installable CLI entry point
 - OIDC/JWT validation primitives and local stdio default
+- Typed stage registry with Pydantic-validated inputs/outputs and deterministic registration order
+- Explicit workflow lifecycle transitions with terminal-state protection
 
 The earlier competitive review document contains historical baseline statements. In particular, provider retries and prompt/model provenance are now implemented; they should not be treated as remaining P0 work.
 
