@@ -10,6 +10,11 @@ const env = {
   AI_MODEL: "test-model",
 };
 const origin = { Origin: env.ALLOWED_ORIGIN };
+const generationRequest = () => new Request("https://worker.test/api/generate", {
+  method: "POST",
+  headers: { ...origin, Authorization: `Bearer ${env.MEHR_API_TOKEN}`, "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt: "Write a short welcome message." }),
+});
 
 test("rejects unapproved browser origins", async () => {
   const request = new Request("https://worker.test/api/health", { headers: { Origin: "https://attacker.test" } });
@@ -55,17 +60,60 @@ test("generates through the configured OpenAI-compatible provider", async () => 
     });
   };
   try {
-    const request = new Request("https://worker.test/api/generate", {
-      method: "POST",
-      headers: { ...origin, Authorization: `Bearer ${env.MEHR_API_TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: "Write a short welcome message." }),
-    });
-    const response = await worker.fetch(request, env);
+    const response = await worker.fetch(generationRequest(), env);
     const body = await response.json();
     assert.equal(response.status, 200);
     assert.equal(body.generated.text, "Generated output");
     assert.equal(sent.url, "https://api.example.test/v1/chat/completions");
     assert.equal(new Headers(sent.init.headers).get("authorization"), "Bearer provider-secret");
+    assert.equal(sent.init.redirect, "manual");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("does not follow provider redirects with authorization credentials", async () => {
+  const originalFetch = globalThis.fetch;
+  let sent;
+  globalThis.fetch = async (_url, init) => {
+    sent = init;
+    return new Response(null, { status: 302, headers: { Location: "https://attacker.test/collect" } });
+  };
+  try {
+    const response = await worker.fetch(generationRequest(), env);
+    assert.equal(response.status, 502);
+    assert.equal(sent.redirect, "manual");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("rejects provider responses larger than one megabyte", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response("oversized", {
+    status: 200,
+    headers: { "Content-Type": "application/json", "Content-Length": String(1024 * 1024 + 1) },
+  });
+  try {
+    const response = await worker.fetch(generationRequest(), env);
+    const body = await response.json();
+    assert.equal(response.status, 502);
+    assert.equal(body.error, "provider_response_too_large");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("rejects non-JSON provider responses", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response("not json", {
+    status: 200, headers: { "Content-Type": "text/html" },
+  });
+  try {
+    const response = await worker.fetch(generationRequest(), env);
+    const body = await response.json();
+    assert.equal(response.status, 502);
+    assert.equal(body.error, "provider_response_invalid");
   } finally {
     globalThis.fetch = originalFetch;
   }
