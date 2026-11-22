@@ -66,7 +66,7 @@ def test_workflow_returns_contract_normalized_asset_and_report(tmp_path, monkeyp
     monkeypatch.setattr(
         workflow,
         "generate_text",
-        lambda prompt: {"text": "A validated generated content sample. " * 5, "model": "test-model"},
+        lambda prompt: {"text": ("A validated generated content sample. " * 5).strip(), "model": "test-model"},
     )
 
     result = workflow.run_content_workflow(
