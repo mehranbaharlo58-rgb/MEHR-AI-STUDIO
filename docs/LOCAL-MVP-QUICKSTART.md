@@ -11,7 +11,7 @@ MEHR AI STUDIO 0.4.1 is currently distributed as a GitHub Actions artifact, not 
 Verified artifact metadata:
 - Artifact ID: `14754015341`
 - SHA-256: `7a2575c35cecef19a1c809ef030816ff02bc24f9b14ba537de6a908208192cd9`
-- CI run: `45015189507`
+- CI run: `45020522625`
 - CI commit: `12a4c63f90f06c71e0fd241a363f8d71418d4156`
 - Expires: `2026-12-06 12:06:16 UTC`
 
