@@ -51,7 +51,7 @@ class OIDCJWTTokenVerifier(TokenVerifier):
         if jwks_cache_seconds < 1 or leeway_seconds < 0:
             raise OIDCConfigurationError("JWKS cache must be positive and leeway non-negative")
 
-        self.issuer_url = issuer_url.rstrip("/")
+        self.issuer_url = issuer_url
         self.jwks_url = jwks_url
         self.audience = audience
         self.resource_server_url = resource_server_url.rstrip("/")
@@ -130,5 +130,5 @@ class OIDCJWTTokenVerifier(TokenVerifier):
                 subject=subject,
                 claims=claims,
             )
-        except (jwt.PyJWTError, ValueError, TypeError, KeyError):
+        except Exception:
             return None
