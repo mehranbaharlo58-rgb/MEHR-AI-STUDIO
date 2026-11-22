@@ -9,7 +9,7 @@ from typing import Any
 DEFAULT_TENANT_ID = "default"
 
 
-def _validate_tenant_id(tenant_id: str) -> str:
+def validate_tenant_id(tenant_id: str) -> str:
     if not isinstance(tenant_id, str):
         raise TypeError("tenant_id must be a string")
     tenant_id = tenant_id.strip()
@@ -107,7 +107,7 @@ class StudioStore:
     def save_memory(
         self, key: str, value: Any, tenant_id: str = DEFAULT_TENANT_ID
     ) -> dict:
-        tenant_id = _validate_tenant_id(tenant_id)
+        tenant_id = validate_tenant_id(tenant_id)
         if not isinstance(key, str):
             raise TypeError("memory key must be a string")
         if not key.strip():
