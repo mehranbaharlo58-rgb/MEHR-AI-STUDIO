@@ -136,7 +136,7 @@ The ten are selected for architectural coverage. Popularity is a discovery signa
 | Quality | Non-empty, punctuation/bullet and word-count score | Rubric-based evaluation, evidence/citation checks, calibration and test datasets |
 | Feedback | Rating and note analytics | Link feedback to exact output, prompt/model/rubric versions; use for offline evaluation, not silent training |
 | MCP | Small static tool registry | Tool metadata/permissions, connector registry, idempotency and approval policy |
-| Security | Local stdio default; opt-in RS256/JWKS verifier and authenticated HTTP factory; unit tests plus missing/invalid bearer rejection over ASGI | Real issuer/live-token validation, cross-tenant isolation through authenticated HTTP, TLS and deployment hardening |
+| Security | Local stdio default; opt-in RS256/JWKS verifier; stricter URL/config validation; tenant-scoped storage and auth-context unit tests | Real issuer/live-token validation, cross-tenant isolation through authenticated HTTP, TLS and deployment hardening |
 | Product surface | MCP-first package, no complete end-user studio UI | Minimal job history and review interface after backend contracts stabilize |
 
 ## Recommended implementation sequence
@@ -147,9 +147,10 @@ The ten are selected for architectural coverage. Popularity is a discovery signa
 - [x] Add deterministic contract, persistence, lifecycle, resume and tenant-isolation unit tests.
 - [x] Add bounded exponential provider retries for transient transport failures and selected HTTP status codes; do not retry permanent client errors or malformed payloads.
 - [x] Record prompt version and configured/actual model identifiers in initial, failed, successful and resumed workflow snapshots.
+- [x] Reject OIDC issuer/JWKS/resource URLs containing credentials, query strings or fragments; reject malformed scope, audience, tenant-claim and timing configuration types.
 - [ ] Add immutable per-stage snapshots and per-stage prompt/model version capture.
 
-**Evidence on 2026-11-22:** PR #1 head `ed82fbb7faeb23ebaaadf95ca65c958bcd8c4be0`; GitHub Actions run #173 succeeded: Ruff passed, pytest reported 108 passed and 1 skipped, package build passed, and the installable distribution artifact was uploaded.
+**Evidence on 2026-11-22:** PR #1 head `c9a4e6c64b5bc295de6496e444d977e22db3242e`; GitHub Actions run #178 succeeded: Ruff passed, pytest reported 118 passed and 1 skipped, package build passed, and the installable distribution artifact was uploaded.
 
 ### P1 — production workflow core
 - Replace the one-shot function with a small step registry and explicit state machine.
