@@ -1,6 +1,7 @@
 import sqlite3
 
 import pytest
+from pydantic import ValidationError
 
 from mehr_ai_studio.store import StudioStore
 
@@ -138,7 +139,7 @@ def test_workflow_run_upsert_updates_status_without_cross_tenant_write(tmp_path)
 
 def test_workflow_run_storage_rejects_invalid_contract_and_limit(tmp_path):
     store = StudioStore(tmp_path / "studio.sqlite3")
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         store.save_workflow_run(_workflow_run(status="unknown"), tenant_id="tenant-a")
     with pytest.raises(ValueError):
         store.list_workflow_runs("tenant-a", limit=0)
