@@ -117,6 +117,22 @@ def build_authenticated_server(
         )
 
     @mcp.tool()
+    def read_workflow_run(run_id: str) -> dict:
+        """Read a saved run only from the authenticated caller's tenant."""
+        tenant_id = current_request_tenant_id()
+        result = tenant_store.read_workflow_run(run_id, tenant_id=tenant_id)
+        return result or {"found": False, "run_id": run_id}
+
+    @mcp.tool()
+    def list_workflow_runs(limit: int = 20) -> dict:
+        """List recent workflow runs for the authenticated caller's tenant."""
+        return {
+            "runs": tenant_store.list_workflow_runs(
+                tenant_id=current_request_tenant_id(), limit=limit
+            )
+        }
+
+    @mcp.tool()
     def generate_with_ai(
         prompt: str,
         system: str = "You are MEHR AI STUDIO, a precise content production assistant.",
