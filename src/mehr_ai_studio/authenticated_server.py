@@ -16,7 +16,10 @@ from .core import assess_text, build_content_brief
 from .oidc import OIDCJWTTokenVerifier
 from .provider import ProviderError, ProviderNotConfigured, generate_text
 from .store import StudioStore
-from .workflow import run_content_workflow as execute_content_workflow
+from .workflow import (
+    resume_content_workflow as execute_resume_content_workflow,
+    run_content_workflow as execute_content_workflow,
+)
 
 
 def _validate_auth_configuration(
@@ -131,6 +134,15 @@ def build_authenticated_server(
                 tenant_id=current_request_tenant_id(), limit=limit
             )
         }
+
+    @mcp.tool()
+    def resume_content_workflow(run_id: str) -> dict:
+        """Resume a failed workflow inside the authenticated caller's tenant."""
+        return execute_resume_content_workflow(
+            tenant_store,
+            run_id,
+            tenant_id=current_request_tenant_id(),
+        )
 
     @mcp.tool()
     def generate_with_ai(
