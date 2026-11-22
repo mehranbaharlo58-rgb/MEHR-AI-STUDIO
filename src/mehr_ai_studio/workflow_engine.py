@@ -1,7 +1,7 @@
 """Typed workflow stage registry and lifecycle transition rules.
 
-This module is an additive execution primitive. Existing content workflow
-entry points remain stable while future workflows adopt registered stages.
+The content workflow executes through registered stages. Lifecycle transitions
+are also enforced by the persistence layer before workflow snapshots are updated.
 """
 from collections.abc import Callable
 from dataclasses import dataclass
