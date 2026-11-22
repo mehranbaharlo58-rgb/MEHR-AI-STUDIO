@@ -96,3 +96,49 @@ def test_invalid_tenant_id_is_rejected(tmp_path, tenant_id):
     store = StudioStore(tmp_path / "studio.sqlite3")
     with pytest.raises((TypeError, ValueError)):
         store.read_memory("brand", tenant_id=tenant_id)
+
+
+def _workflow_run(run_id="run-1", status="queued"):
+    return {
+        "run_id": run_id,
+        "status": status,
+        "created_at": "2026-11-22T08:00:00Z",
+        "updated_at": "2026-11-22T08:00:00Z",
+        "attempt": 1,
+        "current_stage": "brief",
+    }
+
+
+def test_workflow_runs_persist_and_are_tenant_isolated(tmp_path):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    store.save_workflow_run(_workflow_run(), tenant_id="tenant-a")
+    store.save_workflow_run(
+        _workflow_run(status="running"), tenant_id="tenant-b"
+    )
+
+    assert store.read_workflow_run("run-1", "tenant-a")["status"] == "queued"
+    assert store.read_workflow_run("run-1", "tenant-b")["status"] == "running"
+    assert store.read_workflow_run("run-1", "tenant-c") is None
+    assert len(store.list_workflow_runs("tenant-a")) == 1
+    assert len(store.list_workflow_runs("tenant-b")) == 1
+
+
+def test_workflow_run_upsert_updates_status_without_cross_tenant_write(tmp_path):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    store.save_workflow_run(_workflow_run(), tenant_id="tenant-a")
+    updated = _workflow_run(status="succeeded")
+    updated["updated_at"] = "2026-11-22T08:05:00Z"
+    store.save_workflow_run(updated, tenant_id="tenant-a")
+
+    assert store.read_workflow_run("run-1", "tenant-a")["status"] == "succeeded"
+    assert store.read_workflow_run("run-1", "tenant-a")["updated_at"].startswith(
+        "2026-11-22T08:05:00"
+    )
+
+
+def test_workflow_run_storage_rejects_invalid_contract_and_limit(tmp_path):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    with pytest.raises(Exception):
+        store.save_workflow_run(_workflow_run(status="unknown"), tenant_id="tenant-a")
+    with pytest.raises(ValueError):
+        store.list_workflow_runs("tenant-a", limit=0)
