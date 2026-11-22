@@ -44,6 +44,50 @@ mehr-ai-studio
 
 The server uses MCP over stdio. Do not run it in a terminal and expect a chat interface; configure your MCP-compatible client to launch this command as a local stdio server. The exact client configuration format depends on the client.
 
+### MCP client configuration template
+
+For a client that accepts a JSON MCP server configuration, use this template and replace every placeholder with an absolute path and your own provider settings. Keep the API key in the client's private environment configuration; do not commit this file.
+
+Windows example:
+
+```json
+{
+  "mcpServers": {
+    "mehr-ai-studio": {
+      "command": "C:\\ABSOLUTE\\PATH\\TO\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "mehr_ai_studio"],
+      "cwd": "C:\\ABSOLUTE\\PATH\\TO\\MEHR-AI-STUDIO",
+      "env": {
+        "AI_BASE_URL": "https://YOUR-PROVIDER.example/v1",
+        "AI_API_KEY": "YOUR-PRIVATE-API-KEY",
+        "AI_MODEL": "YOUR-MODEL-ID"
+      }
+    }
+  }
+}
+```
+
+macOS/Linux example:
+
+```json
+{
+  "mcpServers": {
+    "mehr-ai-studio": {
+      "command": "/absolute/path/to/MEHR-AI-STUDIO/.venv/bin/python",
+      "args": ["-m", "mehr_ai_studio"],
+      "cwd": "/absolute/path/to/MEHR-AI-STUDIO",
+      "env": {
+        "AI_BASE_URL": "https://YOUR-PROVIDER.example/v1",
+        "AI_API_KEY": "YOUR-PRIVATE-API-KEY",
+        "AI_MODEL": "YOUR-MODEL-ID"
+      }
+    }
+  }
+}
+```
+
+This is a configuration template, not a verified client-specific setup. Consult the selected MCP client's documentation for its config-file location and restart it after editing.
+
 ## 4. Configure an AI provider
 
 Set these environment variables in the environment inherited by the MCP client:
