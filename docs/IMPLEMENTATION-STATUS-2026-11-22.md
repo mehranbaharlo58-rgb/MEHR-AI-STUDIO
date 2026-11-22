@@ -46,13 +46,16 @@ The earlier competitive review document contains historical baseline statements.
 5. A software license has not been selected or approved. No public redistributable release should be made before this owner decision.
 6. PR #1 remains open and unmerged. No merge or public release has been performed.
 
-## Recommended next engineering milestone
+## Provider validation status
 
-Prioritize the first real customer workflow rather than adding framework dependencies:
-- introduce a small typed workflow-step registry and explicit state machine
-- persist immutable per-stage outputs and evaluation evidence
-- add cancellation and safe retry semantics
-- add separate quality dimensions (brief adherence, completeness, source support, audience fit, tone, format validity)
-- require explicit human approval before external publishing or account-changing actions
+- The provider adapter has mocked contract tests for request construction, response parsing, malformed payloads, secret-safe error handling, retryable HTTP status recovery, permanent client errors, and bounded retry exhaustion.
+- `tests/test_provider_live.py` is an opt-in smoke test. It is skipped unless `AI_BASE_URL`, `AI_API_KEY`, and `AI_MODEL` are configured.
+- The dedicated `live AI provider integration` workflow is manual and requires those three GitHub Actions secrets. No live-provider success is claimed.
+
+## Next execution milestone
+
+1. Complete the customer handoff package: verify the current CI artifact link, exact install commands, MCP client launch configuration, and a sample end-to-end workflow.
+2. Add cancellation and explicit approval gates before any external publishing or account-changing action.
+3. Extend quality evaluation beyond structural checks with brief adherence, source support, audience fit, tone, and format validity; keep factual verification claims disabled until separately evidenced.
 
 Do not label the current structural assessment as fact-checking, originality verification, or legal review.
