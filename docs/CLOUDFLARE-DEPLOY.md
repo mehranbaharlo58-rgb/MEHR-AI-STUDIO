@@ -7,37 +7,39 @@ This is an initial, single-owner HTTP generation adapter. It does not turn the e
 - Worker entrypoint: `cloudflare/worker.mjs`
 - Configuration: `wrangler.jsonc`
 - Browser origin: the existing GitHub Pages site, restricted by `ALLOWED_ORIGIN`
-- Provider credentials and owner token must be configured as Cloudflare Worker secrets, never committed to Git.
+- Provider credentials and owner token must be configured in Cloudflare, never committed to Git.
 
-## Required Worker secrets
-
-Configure these under the Worker settings in Cloudflare:
-
-- `MEHR_API_TOKEN`: a randomly generated owner-only bearer token of at least 32 characters.
-- `AI_BASE_URL`: HTTPS OpenAI-compatible API base URL, normally ending in `/v1`.
-- `AI_API_KEY`: provider API key.
-- `AI_MODEL`: model identifier supported by that provider.
-
-The non-secret `ALLOWED_ORIGIN` is already set to the current GitHub Pages origin in `wrangler.jsonc`. If the site hostname changes, update it before deployment.
-
-## Deploy from GitHub Actions
+## Step 1 — Deploy the Worker
 
 A manually triggered workflow is available at **Actions → deploy-cloudflare-worker → Run workflow**. Before using it, add these two repository Actions secrets under **Settings → Secrets and variables → Actions**:
 
 - `CLOUDFLARE_API_TOKEN`: Cloudflare API token with permission to edit Workers Scripts for the target account.
 - `CLOUDFLARE_ACCOUNT_ID`: the target Cloudflare account ID.
 
-The four Worker secrets above must already exist in Cloudflare for the Worker. Do not put provider credentials or `MEHR_API_TOKEN` in source code or workflow files. The deployment workflow does not create or overwrite those secrets.
+Run the workflow once to create/update the Worker. The workflow does not need the AI provider key or owner token and does not create or overwrite Worker runtime secrets.
+
+## Step 2 — Configure Worker runtime values
+
+After the first deployment, open the Worker **mehr-ai-studio-api** in Cloudflare and add the following runtime bindings under Settings → Variables and Secrets:
+
+- `MEHR_API_TOKEN`: a randomly generated owner-only bearer token of at least 32 characters. Store it as a secret.
+- `AI_API_KEY`: provider API key. Store it as a secret.
+- `AI_BASE_URL`: HTTPS OpenAI-compatible API base URL, normally ending in `/v1`. A variable or secret is acceptable.
+- `AI_MODEL`: model identifier supported by that provider. A variable or secret is acceptable.
+
+Do not put provider credentials or `MEHR_API_TOKEN` in source code, GitHub workflow files, or chat messages. Keep the owner token private; it is entered only in the dashboard's Settings panel in the browser session.
+
+The non-secret `ALLOWED_ORIGIN` is already set to the current GitHub Pages origin in `wrangler.jsonc`. If the site hostname changes, update it before deployment.
 
 ## Endpoints
 
 - `GET /api/health`: returns service and provider-configuration status; it does not expose secrets.
 - `POST /api/generate`: requires `Authorization: Bearer <MEHR_API_TOKEN>` and JSON `{"prompt":"..." }`.
 
-The API rejects other browser origins, requires HTTPS for the upstream provider, limits request size and prompt length, does not log prompt contents, and never returns provider credentials. Provider redirects are not followed, preventing the bearer credential from being forwarded to a redirect destination. Provider responses must be JSON and are capped at 1 MiB. The owner token is an access credential: do not publish it or embed it in a public source file.
+The API rejects other browser origins, requires HTTPS for the upstream provider, limits request size and prompt length while streaming the request body, does not log prompt contents, and never returns provider credentials. Provider redirects are not followed, preventing the bearer credential from being forwarded to a redirect destination. Provider responses must be JSON and are capped at 1 MiB.
 
 ## Deployment boundary
 
-After deployment, verify the health endpoint, then test generation using the owner token. Do not enable public multi-user access: this initial adapter is single-owner only and has no account lifecycle, durable rate limiting, or persistent workflow database.
+After configuring runtime values, verify the health endpoint, then test generation using the owner token. Do not enable public multi-user access: this initial adapter is single-owner only and has no account lifecycle, durable rate limiting, or persistent workflow database.
 
 The GitHub Pages UI is connected to this API, but the Worker itself must still be deployed and configured separately. File upload/content processing is not implemented in the UI/API integration.
