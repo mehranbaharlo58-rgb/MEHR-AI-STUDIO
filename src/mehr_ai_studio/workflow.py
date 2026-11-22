@@ -5,13 +5,13 @@ from uuid import uuid4
 
 from pydantic import ValidationError
 
+from .config import settings
 from .contracts import (
     ContentBriefContract,
     GeneratedAssetContract,
     ProviderResultContract,
     QualityReportContract,
 )
-from .config import settings
 from .core import assess_text, build_content_brief
 from .provider import ProviderError, ProviderNotConfigured, generate_text
 from .store import DEFAULT_TENANT_ID, StudioStore
