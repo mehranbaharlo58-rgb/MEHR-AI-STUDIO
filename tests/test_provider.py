@@ -12,6 +12,8 @@ def configured_settings(**overrides):
         "provider_api_key": "test-secret",
         "provider_model": "test-model",
         "request_timeout": 12,
+        "provider_max_attempts": 3,
+        "provider_retry_backoff": 0.5,
     }
     values.update(overrides)
     return SimpleNamespace(**values)
