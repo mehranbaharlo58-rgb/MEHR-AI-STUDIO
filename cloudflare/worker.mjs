@@ -123,12 +123,12 @@ export default {
 
     let endpoint;
     try {
-      endpoint = new URL(env.AI_BASE_URL.replace(/\\/+$/, ""));
+      endpoint = new URL(trimTrailingSlashes(env.AI_BASE_URL));
       if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password) {
         throw new Error("https_required");
       }
       if (!endpoint.pathname.endsWith("/chat/completions")) {
-        endpoint.pathname = endpoint.pathname.replace(/\\/+$/, "") + "/chat/completions";
+        endpoint.pathname = trimTrailingSlashes(endpoint.pathname) + "/chat/completions";
       }
     } catch {
       return response({ ok: false, error: "provider_configuration_invalid" }, 503, cors);
