@@ -8,6 +8,7 @@ The local stdio server remains separate and unchanged.
 from mcp.server.auth.provider import TokenVerifier
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
+from urllib.parse import urlparse
 
 from . import __version__
 from .auth_context import current_request_tenant_id
@@ -29,12 +30,19 @@ def _validate_auth_configuration(
     issuer_url = str(getattr(auth_settings, "issuer_url", "") or "")
     resource_url = str(getattr(auth_settings, "resource_server_url", "") or "")
     required_scopes = getattr(auth_settings, "required_scopes", None)
-    if not issuer_url.startswith("https://"):
-        raise ValueError("OAuth issuer_url must use HTTPS")
-    if not resource_url.startswith("https://"):
-        raise ValueError("OAuth resource_server_url must use HTTPS")
-    if not required_scopes:
-        raise ValueError("At least one required OAuth scope must be configured")
+    for name, value in (
+        ("issuer_url", issuer_url),
+        ("resource_server_url", resource_url),
+    ):
+        parsed = urlparse(value)
+        if parsed.scheme != "https" or not parsed.netloc or parsed.username:
+            raise ValueError(f"OAuth {name} must be an absolute HTTPS URL")
+    if (
+        not isinstance(required_scopes, (list, tuple))
+        or not required_scopes
+        or any(not isinstance(scope, str) or not scope.strip() for scope in required_scopes)
+    ):
+        raise ValueError("At least one non-empty required OAuth scope must be configured")
 
 
 def build_authenticated_server(
