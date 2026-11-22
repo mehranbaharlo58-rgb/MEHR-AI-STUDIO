@@ -3,9 +3,10 @@
 This module is an additive execution primitive. Existing content workflow
 entry points remain stable while future workflows adopt registered stages.
 """
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel
 
