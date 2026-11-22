@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .contracts import WorkflowRunContract
+from .workflow_engine import transition_status
 
 DEFAULT_TENANT_ID = "default"
 
@@ -252,6 +253,13 @@ class StudioStore:
         payload = validated.model_dump(mode="json")
         serialized = json.dumps(payload, ensure_ascii=False)
         with self._connect() as db:
+            existing = db.execute(
+                """SELECT status FROM workflow_runs
+                   WHERE tenant_id=? AND run_id=?""",
+                (tenant_id, validated.run_id),
+            ).fetchone()
+            if existing is not None:
+                transition_status(existing["status"], validated.status)
             db.execute(
                 """INSERT INTO workflow_runs(
                        tenant_id, run_id, status, created_at, updated_at, payload
