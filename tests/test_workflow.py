@@ -19,6 +19,8 @@ def test_workflow_loads_memory_generates_and_assesses(tmp_path, monkeypatch):
     assert result["context_loaded"] is True
     assert result["generated"]["model"] == "test"
     assert result["assessment"]["score"] == 100
+    assert result["assessment"]["dimensions"]["completeness"] == 100
+    assert result["assessment"]["dimensions"]["structure"] == 100
     saved_run = store.read_workflow_run(result["run_id"], "default")
     assert saved_run["status"] == "succeeded"
     assert saved_run["result"]["generated"]["model"] == "test"
@@ -82,6 +84,9 @@ def test_workflow_returns_contract_normalized_asset_and_report(tmp_path, monkeyp
     }
     assert 0 <= result["assessment"]["score"] <= 100
     assert result["assessment"]["checks"]["non_empty"] is True
+    assert set(result["assessment"]["dimensions"]) == {
+        "completeness", "structure", "length", "readability"
+    }
 
 
 def test_workflow_marks_malformed_provider_contract_failed(tmp_path, monkeypatch):
@@ -132,6 +137,7 @@ def test_failed_workflow_resumes_from_checkpoint(tmp_path, monkeypatch):
     assert saved["result"]["brief"]["goal"] == "Explain a service"
     assert saved["prompt_version"] == workflow.CONTENT_PROMPT_VERSION
     assert saved["model"] == "test-model"
+    assert "dimensions" in saved["result"]["assessment"]
 
 
 def test_workflow_resume_rejects_missing_or_non_failed_run(tmp_path):
@@ -148,7 +154,6 @@ def test_workflow_resume_rejects_missing_or_non_failed_run(tmp_path):
     store.save_workflow_run(monkeypatch_run, tenant_id="default")
     active = workflow.resume_content_workflow(store, "active-run")
     assert active["error"] == "run_not_resumable"
-
 
 
 def test_failed_run_records_prompt_and_configured_model_versions(tmp_path, monkeypatch):
