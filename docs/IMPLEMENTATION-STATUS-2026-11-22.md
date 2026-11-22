@@ -2,12 +2,12 @@
 
 **Verified:** 2026-11-22  
 **Branch:** `feat/p0-typed-contracts`  
-**PR head (validated):** `12a4c63f90f06c71e0fd241a363f8d71418d4156`  
+**Current PR head:** `1d331826ccfc615f6fbb4c6bef613b445824d4f2`  
 **Pull request:** [#1](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/pull/1)
 
 ## Verified delivery
 
-GitHub Actions run [#247](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45020522625) completed successfully on PR head `12a4c63f90f06c71e0fd241a363f8d71418d4156`. All 12 validation and delivery steps passed:
+GitHub Actions run [#253](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45021258641) completed successfully on the current PR head `1d331826ccfc615f6fbb4c6bef613b445824d4f2`. All 12 validation and delivery steps passed:
 
 - Ruff lint
 - pytest
@@ -17,7 +17,17 @@ GitHub Actions run [#247](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/
 - installed `python -m mehr_ai_studio.selfcheck` module check
 - artifact upload
 
-Verified current artifact: ID `14754015341`, SHA-256 `7a2575c35cecef19a1c809ef030816ff02bc24f9b14ba537de6a908208192cd9`, size 58,233 bytes, expires 2026-12-06 12:06:16 UTC. It is a temporary Actions artifact, not a permanent release.
+A second run, [#252](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45021254295), also passed all 12 steps on the same commit.
+
+**Current artifact:** `mehr-ai-studio-distributions`  
+- Artifact ID: `14753334896`
+- SHA-256: `5968e71509d7f68892ec9aa42ba9808cccb007f27afb6f56fe26802681d26a7e`
+- Size: 58,341 bytes
+- Created: 2026-11-22 12:15:15 UTC
+- Expires: 2026-12-06 12:15:13 UTC
+- [Download from successful run #253](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45021258641)
+
+This is a temporary GitHub Actions artifact, not a permanent release.
 
 ## P0 status
 
@@ -31,11 +41,11 @@ Implemented and CI-validated:
 - OIDC/JWT validation primitives and local stdio default
 - Typed stage registry with Pydantic-validated inputs/outputs and deterministic registration order
 - Explicit workflow lifecycle transitions with terminal-state protection
-- The live content workflow now executes through six typed stages: brief, context, prompt, generation, asset validation, and assessment
+- The live content workflow executes through six typed stages: brief, context, prompt, generation, asset validation, and assessment
 - Stage outputs are persisted as tenant-scoped, append-only checkpoints keyed by run, attempt, and stage; identical retries are idempotent and conflicting rewrites are rejected
 - Resume replays the validated brief/context/prompt stages for a new attempt while preserving prior attempt outputs
 
-The earlier competitive review document contains historical baseline statements. In particular, provider retries and prompt/model provenance are now implemented; they should not be treated as remaining P0 work.
+The earlier competitive review document contains historical baseline statements. Provider retries and prompt/model provenance are implemented; they should not be treated as remaining P0 work.
 
 ## Remaining product and release gates
 
