@@ -23,6 +23,10 @@ def tenant_id_from_access_token(access_token: AccessToken | None) -> str:
     if access_token is None:
         raise AuthenticationRequired("A verified access token is required")
 
+    subject: Any = access_token.subject
+    if not isinstance(subject, str) or not subject.strip():
+        raise AuthenticationRequired("The verified token has no subject")
+
     claims: Any = access_token.claims
     if not isinstance(claims, Mapping):
         raise AuthenticationRequired("The verified token has no trusted claims")
