@@ -60,6 +60,10 @@ Authentication architecture decision: [ADR-0001 — Authentication boundary for 
 - Feedback is analytics data, not model training.
 - Sending a prompt to a configured external provider transmits that prompt and any included context to that provider. Do not include confidential data unless the provider and data handling are approved.
 
+## Competitive research
+
+A source-informed review of ten leading AI workflow, agent, memory, and MCP projects is available in [Competitive Architecture Review — 2026-11-22](docs/competitive-analysis-2026-11-22.md). It records inspected upstream files, license constraints, reusable patterns, current MEHR gaps, and the recommended implementation sequence.
+
 ## Roadmap
 - [x] Repository and modular package
 - [x] SQLite memory and feedback store
