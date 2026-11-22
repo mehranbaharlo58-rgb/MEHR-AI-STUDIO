@@ -130,6 +130,8 @@ def test_failed_workflow_resumes_from_checkpoint(tmp_path, monkeypatch):
     assert saved["status"] == "succeeded"
     assert saved["attempt"] == 2
     assert saved["result"]["brief"]["goal"] == "Explain a service"
+    assert saved["prompt_version"] == workflow.CONTENT_PROMPT_VERSION
+    assert saved["model"] == "test-model"
 
 
 def test_workflow_resume_rejects_missing_or_non_failed_run(tmp_path):
