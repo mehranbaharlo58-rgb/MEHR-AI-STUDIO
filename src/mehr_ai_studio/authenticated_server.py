@@ -18,8 +18,8 @@ from .provider import ProviderError, ProviderNotConfigured, generate_text
 from .store import StudioStore
 from .workflow import (
     run_content_workflow as execute_content_workflow,
+    resume_content_workflow as execute_resume_content_workflow,
 )
-from .workflow import resume_content_workflow as execute_resume_content_workflow
 
 
 def _validate_auth_configuration(
