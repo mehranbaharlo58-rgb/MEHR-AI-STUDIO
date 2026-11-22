@@ -37,8 +37,8 @@ def run_content_workflow(
     )
     context = memory["value"] if memory else None
     prompt = (
-        "Create content using this structured brief.\\n"
-        f"BRIEF: {brief}\\n"
+        "Create content using this structured brief.\n"
+        f"BRIEF: {brief}\n"
         f"SAVED CONTEXT ({context_key}): {context if context is not None else 'not provided'}"
     )
     try:
