@@ -4,7 +4,7 @@ MEHR AI STUDIO 0.4.1 is currently distributed as a CI artifact, not as a public 
 
 ## 1. Download the tested package
 
-1. Open the [successful CI run](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45012797054).
+1. Open the [successful CI run](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45014720216).
 2. Download the `mehr-ai-studio-distributions` artifact and extract the ZIP.
 3. Use the `.whl` file inside the extracted folder.
 
