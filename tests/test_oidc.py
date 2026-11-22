@@ -124,3 +124,36 @@ def test_requires_https_and_scopes():
             resource_server_url=RESOURCE,
             required_scopes=[],
         )
+
+
+def test_custom_tenant_claim_is_normalized_for_request_context(rsa_keys):
+    private_key, public_jwk = rsa_keys
+    verifier = OIDCJWTTokenVerifier(
+        issuer_url=ISSUER,
+        jwks_url="https://issuer.example.test/.well-known/jwks.json",
+        audience=AUDIENCE,
+        resource_server_url=RESOURCE,
+        required_scopes=["studio:access"],
+        tenant_claim="org_tenant",
+    )
+    verifier._jwks = FakeJWKClient(public_jwk)
+    token = make_token(private_key, org_tenant=TENANT)
+    result = asyncio.run(verifier.verify_token(token))
+    assert result is not None
+    assert result.claims["tenant_id"] == TENANT
+    assert result.claims["org_tenant"] == TENANT
+
+
+@pytest.mark.parametrize(
+    "claims",
+    [
+        {"exp": float("inf")},
+        {"iat": float("nan")},
+        {"exp": int(time.time()) + 90000},
+        {"tenant_id": "../other-tenant"},
+    ],
+)
+def test_rejects_non_finite_or_unsafe_claim_values(verifier, rsa_keys, claims):
+    private_key, _ = rsa_keys
+    token = make_token(private_key, **claims)
+    assert asyncio.run(verifier.verify_token(token)) is None
