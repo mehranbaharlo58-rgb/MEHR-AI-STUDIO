@@ -2,12 +2,12 @@
 
 **Verified:** 2026-11-22  
 **Branch:** `feat/p0-typed-contracts`  
-**Code head (before this status update):** `7d79d57d9a45646096e238e60103e541c2255d3f`  
+**Code head (validated):** `920c207af6060c5fc4b6881fbf573cadc0217b06`  
 **Pull request:** [#1](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/pull/1)
 
 ## Verified delivery
 
-GitHub Actions run [#214](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45013521811) completed successfully on code head `7d79d57d9a45646096e238e60103e541c2255d3f`. All 12 validation and delivery steps passed:
+GitHub Actions runs [#226](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45014646451) and [#227](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/actions/runs/45014651525) completed successfully on code head `920c207af6060c5fc4b6881fbf573cadc0217b06`. Both runs passed all 12 validation and delivery steps:
 
 - Ruff lint
 - pytest
@@ -17,7 +17,7 @@ GitHub Actions run [#214](https://github.com/mehranbaharlo58-rgb/MEHR-AI-STUDIO/
 - installed `python -m mehr_ai_studio.selfcheck` module check
 - artifact upload
 
-The installable distribution artifact `14749659503` (50,209 bytes; SHA-256 `8d0377dc558ab53ec980a7244230e93d0d2c638fe133f1b41db9269a202bf9ca`) belongs to an earlier validated build and expires 2026-12-06. Run #214 uploaded a fresh artifact for the current code head.
+The installable distribution artifacts were uploaded by both successful runs. Actions artifacts are temporary CI outputs, not permanent releases.
 
 ## P0 status
 
@@ -31,6 +31,9 @@ Implemented and CI-validated:
 - OIDC/JWT validation primitives and local stdio default
 - Typed stage registry with Pydantic-validated inputs/outputs and deterministic registration order
 - Explicit workflow lifecycle transitions with terminal-state protection
+- The live content workflow now executes through six typed stages: brief, context, prompt, generation, asset validation, and assessment
+- Stage outputs are persisted as tenant-scoped, append-only checkpoints keyed by run, attempt, and stage; identical retries are idempotent and conflicting rewrites are rejected
+- Resume replays the validated brief/context/prompt stages for a new attempt while preserving prior attempt outputs
 
 The earlier competitive review document contains historical baseline statements. In particular, provider retries and prompt/model provenance are now implemented; they should not be treated as remaining P0 work.
 
