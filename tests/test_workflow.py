@@ -74,7 +74,7 @@ def test_workflow_returns_contract_normalized_asset_and_report(tmp_path, monkeyp
     )
 
     assert result["generated"] == {
-        "text": "A validated generated content sample. " * 5,
+        "text": ("A validated generated content sample. " * 5).strip(),
         "model": "test-model",
         "format": "text",
     }
