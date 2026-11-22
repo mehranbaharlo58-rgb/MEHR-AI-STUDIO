@@ -1,6 +1,7 @@
 """Standards-based OIDC JWT access-token verification using a trusted JWKS."""
 
 import asyncio
+import math
 import time
 from typing import Any
 from urllib.parse import urlparse
@@ -8,6 +9,8 @@ from urllib.parse import urlparse
 import jwt
 from jwt import PyJWKClient
 from mcp.server.auth.provider import AccessToken, TokenVerifier
+
+from .store import validate_tenant_id
 
 
 class OIDCConfigurationError(ValueError):
@@ -115,12 +118,24 @@ class OIDCJWTTokenVerifier(TokenVerifier):
             expires_at = claims.get("exp")
             issued_at = claims.get("iat")
             if (
-                not isinstance(expires_at, (int, float))
+                isinstance(expires_at, bool)
+                or isinstance(issued_at, bool)
+                or not isinstance(expires_at, (int, float))
                 or not isinstance(issued_at, (int, float))
+                or not math.isfinite(expires_at)
+                or not math.isfinite(issued_at)
                 or expires_at <= time.time()
                 or issued_at > time.time() + self.leeway_seconds
+                or expires_at - issued_at > 86400
             ):
                 return None
+            try:
+                trusted_tenant_id = validate_tenant_id(tenant_id)
+            except (TypeError, ValueError):
+                return None
+            # Normalize a configured tenant claim name for the request context.
+            trusted_claims = dict(claims)
+            trusted_claims["tenant_id"] = trusted_tenant_id
             return AccessToken(
                 token=token,
                 client_id=client_id,
@@ -128,7 +143,7 @@ class OIDCJWTTokenVerifier(TokenVerifier):
                 expires_at=int(expires_at),
                 resource=self.resource_server_url,
                 subject=subject,
-                claims=claims,
+                claims=trusted_claims,
             )
-        except (jwt.PyJWTError, ValueError, TypeError, KeyError, OSError, TimeoutError):
+        except (jwt.PyJWTError, ValueError, TypeError, KeyError, OSError, TimeoutError, OverflowError):
             return None
