@@ -20,6 +20,14 @@ jobs:
       - run: ruff check src tests
       - run: pytest -q
       - run: python -m build
+      - name: Install built wheel in a clean virtual environment
+        run: |
+          python -m venv .venv-smoke
+          .venv-smoke/bin/python -m pip install dist/*.whl
+      - name: Run installed console command
+        run: .venv-smoke/bin/mehr-ai-studio-check
+      - name: Run installed module check
+        run: .venv-smoke/bin/python -m mehr_ai_studio.selfcheck
       - name: Upload installable distributions
         uses: actions/upload-artifact@v4
         with:
