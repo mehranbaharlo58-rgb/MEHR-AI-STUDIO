@@ -5,10 +5,11 @@ an SDK TokenVerifier and AuthSettings from a configured authorization server.
 The local stdio server remains separate and unchanged.
 """
 
+from urllib.parse import urlparse
+
 from mcp.server.auth.provider import TokenVerifier
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
-from urllib.parse import urlparse
 
 from . import __version__
 from .auth_context import current_request_tenant_id
