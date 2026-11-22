@@ -24,6 +24,7 @@ Feedback storage is **not** model training. The system does not silently train o
 ## Requirements
 - Python 3.11+
 - Install development dependencies: `pip install -e ".[dev]"`
+- For a normal local installation: `pip install .`
 
 ## Local development
 ```bash
@@ -36,7 +37,11 @@ pytest -q
 python -m build
 ```
 
-Run the MCP server with `python -m mehr_ai_studio`. It uses stdio by default.
+Run the MCP server with `python -m mehr_ai_studio` or the installed `mehr-ai-studio` command. It uses stdio by default.
+
+For installation from the tested GitHub Actions wheel artifact and local MCP setup, see [Local MVP Quick Start](docs/LOCAL-MVP-QUICKSTART.md).
+
+Run the offline installation check with `python -m mehr_ai_studio.selfcheck`. It verifies SQLite write/read, content-brief creation, and structural assessment without an API key or network connection. A successful offline check does not claim that a live AI provider or hosted HTTP authentication has been tested.
 
 ## AI provider configuration
 Copy `.env.example` to `.env`, then set:
@@ -49,7 +54,7 @@ The adapter appends `/chat/completions` unless the supplied base URL already end
 
 ## Security and limitations
 
-Authentication architecture decision: [ADR-0001 — Authentication boundary for multi-user MCP deployment](docs/adr/0001-authentication-boundary.md). The current release remains local single-user stdio; hosted multi-user operation is blocked until the implementation gates in that ADR are completed and tested. A fail-closed identity resolver requires a non-empty verified token subject and maps the SDK-verified token's trusted `tenant_id` claim to a tenant (`src/mehr_ai_studio/auth_context.py`). An opt-in authenticated server factory (`src/mehr_ai_studio/authenticated_server.py`) now accepts an injected SDK `TokenVerifier` and `AuthSettings`, requires HTTPS issuer/resource URLs and at least one required scope, and binds memory, feedback, and workflow operations to the request's verified tenant. It builds a server but does not start or expose a network listener. A standards-based RS256 OIDC/JWT verifier is now implemented in `src/mehr_ai_studio/oidc.py`: it resolves signing keys from the configured HTTPS JWKS endpoint, validates signature, exact issuer, audience, expiry, issued-at/not-before, subject, client identity, required scopes, and the signed tenant claim. `build_oidc_authenticated_server_from_env()` wires it to environment configuration. The local `stdio` server remains the only default entry point; OIDC HTTP hosting is opt-in and requires real issuer values and an account system that issues the `tenant_id` claim. The MCP SDK minimum is pinned to 1.27.2 because that release line provides the `AccessToken.claims` field used by the resolver.
+Authentication architecture decision: [ADR-0001 — Authentication boundary for multi-user MCP deployment](docs/adr/0001-authentication-boundary.md). The current release remains local single-user stdio; hosted multi-user operation is blocked until the implementation gates in that ADR are completed and tested. A fail-closed identity resolver requires a non-empty verified token subject and maps the SDK-verified token's trusted `tenant_id` claim to a tenant (`src/mehr_ai_studio/auth_context.py`). An opt-in authenticated server factory (`src/mehr_ai_studio/authenticated_server.py`) now accepts an injected SDK `TokenVerifier` and `AuthSettings`, requires HTTPS issuer/resource URLs and at least one required scope, and binds memory, feedback, and workflow operations to the request's verified tenant. It builds a server but does not start or expose a network listener. A standards-based RS256 OIDC/JWT verifier is implemented in `src/mehr_ai_studio/oidc.py`: it resolves signing keys from the configured HTTPS JWKS endpoint, validates signature, exact issuer, audience, expiry, issued-at/not-before, subject, client identity, required scopes, finite timestamps, and a bounded token lifetime (maximum 24 hours). The tenant claim name is configurable and normalized into the trusted `tenant_id` request claim after validation. `build_oidc_authenticated_server_from_env()` wires it to environment configuration. The local `stdio` server remains the only default entry point; OIDC HTTP hosting is opt-in and requires real issuer values and an account system that issues the `tenant_id` claim. The MCP SDK minimum is pinned to 1.27.2 because that release line provides the `AccessToken.claims` field used by the resolver.
 - Secrets are read from environment variables and are never intentionally included in error messages.
 - Project memory is stored in local SQLite by default; it is not encrypted at rest by this application.
 - The default MCP entry point remains a local, single-user stdio process. The opt-in authenticated factory is separate and is not activated by default.
@@ -79,3 +84,10 @@ A source-informed review of ten leading AI workflow, agent, memory, and MCP proj
 
 ## License
 No open-source license has been selected. All rights remain with the project owner unless a license is added.
+
+
+### Provider retry policy
+
+The OpenAI-compatible adapter retries transient transport failures and HTTP `408`, `409`, `425`, `429`, `500`, `502`, `503`, and `504` responses. Retries are bounded and use exponential backoff. Configure `AI_MAX_ATTEMPTS` (1–5, default 3) and `AI_RETRY_BACKOFF_SECONDS` (0–10 seconds, default 0.5). Permanent client errors and malformed provider responses are not retried. Provider response bodies and API credentials are not included in raised error messages.
+
+Each content workflow run records the content prompt version (`content-v1`) and configured/actual model identifier in its persisted run snapshot. Increment the prompt version when changing the production prompt template so historical runs remain attributable.

@@ -6,6 +6,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from .contracts import WorkflowRunContract
+from .workflow_engine import transition_status
+
 DEFAULT_TENANT_ID = "default"
 
 
@@ -102,6 +105,37 @@ class StudioStore:
             db.execute(
                 "CREATE INDEX IF NOT EXISTS idx_feedback_tenant_created "
                 "ON feedback(tenant_id, created_at)"
+            )
+
+            db.execute(
+                """CREATE TABLE IF NOT EXISTS workflow_runs (
+                    tenant_id TEXT NOT NULL,
+                    run_id TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    payload TEXT NOT NULL,
+                    PRIMARY KEY (tenant_id, run_id)
+                )"""
+            )
+            db.execute(
+                "CREATE INDEX IF NOT EXISTS idx_workflow_runs_tenant_updated "
+                "ON workflow_runs(tenant_id, updated_at DESC)"
+            )
+            db.execute(
+                """CREATE TABLE IF NOT EXISTS workflow_stage_outputs (
+                    tenant_id TEXT NOT NULL,
+                    run_id TEXT NOT NULL,
+                    attempt INTEGER NOT NULL,
+                    stage_name TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    payload TEXT NOT NULL,
+                    PRIMARY KEY (tenant_id, run_id, attempt, stage_name)
+                )"""
+            )
+            db.execute(
+                "CREATE INDEX IF NOT EXISTS idx_stage_outputs_run "
+                "ON workflow_stage_outputs(tenant_id, run_id, attempt)"
             )
 
     def save_memory(
@@ -204,3 +238,165 @@ class StudioStore:
             ],
             "note": "Feedback is stored for analysis; it does not train or fine-tune a model.",
         }
+
+
+    def save_workflow_run(
+        self, run: dict[str, Any], tenant_id: str
+    ) -> dict[str, Any]:
+        """Validate and persist one workflow run within the authenticated tenant."""
+        tenant_id = validate_tenant_id(tenant_id)
+        if not isinstance(run, dict):
+            raise TypeError("workflow run must be a dictionary")
+        validated = WorkflowRunContract.model_validate(
+            {**run, "tenant_id": tenant_id}
+        )
+        payload = validated.model_dump(mode="json")
+        serialized = json.dumps(payload, ensure_ascii=False)
+        with self._connect() as db:
+            existing = db.execute(
+                """SELECT status FROM workflow_runs
+                   WHERE tenant_id=? AND run_id=?""",
+                (tenant_id, validated.run_id),
+            ).fetchone()
+            if existing is not None:
+                transition_status(existing["status"], validated.status)
+            db.execute(
+                """INSERT INTO workflow_runs(
+                       tenant_id, run_id, status, created_at, updated_at, payload
+                   ) VALUES(?,?,?,?,?,?)
+                   ON CONFLICT(tenant_id, run_id) DO UPDATE SET
+                       status=excluded.status,
+                       created_at=excluded.created_at,
+                       updated_at=excluded.updated_at,
+                       payload=excluded.payload""",
+                (
+                    tenant_id,
+                    validated.run_id,
+                    validated.status,
+                    validated.created_at.isoformat(),
+                    validated.updated_at.isoformat(),
+                    serialized,
+                ),
+            )
+        return payload
+
+    def read_workflow_run(
+        self, run_id: str, tenant_id: str
+    ) -> dict[str, Any] | None:
+        """Read a workflow run only from the requested tenant partition."""
+        tenant_id = validate_tenant_id(tenant_id)
+        if not isinstance(run_id, str) or not run_id.strip():
+            raise ValueError("run_id is required")
+        with self._connect() as db:
+            row = db.execute(
+                """SELECT payload FROM workflow_runs
+                   WHERE tenant_id=? AND run_id=?""",
+                (tenant_id, run_id.strip()),
+            ).fetchone()
+        return json.loads(row["payload"]) if row is not None else None
+
+    def list_workflow_runs(
+        self, tenant_id: str, limit: int = 20
+    ) -> list[dict[str, Any]]:
+        """List recent workflow runs for one tenant, newest update first."""
+        tenant_id = validate_tenant_id(tenant_id)
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise ValueError("limit must be an integer between 1 and 100")
+        with self._connect() as db:
+            rows = db.execute(
+                """SELECT payload FROM workflow_runs
+                   WHERE tenant_id=?
+                   ORDER BY updated_at DESC, run_id
+                   LIMIT ?""",
+                (tenant_id, limit),
+            ).fetchall()
+        return [json.loads(row["payload"]) for row in rows]
+
+
+    def save_stage_output(
+        self,
+        run_id: str,
+        attempt: int,
+        stage_name: str,
+        output: dict[str, Any],
+        tenant_id: str = DEFAULT_TENANT_ID,
+    ) -> dict[str, Any]:
+        """Persist one immutable, tenant-scoped stage output per run attempt."""
+        tenant_id = validate_tenant_id(tenant_id)
+        if not isinstance(run_id, str) or not run_id.strip():
+            raise ValueError("run_id is required")
+        if isinstance(attempt, bool) or not isinstance(attempt, int) or attempt < 1:
+            raise ValueError("attempt must be a positive integer")
+        if not isinstance(stage_name, str) or not stage_name.strip():
+            raise ValueError("stage_name is required")
+        if not isinstance(output, dict):
+            raise TypeError("stage output must be a dictionary")
+        try:
+            serialized = json.dumps(output, ensure_ascii=False, sort_keys=True)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("stage output must be JSON-serializable") from exc
+        now = datetime.now(UTC).isoformat()
+        with self._connect() as db:
+            existing = db.execute(
+                """SELECT payload FROM workflow_stage_outputs
+                   WHERE tenant_id=? AND run_id=? AND attempt=? AND stage_name=?""",
+                (tenant_id, run_id.strip(), attempt, stage_name.strip()),
+            ).fetchone()
+            if existing is not None:
+                if existing["payload"] != serialized:
+                    raise ValueError("stage output is immutable once persisted")
+                return {
+                    "tenant_id": tenant_id,
+                    "run_id": run_id.strip(),
+                    "attempt": attempt,
+                    "stage_name": stage_name.strip(),
+                    "created_at": None,
+                }
+            db.execute(
+                """INSERT INTO workflow_stage_outputs(
+                       tenant_id, run_id, attempt, stage_name, created_at, payload
+                   ) VALUES(?,?,?,?,?,?)""",
+                (tenant_id, run_id.strip(), attempt, stage_name.strip(), now, serialized),
+            )
+        return {
+            "tenant_id": tenant_id,
+            "run_id": run_id.strip(),
+            "attempt": attempt,
+            "stage_name": stage_name.strip(),
+            "created_at": now,
+        }
+
+    def list_stage_outputs(
+        self,
+        run_id: str,
+        tenant_id: str = DEFAULT_TENANT_ID,
+        attempt: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Read immutable stage outputs in deterministic execution order."""
+        tenant_id = validate_tenant_id(tenant_id)
+        if not isinstance(run_id, str) or not run_id.strip():
+            raise ValueError("run_id is required")
+        if attempt is not None and (
+            isinstance(attempt, bool) or not isinstance(attempt, int) or attempt < 1
+        ):
+            raise ValueError("attempt must be a positive integer")
+        query = (
+            "SELECT attempt,stage_name,created_at,payload FROM workflow_stage_outputs "
+            "WHERE tenant_id=? AND run_id=?"
+        )
+        params: list[Any] = [tenant_id, run_id.strip()]
+        if attempt is not None:
+            query += " AND attempt=?"
+            params.append(attempt)
+        query += " ORDER BY attempt, rowid"
+        with self._connect() as db:
+            rows = db.execute(query, params).fetchall()
+        return [
+            {
+                "attempt": row["attempt"],
+                "stage_name": row["stage_name"],
+                "created_at": row["created_at"],
+                "output": json.loads(row["payload"]),
+            }
+            for row in rows
+        ]

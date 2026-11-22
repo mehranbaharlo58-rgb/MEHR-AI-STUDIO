@@ -5,6 +5,8 @@ an SDK TokenVerifier and AuthSettings from a configured authorization server.
 The local stdio server remains separate and unchanged.
 """
 
+from urllib.parse import urlparse
+
 from mcp.server.auth.provider import TokenVerifier
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
@@ -16,6 +18,7 @@ from .core import assess_text, build_content_brief
 from .oidc import OIDCJWTTokenVerifier
 from .provider import ProviderError, ProviderNotConfigured, generate_text
 from .store import StudioStore
+from .workflow import resume_content_workflow as execute_resume_content_workflow
 from .workflow import run_content_workflow as execute_content_workflow
 
 
@@ -28,12 +31,19 @@ def _validate_auth_configuration(
     issuer_url = str(getattr(auth_settings, "issuer_url", "") or "")
     resource_url = str(getattr(auth_settings, "resource_server_url", "") or "")
     required_scopes = getattr(auth_settings, "required_scopes", None)
-    if not issuer_url.startswith("https://"):
-        raise ValueError("OAuth issuer_url must use HTTPS")
-    if not resource_url.startswith("https://"):
-        raise ValueError("OAuth resource_server_url must use HTTPS")
-    if not required_scopes:
-        raise ValueError("At least one required OAuth scope must be configured")
+    for name, value in (
+        ("issuer_url", issuer_url),
+        ("resource_server_url", resource_url),
+    ):
+        parsed = urlparse(value)
+        if parsed.scheme != "https" or not parsed.netloc or parsed.username:
+            raise ValueError(f"OAuth {name} must be an absolute HTTPS URL")
+    if (
+        not isinstance(required_scopes, (list, tuple))
+        or not required_scopes
+        or any(not isinstance(scope, str) or not scope.strip() for scope in required_scopes)
+    ):
+        raise ValueError("At least one non-empty required OAuth scope must be configured")
 
 
 def build_authenticated_server(
@@ -114,6 +124,31 @@ def build_authenticated_server(
         """Return feedback analytics for the authenticated caller's tenant."""
         return tenant_store.feedback_insights(
             tenant_id=current_request_tenant_id()
+        )
+
+    @mcp.tool()
+    def read_workflow_run(run_id: str) -> dict:
+        """Read a saved run only from the authenticated caller's tenant."""
+        tenant_id = current_request_tenant_id()
+        result = tenant_store.read_workflow_run(run_id, tenant_id=tenant_id)
+        return result or {"found": False, "run_id": run_id}
+
+    @mcp.tool()
+    def list_workflow_runs(limit: int = 20) -> dict:
+        """List recent workflow runs for the authenticated caller's tenant."""
+        return {
+            "runs": tenant_store.list_workflow_runs(
+                tenant_id=current_request_tenant_id(), limit=limit
+            )
+        }
+
+    @mcp.tool()
+    def resume_content_workflow(run_id: str) -> dict:
+        """Resume a failed workflow inside the authenticated caller's tenant."""
+        return execute_resume_content_workflow(
+            tenant_store,
+            run_id,
+            tenant_id=current_request_tenant_id(),
         )
 
     @mcp.tool()

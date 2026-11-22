@@ -130,22 +130,27 @@ The ten are selected for architectural coverage. Popularity is a discovery signa
 
 | Area | Current repository evidence | Gap |
 |---|---|---|
-| Model adapter | One OpenAI-compatible synchronous HTTP adapter | Retry/backoff, async/streaming, provider capability metadata, usage and cost telemetry |
-| Workflow | One linear function: brief → memory → generation → structural assessment | Run records, step registry, branching, retries, checkpoints, cancellation, resume |
+| Model adapter | OpenAI-compatible synchronous adapter with bounded exponential retry for transient transport/HTTP failures | Async/streaming, provider capability metadata, usage and cost telemetry |
+| Workflow | Linear content path, tenant-scoped run snapshots, checkpoint resume, prompt-version and model metadata | Step registry, branching, cancellation, immutable per-stage snapshots and per-stage evaluation evidence |
 | Memory | SQLite key/value records with tenant partition | Typed memories, provenance, expiry/forgetting, search, versioning and stronger storage controls |
 | Quality | Non-empty, punctuation/bullet and word-count score | Rubric-based evaluation, evidence/citation checks, calibration and test datasets |
 | Feedback | Rating and note analytics | Link feedback to exact output, prompt/model/rubric versions; use for offline evaluation, not silent training |
 | MCP | Small static tool registry | Tool metadata/permissions, connector registry, idempotency and approval policy |
-| Security | Local stdio default plus opt-in OIDC design | Real issuer configuration, live token tests, tenant isolation integration tests, deployment hardening |
+| Security | Local stdio default; opt-in RS256/JWKS verifier; stricter URL/config validation; tenant-scoped storage and auth-context unit tests | Real issuer/live-token validation, cross-tenant isolation through authenticated HTTP, TLS and deployment hardening |
 | Product surface | MCP-first package, no complete end-user studio UI | Minimal job history and review interface after backend contracts stabilize |
 
 ## Recommended implementation sequence
 
 ### P0 — reliability and contracts
-- Add Pydantic models for Brief, GeneratedAsset, QualityReport, WorkflowRun and ProviderResult.
-- Add provider timeout/retry/backoff with bounded attempts and classified errors.
-- Add run and step tables with immutable run snapshots and prompt/model versions.
-- Add deterministic test fixtures for generated outputs and evaluator results.
+- [x] Add strict Pydantic contracts for content briefs, generated assets, quality reports, provider results and workflow runs.
+- [x] Persist tenant-scoped workflow lifecycle states and validated run snapshots; support checkpoint-based resume.
+- [x] Add deterministic contract, persistence, lifecycle, resume and tenant-isolation unit tests.
+- [x] Add bounded exponential provider retries for transient transport failures and selected HTTP status codes; do not retry permanent client errors or malformed payloads.
+- [x] Record prompt version and configured/actual model identifiers in initial, failed, successful and resumed workflow snapshots.
+- [x] Reject OIDC issuer/JWKS/resource URLs containing credentials, query strings or fragments; reject malformed scope, audience, tenant-claim and timing configuration types.
+- [ ] Add immutable per-stage snapshots and per-stage prompt/model version capture.
+
+**Evidence on 2026-11-22:** PR #1 head `c9a4e6c64b5bc295de6496e444d977e22db3242e`; GitHub Actions run #178 succeeded: Ruff passed, pytest reported 118 passed and 1 skipped, package build passed, and the installable distribution artifact was uploaded.
 
 ### P1 — production workflow core
 - Replace the one-shot function with a small step registry and explicit state machine.
@@ -176,4 +181,4 @@ Do not paste whole modules. Prefer using maintained packages as dependencies whe
 
 The highest-ROI route is **not** to add ten frameworks. Build a thin, reliable MEHR workflow core inspired by LangGraph's state/checkpoint model, Pydantic AI's contracts, Langflow's component boundaries, Activepieces' connector model, and LibreChat's request-scoped MCP permissions. Keep the existing provider adapter and SQLite base until tests and actual usage justify replacing them.
 
-The next implementation milestone should be P0: typed contracts + durable workflow-run records + stronger quality evaluation. This improves the current product directly without importing a large framework or creating avoidable deployment and licensing complexity.
+The contracts and workflow-run persistence portion of P0 is implemented and CI-validated. The next milestone is to close the remaining P0 gaps (bounded provider retries and immutable stage/version snapshots), then build the P1 step registry, cancellation, richer evaluation dimensions and explicit human-approval state. Do not enable hosted multi-user deployment until the real-issuer and transport-level isolation gates are proven.

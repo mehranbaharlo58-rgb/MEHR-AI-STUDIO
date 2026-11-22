@@ -1,4 +1,5 @@
 """Deterministic content-brief and structural quality primitives."""
+import re
 from dataclasses import asdict, dataclass
 from typing import Any
 
@@ -51,20 +52,64 @@ def build_content_brief(
 
 
 def assess_text(text: str) -> dict[str, Any]:
-    """Structural checks only; does not establish factual accuracy."""
+    """Return explainable structural scores; never infer factual or semantic quality."""
     if not isinstance(text, str):
         raise TypeError("text must be a string")
+
     content = text.strip()
     words = content.split()
+    sentences = [
+        part.strip()
+        for part in re.split(r"[.!?؟۔]+", content)
+        if part.strip()
+    ]
+    lines = [line.strip() for line in content.splitlines() if line.strip()]
+    bullets = [
+        line for line in lines
+        if re.match(r"^(?:[-*•]|\d+[.)])\s+", line)
+    ]
+    paragraphs = [part for part in re.split(r"\n\s*\n", content) if part.strip()]
+    word_count = len(words)
+    sentence_count = len(sentences)
+    average_sentence_length = (
+        round(word_count / sentence_count, 1) if sentence_count else 0.0
+    )
+
     checks = {
         "non_empty": bool(content),
-        "has_sentence_or_bullet": any(mark in content for mark in (".", "!", "?", "\n", "-")),
-        "word_count": len(words),
+        "has_sentence_or_bullet": bool(sentences or bullets),
+        "word_count": word_count,
+        "sentence_count": sentence_count,
+        "paragraph_count": len(paragraphs),
+        "bullet_count": len(bullets),
+        "average_sentence_length": average_sentence_length,
     }
-    score = (40 if checks["non_empty"] else 0) + (20 if checks["has_sentence_or_bullet"] else 0)
-    score += 40 if len(words) >= 30 else round(40 * len(words) / 30)
+
+    dimensions = {
+        "completeness": 100 if content else 0,
+        "structure": 100 if sentences or bullets else (50 if paragraphs else 0),
+        "length": (
+            0 if word_count == 0
+            else min(100, round(word_count * 100 / 30))
+            if word_count < 30
+            else max(0, 100 - round((word_count - 500) * 100 / 500))
+            if word_count > 500
+            else 100
+        ),
+        "readability": (
+            0 if word_count == 0
+            else 100 if average_sentence_length <= 25
+            else max(0, 100 - round((average_sentence_length - 25) * 3))
+        ),
+    }
+    score = round(sum(dimensions.values()) / len(dimensions))
+
     return {
         "score": score,
+        "dimensions": dimensions,
         "checks": checks,
-        "limitations": ["Does not verify factual accuracy or originality."],
+        "limitations": [
+            "Structural heuristics only; no semantic or brief-adherence evaluation.",
+            "Does not verify factual accuracy, sources, originality, or legal compliance.",
+        ],
     }

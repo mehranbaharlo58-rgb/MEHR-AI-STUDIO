@@ -1,6 +1,7 @@
 import sqlite3
 
 import pytest
+from pydantic import ValidationError
 
 from mehr_ai_studio.store import StudioStore
 
@@ -96,3 +97,122 @@ def test_invalid_tenant_id_is_rejected(tmp_path, tenant_id):
     store = StudioStore(tmp_path / "studio.sqlite3")
     with pytest.raises((TypeError, ValueError)):
         store.read_memory("brand", tenant_id=tenant_id)
+
+
+def _workflow_run(run_id="run-1", status="queued"):
+    return {
+        "run_id": run_id,
+        "status": status,
+        "created_at": "2026-11-22T08:00:00Z",
+        "updated_at": "2026-11-22T08:00:00Z",
+        "attempt": 1,
+        "current_stage": "brief",
+    }
+
+
+def test_workflow_runs_persist_and_are_tenant_isolated(tmp_path):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    store.save_workflow_run(_workflow_run(), tenant_id="tenant-a")
+    store.save_workflow_run(
+        _workflow_run(status="running"), tenant_id="tenant-b"
+    )
+
+    assert store.read_workflow_run("run-1", "tenant-a")["status"] == "queued"
+    assert store.read_workflow_run("run-1", "tenant-b")["status"] == "running"
+    assert store.read_workflow_run("run-1", "tenant-c") is None
+    assert len(store.list_workflow_runs("tenant-a")) == 1
+    assert len(store.list_workflow_runs("tenant-b")) == 1
+
+
+def test_workflow_run_upsert_updates_status_without_cross_tenant_write(tmp_path):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    store.save_workflow_run(_workflow_run(), tenant_id="tenant-a")
+    running = _workflow_run(status="running")
+    running["updated_at"] = "2026-11-22T08:04:00Z"
+    store.save_workflow_run(running, tenant_id="tenant-a")
+    updated = _workflow_run(status="succeeded")
+    updated["updated_at"] = "2026-11-22T08:05:00Z"
+    store.save_workflow_run(updated, tenant_id="tenant-a")
+
+    assert store.read_workflow_run("run-1", "tenant-a")["status"] == "succeeded"
+    assert store.read_workflow_run("run-1", "tenant-a")["updated_at"].startswith(
+        "2026-11-22T08:05:00"
+    )
+
+
+def test_workflow_run_storage_rejects_invalid_contract_and_limit(tmp_path):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    with pytest.raises(ValidationError):
+        store.save_workflow_run(_workflow_run(status="unknown"), tenant_id="tenant-a")
+    with pytest.raises(ValueError):
+        store.list_workflow_runs("tenant-a", limit=0)
+
+
+def test_stage_outputs_are_immutable_and_attempt_scoped(tmp_path):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    first = {"brief": {"goal": "build"}}
+    store.save_stage_output("run-1", 1, "brief", first, tenant_id="alpha")
+    # Replaying the exact checkpoint is idempotent.
+    store.save_stage_output("run-1", 1, "brief", first, tenant_id="alpha")
+
+    with pytest.raises(ValueError, match="immutable"):
+        store.save_stage_output(
+            "run-1", 1, "brief", {"brief": {"goal": "changed"}}, tenant_id="alpha"
+        )
+
+    store.save_stage_output(
+        "run-1", 2, "brief", {"brief": {"goal": "revised"}}, tenant_id="alpha"
+    )
+    store.save_stage_output(
+        "run-1", 1, "brief", {"brief": {"goal": "other tenant"}}, tenant_id="beta"
+    )
+
+    assert len(store.list_stage_outputs("run-1", tenant_id="alpha")) == 2
+    assert len(store.list_stage_outputs("run-1", tenant_id="alpha", attempt=1)) == 1
+    assert store.list_stage_outputs("run-1", tenant_id="beta")[0]["output"] == {
+        "brief": {"goal": "other tenant"}
+    }
+
+
+def test_stage_output_rejects_invalid_attempt_and_non_json_payload(tmp_path):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    with pytest.raises(ValueError):
+        store.save_stage_output("run-1", 0, "brief", {})
+    with pytest.raises(ValueError, match="JSON-serializable"):
+        store.save_stage_output("run-1", 1, "brief", {"bad": object()})
+
+
+def test_workflow_status_transitions_are_enforced_at_persistence_boundary(tmp_path):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    store.save_workflow_run(_workflow_run(status="queued"), tenant_id="tenant-a")
+
+    running = _workflow_run(status="running")
+    running["updated_at"] = "2026-11-22T08:01:00Z"
+    store.save_workflow_run(running, tenant_id="tenant-a")
+
+    # Repeated persistence of the current state is idempotently permitted.
+    running["updated_at"] = "2026-11-22T08:02:00Z"
+    store.save_workflow_run(running, tenant_id="tenant-a")
+
+    succeeded = _workflow_run(status="succeeded")
+    succeeded["updated_at"] = "2026-11-22T08:03:00Z"
+    store.save_workflow_run(succeeded, tenant_id="tenant-a")
+
+    failed = _workflow_run(status="failed")
+    failed["updated_at"] = "2026-11-22T08:04:00Z"
+    with pytest.raises(ValueError, match="invalid workflow transition"):
+        store.save_workflow_run(failed, tenant_id="tenant-a")
+
+    assert store.read_workflow_run("run-1", "tenant-a")["status"] == "succeeded"
+
+
+def test_failed_workflow_can_transition_to_running_for_resume(tmp_path):
+    store = StudioStore(tmp_path / "studio.sqlite3")
+    store.save_workflow_run(_workflow_run(status="failed"), tenant_id="tenant-a")
+
+    resumed = _workflow_run(status="running")
+    resumed["attempt"] = 2
+    resumed["updated_at"] = "2026-11-22T08:05:00Z"
+    store.save_workflow_run(resumed, tenant_id="tenant-a")
+
+    assert store.read_workflow_run("run-1", "tenant-a")["status"] == "running"

@@ -1,4 +1,6 @@
-"""Optional OpenAI-compatible chat-completions adapter."""
+"""Optional OpenAI-compatible chat-completions adapter with bounded retries."""
+import time
+
 import httpx
 
 from .config import settings
@@ -10,6 +12,29 @@ class ProviderNotConfigured(RuntimeError):
 
 class ProviderError(RuntimeError):
     """Raised when the provider request or response is invalid."""
+
+
+_RETRYABLE_STATUS_CODES = {408, 409, 425, 429, 500, 502, 503, 504}
+
+
+def _request_once(url: str, payload: dict, headers: dict) -> dict:
+    with httpx.Client(timeout=settings.request_timeout) as client:
+        response = client.post(url, json=payload, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+    if not isinstance(data, dict):
+        raise TypeError("Provider response must be a JSON object")
+    choices = data.get("choices")
+    if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+        raise TypeError("Provider response has no valid choices")
+    message = choices[0].get("message")
+    if not isinstance(message, dict):
+        raise TypeError("Provider response has no valid message")
+    content = message.get("content")
+    if not isinstance(content, str) or not content.strip():
+        raise ValueError("Provider returned empty content")
+    return {"text": content, "model": data.get("model", settings.provider_model)}
 
 
 def generate_text(
@@ -36,27 +61,29 @@ def generate_text(
         ],
         "temperature": 0.6,
     }
-    try:
-        with httpx.Client(timeout=settings.request_timeout) as client:
-            response = client.post(
-                url,
-                json=payload,
-                headers={"Authorization": f"Bearer {settings.provider_api_key}"},
-            )
-            response.raise_for_status()
-            data = response.json()
+    headers = {"Authorization": f"Bearer {settings.provider_api_key}"}
+    max_attempts = settings.provider_max_attempts
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return _request_once(url, payload, headers)
+        except httpx.HTTPStatusError as exc:
+            last_error = exc
+            status = exc.response.status_code
+            retryable = status in _RETRYABLE_STATUS_CODES
+            error_name = f"http_{status}"
+        except (httpx.TimeoutException, httpx.TransportError) as exc:
+            last_error = exc
+            retryable = True
+            error_name = type(exc).__name__
+        except (httpx.HTTPError, KeyError, IndexError, TypeError, AttributeError, ValueError) as exc:
+            raise ProviderError(
+                f"AI provider request failed: {type(exc).__name__}"
+            ) from exc
 
-        if not isinstance(data, dict):
-            raise TypeError("Provider response must be a JSON object")
-        choices = data.get("choices")
-        if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
-            raise TypeError("Provider response has no valid choices")
-        message = choices[0].get("message")
-        if not isinstance(message, dict):
-            raise TypeError("Provider response has no valid message")
-        content = message.get("content")
-        if not isinstance(content, str) or not content.strip():
-            raise ValueError("Provider returned empty content")
-        return {"text": content, "model": data.get("model", settings.provider_model)}
-    except (httpx.HTTPError, KeyError, IndexError, TypeError, AttributeError, ValueError) as exc:
-        raise ProviderError(f"AI provider request failed: {type(exc).__name__}") from exc
+        if not retryable or attempt >= max_attempts:
+            raise ProviderError(f"AI provider request failed: {error_name}") from last_error
+        delay = settings.provider_retry_backoff * (2 ** (attempt - 1))
+        if delay:
+            time.sleep(delay)
+
+    raise ProviderError("AI provider request failed: retry_limit_exhausted")

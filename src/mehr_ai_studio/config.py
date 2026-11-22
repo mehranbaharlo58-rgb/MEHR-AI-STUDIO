@@ -16,6 +16,8 @@ class Settings:
     provider_api_key: str = os.getenv("AI_API_KEY", "")
     provider_model: str = os.getenv("AI_MODEL", "")
     request_timeout: float = float(os.getenv("AI_TIMEOUT_SECONDS", "45"))
+    provider_max_attempts: int = min(5, max(1, int(os.getenv("AI_MAX_ATTEMPTS", "3"))))
+    provider_retry_backoff: float = min(10.0, max(0.0, float(os.getenv("AI_RETRY_BACKOFF_SECONDS", "0.5"))))
 
 
 settings = Settings()
