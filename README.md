@@ -79,3 +79,10 @@ A source-informed review of ten leading AI workflow, agent, memory, and MCP proj
 
 ## License
 No open-source license has been selected. All rights remain with the project owner unless a license is added.
+
+
+### Provider retry policy
+
+The OpenAI-compatible adapter retries transient transport failures and HTTP `408`, `409`, `425`, `429`, `500`, `502`, `503`, and `504` responses. Retries are bounded and use exponential backoff. Configure `AI_MAX_ATTEMPTS` (1–5, default 3) and `AI_RETRY_BACKOFF_SECONDS` (0–10 seconds, default 0.5). Permanent client errors and malformed provider responses are not retried. Provider response bodies and API credentials are not included in raised error messages.
+
+Each content workflow run records the content prompt version (`content-v1`) and configured/actual model identifier in its persisted run snapshot. Increment the prompt version when changing the production prompt template so historical runs remain attributable.
