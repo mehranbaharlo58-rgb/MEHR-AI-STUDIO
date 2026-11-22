@@ -48,6 +48,8 @@ Copy `.env.example` to `.env`, then set:
 The adapter appends `/chat/completions` unless the supplied base URL already ends with that path. Provider compatibility must be verified against the selected service. Never commit `.env`, API keys, access tokens, database files, or private user data.
 
 ## Security and limitations
+
+Authentication architecture decision: [ADR-0001 — Authentication boundary for multi-user MCP deployment](docs/adr/0001-authentication-boundary.md). The current release remains local single-user stdio; hosted multi-user operation is blocked until the implementation gates in that ADR are completed and tested.
 - Secrets are read from environment variables and are never intentionally included in error messages.
 - Project memory is stored in local SQLite by default; it is not encrypted at rest by this application.
 - The current MCP tools run as a local, single-user stdio process. They do not authenticate users or derive tenant IDs from an authenticated principal.
