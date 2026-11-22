@@ -50,7 +50,9 @@ The adapter appends `/chat/completions` unless the supplied base URL already end
 ## Security and limitations
 - Secrets are read from environment variables and are never intentionally included in error messages.
 - Project memory is stored in local SQLite by default; it is not encrypted at rest by this application.
-- The MCP server uses stdio. Do not expose a network endpoint publicly without authentication, TLS, and deployment hardening.
+- The current MCP tools run as a local, single-user stdio process. They do not authenticate users or derive tenant IDs from an authenticated principal.
+- `StudioStore` supports tenant-scoped records, but its `tenant_id` argument is a data-partitioning parameter, not an authentication or authorization boundary. The exposed MCP tools currently use the default tenant.
+- Do not share one running instance or expose a network endpoint to multiple users. A multi-user deployment requires authenticated identity resolution, server-controlled tenant binding on every operation, authorization tests, TLS, and deployment hardening.
 - No automatic publication, payments, or irreversible external actions are performed.
 - Content assessment is structural only; it does not verify factual accuracy, originality, or legal compliance.
 - Feedback is analytics data, not model training.
