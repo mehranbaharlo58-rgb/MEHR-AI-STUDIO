@@ -16,6 +16,8 @@ A manually triggered workflow is available at **Actions → deploy-cloudflare-wo
 - `CLOUDFLARE_API_TOKEN`: Cloudflare API token with permission to edit Workers Scripts for the target account.
 - `CLOUDFLARE_ACCOUNT_ID`: the target Cloudflare account ID.
 
+Find the Account ID in Cloudflare Dashboard → **Workers & Pages** → **Overview** → **Account Details**. Copy the 32-character hexadecimal **Account ID** (not the Zone ID, account name, or user ID). The deployment workflow validates its format and checks that the token can access the account's Workers Scripts API before running Wrangler.
+
 Run the workflow once to create/update the Worker. The workflow does not need the AI provider key or owner token and does not create or overwrite Worker runtime secrets.
 
 ## Step 2 — Configure Worker runtime values
