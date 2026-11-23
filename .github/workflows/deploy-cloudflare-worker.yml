@@ -21,16 +21,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Validate and normalize deployment credentials
+      - name: Validate deployment credentials
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          TOKEN="$(printf '%s' "$CLOUDFLARE_API_TOKEN" | tr -d '[:space:]')"
-          case "$TOKEN" in
-            [Bb][Ee][Aa][Rr][Ee][Rr]*) TOKEN="${TOKEN#??????}" ;;
-          esac
-          if [ -z "$TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "::error::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID as repository Actions secrets before deployment."
             exit 1
           fi
@@ -38,25 +34,24 @@ jobs:
             echo "::error::CLOUDFLARE_ACCOUNT_ID must be the 32-character hexadecimal Account ID shown in Cloudflare Account Details."
             exit 1
           fi
-          printf 'CLOUDFLARE_API_TOKEN_NORMALIZED=%s\n' "$TOKEN" >> "$GITHUB_ENV"
 
       - name: Verify Cloudflare API token status
         env:
-          CLOUDFLARE_API_TOKEN: ${{ env.CLOUDFLARE_API_TOKEN_NORMALIZED }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           response="$(curl --silent --show-error \
             --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             "https://api.cloudflare.com/client/v4/user/tokens/verify")"
           if [ "$(printf '%s' "$response" | jq -r '.success // false')" != "true" ] || [ "$(printf '%s' "$response" | jq -r '.result.status // empty')" != "active" ]; then
             errors="$(printf '%s' "$response" | jq -c '.errors // []')"
-            echo "::error::Cloudflare API token verification failed or token is not active. Recreate the token and update the CLOUDFLARE_API_TOKEN repository secret. Cloudflare errors: $errors"
+            echo "::error::Cloudflare API token verification failed or token is not active. Ensure CLOUDFLARE_API_TOKEN contains only the raw token value. Cloudflare errors: $errors"
             exit 1
           fi
           echo "Cloudflare API token is active."
 
       - name: Verify Cloudflare account access
         env:
-          CLOUDFLARE_API_TOKEN: ${{ env.CLOUDFLARE_API_TOKEN_NORMALIZED }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           response="$(curl --silent --show-error \
@@ -65,7 +60,7 @@ jobs:
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts?per_page=1")"
           if [ "$(printf '%s' "$response" | jq -r '.success // false')" != "true" ]; then
             errors="$(printf '%s' "$response" | jq -c '.errors // []')"
-            echo "::error::Cloudflare rejected the account ID or token access. Confirm the Account ID and that the token has Workers Scripts:Edit permission for this account. Cloudflare errors: $errors"
+            echo "::error::Cloudflare rejected the account ID or token access. Confirm the Account ID and Workers Scripts:Edit permission. Cloudflare errors: $errors"
             exit 1
           fi
           echo "Cloudflare account access verified."
@@ -75,6 +70,6 @@ jobs:
       - name: Deploy Worker
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ env.CLOUDFLARE_API_TOKEN_NORMALIZED }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --config wrangler.jsonc
