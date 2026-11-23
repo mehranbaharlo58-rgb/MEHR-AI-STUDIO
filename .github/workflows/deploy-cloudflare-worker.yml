@@ -28,7 +28,7 @@ jobs:
         run: |
           TOKEN="$(printf '%s' "$CLOUDFLARE_API_TOKEN" | tr -d '[:space:]')"
           case "$TOKEN" in
-            [Bb][Ee][Aa][Rr][Ee][Rr]*) TOKEN="${TOKEN#????????}" ;;
+            [Bb][Ee][Aa][Rr][Ee][Rr]*) TOKEN="${TOKEN#??????}" ;;
           esac
           if [ -z "$TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "::error::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID as repository Actions secrets before deployment."
