@@ -22,7 +22,7 @@ Run the workflow once to create/update the Worker. The workflow does not need th
 
 ## Step 2 — Configure Worker runtime values
 
-After the first deployment, open the Worker **mehr-ai-studio-api** in Cloudflare and add the following runtime bindings under Settings → Variables and Secrets:
+After the first deployment, open the Worker **mehr-ai-studio** in Cloudflare and add the following runtime bindings under Settings → Variables and Secrets:
 
 - `MEHR_API_TOKEN`: a randomly generated owner-only bearer token of at least 32 characters. Store it as a secret.
 - `AI_API_KEY`: provider API key. Store it as a secret.
