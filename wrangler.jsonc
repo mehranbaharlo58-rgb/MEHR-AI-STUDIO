@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "mehr-ai-studio-api",
+  "name": "mehr-ai-studio",
   "main": "cloudflare/worker.mjs",
   "compatibility_date": "2026-11-21",
   "workers_dev": true,
