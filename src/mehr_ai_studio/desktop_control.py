@@ -44,7 +44,7 @@ class DesktopAction(BaseModel):
     text: str | None = Field(default=None, max_length=1000)
 
     @model_validator(mode="after")
-    def validate_shape(self) -> "DesktopAction":
+    def validate_shape(self) -> DesktopAction:
         pointer_kinds = {"move", "click", "double_click", "context_click", "scroll"}
         if self.kind in pointer_kinds and (self.x is None or self.y is None):
             raise ValueError("pointer actions require x and y")
@@ -140,11 +140,13 @@ def evaluate_action(
         return ActionDecision(
             allowed=False, requires_confirmation=False, reason="guide_mode_no_input"
         )
-    if action.kind in {"click", "double_click", "context_click", "scroll", "drag"}:
-        if not policy.allow_pointer_control:
-            return ActionDecision(
-                allowed=False, requires_confirmation=False, reason="pointer_control_disabled"
-            )
+    if (
+        action.kind in {"click", "double_click", "context_click", "scroll", "drag"}
+        and not policy.allow_pointer_control
+    ):
+        return ActionDecision(
+            allowed=False, requires_confirmation=False, reason="pointer_control_disabled"
+        )
     if action.kind in {"keypress", "type_text"} and not policy.allow_keyboard_control:
         return ActionDecision(
             allowed=False, requires_confirmation=False, reason="keyboard_control_disabled"
