@@ -88,6 +88,15 @@ class WindowsDesktopAdapter:
             monitor = monitors[index]
             return int(monitor["width"]), int(monitor["height"])
 
+    def _absolute_point(self, x: int, y: int, display_id: str) -> tuple[int, int]:
+        """Translate monitor-relative coordinates into desktop coordinates."""
+        index = self._monitor_index(display_id)
+        with self._mss.mss() as capture:
+            if index >= len(capture.monitors):
+                raise ValueError("display_not_found")
+            monitor = capture.monitors[index]
+            return x + int(monitor["left"]), y + int(monitor["top"])
+
     def capture_screen(self, display_id: str) -> bytes:
         """Capture one monitor to in-memory PNG bytes; no file is written."""
         index = self._monitor_index(display_id)
@@ -105,19 +114,24 @@ class WindowsDesktopAdapter:
         """Dispatch one typed action; no arbitrary command or script execution."""
         with self._lock:
             mouse = self._pyautogui
+            if action.kind in {
+                "move", "click", "double_click", "context_click", "scroll", "drag"
+            }:
+                start = self._absolute_point(action.x, action.y, action.display_id)
             if action.kind == "move":
-                mouse.moveTo(action.x, action.y)
+                mouse.moveTo(*start)
             elif action.kind == "click":
-                mouse.click(x=action.x, y=action.y, button=action.button)
+                mouse.click(x=start[0], y=start[1], button=action.button)
             elif action.kind == "double_click":
-                mouse.doubleClick(x=action.x, y=action.y, button=action.button)
+                mouse.doubleClick(x=start[0], y=start[1], button=action.button)
             elif action.kind == "context_click":
-                mouse.rightClick(x=action.x, y=action.y)
+                mouse.rightClick(x=start[0], y=start[1])
             elif action.kind == "scroll":
-                mouse.scroll(action.scroll_delta, x=action.x, y=action.y)
+                mouse.scroll(action.scroll_delta, x=start[0], y=start[1])
             elif action.kind == "drag":
-                mouse.moveTo(action.x, action.y)
-                mouse.dragTo(action.end_x, action.end_y, button=action.button)
+                end = self._absolute_point(action.end_x, action.end_y, action.display_id)
+                mouse.moveTo(*start)
+                mouse.dragTo(*end, button=action.button)
             elif action.kind == "keypress":
                 if len(action.keys) == 1:
                     mouse.press(action.keys[0])
@@ -125,6 +139,8 @@ class WindowsDesktopAdapter:
                 else:
                     mouse.hotkey(*action.keys)
             elif action.kind == "type_text":
+                if not action.text.isascii():
+                    raise ValueError("unicode_text_requires_clipboard_adapter")
                 mouse.write(action.text, interval=0.01)
             else:
                 raise ValueError("unsupported_desktop_action")
