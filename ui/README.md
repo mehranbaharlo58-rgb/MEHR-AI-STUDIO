@@ -31,3 +31,18 @@ It is not yet the full MEHR AI orchestration product. The authenticated Python M
 5. Implement validated file uploads and controlled storage.
 6. Add accessibility, authorization, quota and browser integration tests.
 7. Preserve human approval for paid, external or irreversible actions.
+
+
+## MEHR Live — Voice & Vision
+
+The dashboard now includes an early Live Room interaction shell. Its current
+L0 implementation can request microphone and camera permissions separately,
+show a local camera preview, mute the local microphone track, and stop all
+media tracks when the user leaves the page. Local media is not uploaded,
+recorded, or sent to an AI provider.
+
+This is deliberately **not** a live AI call yet. The OIDC browser login,
+Realtime session bootstrap, WebRTC peer connection, camera-frame transport,
+server-side session control, quotas and live provider tests remain future
+integration work. See [MEHR Live Voice & Vision Architecture](../docs/MEHR-LIVE-VOICE-VISION.md)
+for the product contract and staged release gates.
