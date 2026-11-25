@@ -131,6 +131,8 @@ class DesktopBridgeRuntime:
             return BridgeActionResult(action.action_id, False, "active_application_changed")
 
         with self._lock:
+            if self._action_in_flight:
+                return BridgeActionResult(action.action_id, False, "another_action_in_flight")
             if self._actions_executed >= self._policy.max_actions:
                 return BridgeActionResult(action.action_id, False, "session_action_limit")
             if not self._arbiter.acquire_agent():
@@ -164,7 +166,9 @@ class DesktopBridgeRuntime:
         with self._lock:
             self._arbiter.yield_human_control()
             if not self._arbiter.stopped:
-                self._cancel_event.clear()
+                # Give the next action a fresh token; never clear the token
+                # already held by an in-flight action that was preempted.
+                self._cancel_event = Event()
 
     def emergency_stop(self) -> None:
         """Stop future agent actions for this session."""
