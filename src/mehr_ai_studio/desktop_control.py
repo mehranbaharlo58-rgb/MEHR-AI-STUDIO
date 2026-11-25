@@ -4,6 +4,7 @@ This module deliberately does not inject operating-system input. It validates
 requests and models consent, approvals, replay protection, and human priority.
 A platform bridge must enforce these decisions again immediately before I/O.
 """
+
 from __future__ import annotations
 
 from collections import deque
