@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import time
 from collections.abc import Awaitable, Callable, Iterable
 from typing import Any, Literal
@@ -76,6 +77,45 @@ class MatchResult(BaseModel):
     reasons: list[str]
 
 
+
+_TASK_ALIASES = {
+    "تحقیق": {"research", "search", "literature-review", "papers"},
+    "پژوهش": {"research", "search", "literature-review", "papers"},
+    "کدنویسی": {"coding", "code", "software", "debugging"},
+    "برنامه‌نویسی": {"coding", "code", "software", "debugging"},
+    "برنامه نویسی": {"coding", "code", "software", "debugging"},
+    "تولید تصویر": {"image", "image-generation", "design"},
+    "تصویر": {"image", "image-generation"},
+    "ویدئو": {"video", "video-generation"},
+    "ویدیو": {"video", "video-generation"},
+    "صدا": {"audio", "voice", "speech"},
+    "گویندگی": {"audio", "voice", "text-to-speech"},
+    "ترجمه": {"translation", "multilingual"},
+    "خلاصه": {"summarization", "summary", "documents"},
+    "خلاصه‌سازی": {"summarization", "summary", "documents"},
+    "تحلیل": {"analysis", "reasoning"},
+    "اسناد": {"documents", "document-parsing", "pdf"},
+    "سند": {"documents", "document-parsing", "pdf"},
+    "اتوماسیون": {"automation", "workflow", "integrations"},
+    "عامل": {"agents", "orchestration", "tools"},
+    "ایجنت": {"agents", "orchestration", "tools"},
+    "پایگاه": {"database", "vectors", "retrieval"},
+    "برداری": {"vectors", "vector-search", "retrieval"},
+}
+
+
+def _task_terms(text: str) -> set[str]:
+    normalized = text.lower().replace("ي", "ی").replace("ك", "ک")
+    terms = set(re.findall(r"[a-z0-9_]+|[\u0600-\u06ff]+", normalized))
+    expanded = set(terms)
+    for phrase, aliases in _TASK_ALIASES.items():
+        if phrase in normalized:
+            expanded.update(aliases)
+    for term in tuple(terms):
+        expanded.update(_TASK_ALIASES.get(term, set()))
+    return expanded
+
+
 class AIRegistry:
     """In-memory registry interface; durable storage is a separate concern."""
     def __init__(self, models: Iterable[AIModel] = ()) -> None:
@@ -98,7 +138,7 @@ class AIRegistry:
         return sorted(values, key=lambda item: (item.category, item.provider, item.name))
 
     def match(self, request: MatchRequest) -> list[MatchResult]:
-        task_terms = set(request.task.lower().replace("/", " ").replace("-", " ").split())
+        task_terms = _task_terms(request.task)
         required = {term.strip().lower() for term in request.required_capabilities}
         results = []
         for model in self._models.values():
