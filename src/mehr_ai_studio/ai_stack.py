@@ -168,7 +168,7 @@ class AIExecutionManager:
         async with self._global_limit, limit:
             try:
                 return {"model_id": model_id, "ok": True, "result": await adapter(model, task)}
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - isolate arbitrary adapter/provider failures
                 return {"model_id": model_id, "ok": False, "error": type(exc).__name__}
 
     async def execute_parallel(self, model_ids: list[str], task: str) -> list[dict[str, Any]]:
