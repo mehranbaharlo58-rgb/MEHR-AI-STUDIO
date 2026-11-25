@@ -48,7 +48,7 @@ class LiveSessionRequest(BaseModel):
     max_image_frames_per_minute: int = Field(default=0, ge=0, le=30)
 
     @model_validator(mode="after")
-    def validate_consent_and_limits(self) -> "LiveSessionRequest":
+    def validate_consent_and_limits(self) -> LiveSessionRequest:
         if not self.consent.microphone:
             raise ValueError("microphone consent is required for a live session")
         if self.mode in {LiveMode.VOICE_VISION, LiveMode.VOICE_VISION_AVATAR}:
