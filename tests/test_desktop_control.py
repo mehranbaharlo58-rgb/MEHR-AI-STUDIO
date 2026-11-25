@@ -19,7 +19,7 @@ def action(kind="click", **changes):
         "x": 10,
         "y": 20,
     }
-    if kind != "click":
+    if kind not in {"click", "move", "double_click", "context_click", "scroll"}:
         values.pop("x", None)
         values.pop("y", None)
     values.update(changes)
