@@ -138,3 +138,26 @@ def test_dispatch_rejects_unsafe_scheduler_limits():
         AIExecutionManager(AIRegistry(), {}, max_parallel=101)
     with pytest.raises(ValueError):
         AIExecutionManager(AIRegistry(), {}, timeout_s=0)
+
+
+
+def test_matcher_understands_persian_task_descriptions():
+    coding = entry(
+        id="coding.agent",
+        name="Coding Agent",
+        category="coding",
+        capabilities=["code-generation"],
+        task_tags=["coding", "debugging", "refactoring"],
+    )
+    research = entry(
+        id="research.agent",
+        name="Research Agent",
+        category="research",
+        capabilities=["research"],
+        task_tags=["research", "search", "literature-review"],
+    )
+    registry = AIRegistry([coding, research])
+    coding_result = registry.match(MatchRequest(task="برای کدنویسی و رفع خطا"))
+    research_result = registry.match(MatchRequest(task="تحقیق و پژوهش علمی"))
+    assert coding_result[0].model_id == "coding.agent"
+    assert research_result[0].model_id == "research.agent"
