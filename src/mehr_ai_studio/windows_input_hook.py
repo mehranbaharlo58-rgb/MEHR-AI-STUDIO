@@ -5,6 +5,7 @@ Injected events are ignored so PyAutoGUI/SendInput agent events do not preempt
 the agent itself. This module never captures key contents or mouse coordinates.
 """
 
+# isort: off
 from __future__ import annotations
 
 import ctypes
@@ -12,6 +13,7 @@ import sys
 import threading
 from collections.abc import Callable
 from ctypes import wintypes
+# isort: on
 
 
 WH_KEYBOARD_LL = 13
