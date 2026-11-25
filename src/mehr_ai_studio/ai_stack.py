@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from collections.abc import Awaitable, Callable, Iterable
 from typing import Any, Literal
 
@@ -147,13 +148,28 @@ Adapter = Callable[[AIModel, str], Awaitable[dict[str, Any]]]
 
 
 class AIExecutionManager:
-    """Bounded parallel dispatcher with per-model limits and failure isolation."""
-    def __init__(self, registry: AIRegistry, adapters: dict[str, Adapter], max_parallel: int = 10):
-        if max_parallel < 1:
-            raise ValueError("max_parallel must be at least 1")
+    """Dispatch up to 100 selected models with global, provider, and model limits."""
+
+    def __init__(
+        self,
+        registry: AIRegistry,
+        adapters: dict[str, Adapter],
+        max_parallel: int = 10,
+        timeout_s: float = 90.0,
+        provider_limits: dict[str, int] | None = None,
+    ) -> None:
+        if max_parallel < 1 or max_parallel > 100:
+            raise ValueError("max_parallel must be between 1 and 100")
+        if timeout_s <= 0:
+            raise ValueError("timeout_s must be positive")
         self.registry, self.adapters = registry, adapters
+        self.timeout_s = timeout_s
         self._global_limit = asyncio.Semaphore(max_parallel)
         self._model_limits: dict[str, asyncio.Semaphore] = {}
+        self._provider_limits: dict[str, asyncio.Semaphore] = {}
+        self._provider_limit_values = provider_limits or {}
+        if any(value < 1 or value > 100 for value in self._provider_limit_values.values()):
+            raise ValueError("provider limits must be between 1 and 100")
 
     async def _execute_one(self, model_id: str, task: str) -> dict[str, Any]:
         model = self.registry.get(model_id)
@@ -164,12 +180,38 @@ class AIExecutionManager:
         adapter = self.adapters.get(model_id)
         if adapter is None:
             return {"model_id": model_id, "ok": False, "error": "adapter_not_registered"}
-        limit = self._model_limits.setdefault(model_id, asyncio.Semaphore(model.max_concurrency))
-        async with self._global_limit, limit:
-            try:
-                return {"model_id": model_id, "ok": True, "result": await adapter(model, task)}
-            except Exception as exc:  # noqa: BLE001 - isolate arbitrary adapter/provider failures
-                return {"model_id": model_id, "ok": False, "error": type(exc).__name__}
+
+        model_limit = self._model_limits.setdefault(
+            model_id, asyncio.Semaphore(model.max_concurrency)
+        )
+        provider_limit_value = self._provider_limit_values.get(model.provider, 10)
+        provider_limit = self._provider_limits.setdefault(
+            model.provider, asyncio.Semaphore(provider_limit_value)
+        )
+        started = time.perf_counter()
+        try:
+            async with self._global_limit, provider_limit, model_limit:
+                result = await asyncio.wait_for(adapter(model, task), timeout=self.timeout_s)
+            return {
+                "model_id": model_id,
+                "ok": True,
+                "result": result,
+                "latency_ms": round((time.perf_counter() - started) * 1000, 2),
+            }
+        except TimeoutError:
+            return {
+                "model_id": model_id,
+                "ok": False,
+                "error": "timeout",
+                "latency_ms": round((time.perf_counter() - started) * 1000, 2),
+            }
+        except Exception as exc:  # noqa: BLE001 - isolate arbitrary adapter/provider failures
+            return {
+                "model_id": model_id,
+                "ok": False,
+                "error": type(exc).__name__,
+                "latency_ms": round((time.perf_counter() - started) * 1000, 2),
+            }
 
     async def execute_parallel(self, model_ids: list[str], task: str) -> list[dict[str, Any]]:
         if not task.strip():
