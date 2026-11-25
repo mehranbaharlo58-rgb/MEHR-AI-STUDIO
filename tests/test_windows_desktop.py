@@ -19,3 +19,30 @@ def test_monitor_id_parser_accepts_only_explicit_monitor_ids():
         parser("monitor:0")
     with pytest.raises(ValueError, match="unsupported_display_id"):
         parser("all")
+
+
+class FakeCapture:
+    monitors = [
+        {"left": 0, "top": 0, "width": 3000, "height": 1200},
+        {"left": -1920, "top": 0, "width": 1920, "height": 1080},
+        {"left": 0, "top": 0, "width": 1920, "height": 1080},
+    ]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, traceback):
+        return False
+
+
+class FakeMss:
+    @staticmethod
+    def mss():
+        return FakeCapture()
+
+
+def test_monitor_relative_coordinates_translate_to_virtual_desktop():
+    adapter = object.__new__(windows_desktop.WindowsDesktopAdapter)
+    adapter._mss = FakeMss
+    assert adapter._absolute_point(25, 40, "monitor:1") == (-1895, 40)
+    assert adapter._absolute_point(25, 40, "monitor:2") == (25, 40)
