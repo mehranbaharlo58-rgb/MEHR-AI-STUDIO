@@ -10,8 +10,8 @@ from __future__ import annotations
 import ctypes
 import sys
 import threading
-from collections.abc import Callable
 from ctypes import wintypes
+from collections.abc import Callable
 
 
 WH_KEYBOARD_LL = 13
