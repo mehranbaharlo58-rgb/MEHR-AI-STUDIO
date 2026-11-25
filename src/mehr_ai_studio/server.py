@@ -221,7 +221,7 @@ async def test_ai_connector(model_id: str) -> dict:
     model = next((item for item in models if item.id == model_id), None)
     if model is None:
         return {"ok": False, "error": "model_not_registered"}
-    if model.status not in {"configured", "tested"}:
+    if model.status not in {"configured", "tested", "degraded"}:
         return {"ok": False, "error": "model_not_operational", "status": model.status}
     adapters = build_adapters(
         models,
