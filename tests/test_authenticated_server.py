@@ -287,6 +287,17 @@ def test_authenticated_ai_registry_tools_are_tenant_scoped(monkeypatch, tmp_path
         "auth_required": False,
     }
     assert app.tools["register_ai_model"](model)["saved"] is True
+    forged_health = {
+        **model,
+        "status": "tested",
+        "verification_status": "integration_tested",
+        "last_verified_at": "2026-01-01T00:00:00+00:00",
+        "latency_ms": 1,
+    }
+    assert app.tools["register_ai_model"](forged_health) == {
+        "saved": False,
+        "error": "health_state_must_be_set_by_connector_test",
+    }
     alpha = app.tools["list_ai_models"]()
     assert alpha["counts"]["configured"] == 1
     assert alpha["models"][0]["id"] == "local.test"
