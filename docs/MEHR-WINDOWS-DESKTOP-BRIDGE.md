@@ -45,7 +45,7 @@ The runtime is deliberately not exposed over a network. A future pairing service
 - Monitor-relative coordinates are translated to virtual-desktop coordinates, including monitors positioned left of the primary display.
 - Non-ASCII text is rejected by the first Windows adapter. Persian and other Unicode input require a later clipboard adapter with safe clipboard restoration.
 - Foreground application identity is process-level, not window/tab-level.
-- An opt-in Windows low-level keyboard/mouse hook is now implemented in `windows_input_hook.py`. It reports only that physical input occurred; it does not record keys or coordinates. OS-tagged injected events are ignored to avoid self-preemption. It must be started only for a consented session. Windows runtime behavior still requires a real Windows smoke test.
+- An opt-in Windows low-level keyboard/mouse hook is implemented in `windows_input_hook.py`. Start it with `WindowsPhysicalInputHook(runtime.on_human_input).start()` only after the user grants session consent; stop it when the session ends. It reports only that physical input occurred; it does not record keys or coordinates. The hook is global to the current interactive desktop, so physical input in any app preempts the agent. OS-tagged injected events are ignored to avoid self-preemption. Windows runtime behavior still requires a real Windows smoke test.
 - The current adapter does not verify that the requested UI action achieved the intended task result. A later observation and verification layer must do that.
 - USB and Wi-Fi are transport choices for a future authenticated pairing layer; neither is implemented in this increment.
 
