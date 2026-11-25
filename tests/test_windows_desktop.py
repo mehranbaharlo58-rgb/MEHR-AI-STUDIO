@@ -1,7 +1,8 @@
 """Platform guard tests for the optional Windows desktop adapter."""
 
-import pytest
 from typing import ClassVar
+
+import pytest
 
 from mehr_ai_studio import windows_desktop
 
