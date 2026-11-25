@@ -3,7 +3,8 @@ from mcp.server.fastmcp import FastMCP
 
 from . import __version__
 from .ai_registry_store import AIRegistryStore
-from .ai_stack import AIModel, MatchRequest
+from .ai_stack import AIExecutionManager, AIModel, AIRegistry, MatchRequest
+from .connectors import build_adapters
 from .catalog import seed_ai_catalog as seed_catalog_records
 from .config import settings
 from .core import assess_text, build_content_brief
@@ -155,6 +156,59 @@ def match_ai_models(
 def seed_ai_catalog() -> dict:
     """Seed the curated 100-entry AI catalogue without overwriting existing records."""
     return seed_catalog_records(ai_registry)
+
+
+
+@app.tool()
+async def execute_ai_task(
+    task: str,
+    category: str | None = None,
+    limit: int = 3,
+) -> dict:
+    """Match and execute only configured models with usable connector credentials."""
+    if not 1 <= limit <= 10:
+        return {"ok": False, "error": "limit_must_be_between_1_and_10"}
+    models = ai_registry.list()
+    matches = ai_registry.match(MatchRequest(
+        task=task,
+        category=category,
+        prefer_free=True,
+        operational_only=True,
+        limit=limit,
+    ))
+    adapters = build_adapters(
+        models,
+        default_endpoint=settings.provider_base_url,
+        default_api_key=settings.provider_api_key,
+    )
+    selected_ids = [item["model_id"] for item in matches if item["model_id"] in adapters]
+    skipped = [
+        {"model_id": item["model_id"], "reason": "connector_or_credentials_not_configured"}
+        for item in matches if item["model_id"] not in adapters
+    ]
+    if not selected_ids:
+        return {
+            "ok": False,
+            "error": "no_runnable_models",
+            "matches": matches,
+            "skipped": skipped,
+            "registry_counts": ai_registry.counts(),
+        }
+    registry = AIRegistry(model for model in models if model.id in selected_ids)
+    manager = AIExecutionManager(
+        registry,
+        {model_id: adapters[model_id] for model_id in selected_ids},
+        max_parallel=min(3, len(selected_ids)),
+        timeout_s=settings.request_timeout,
+    )
+    results = await manager.execute_parallel(selected_ids, task)
+    return {
+        "ok": any(item["ok"] for item in results),
+        "selected_model_ids": selected_ids,
+        "skipped": skipped,
+        "results": results,
+        "registry_counts": ai_registry.counts(),
+    }
 
 
 def main() -> None:
