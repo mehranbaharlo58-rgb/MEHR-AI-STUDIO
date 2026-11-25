@@ -9,13 +9,36 @@ from __future__ import annotations
 
 import os
 
+from starlette.middleware.cors import CORSMiddleware
+
 from .authenticated_server import build_oidc_authenticated_server_from_env
 
 
 def create_app():
     """Build the OIDC-protected MCP ASGI application from environment settings."""
     server = build_oidc_authenticated_server_from_env()
-    return server.streamable_http_app()
+    app = server.streamable_http_app()
+    raw_origins = os.getenv("MEHR_ALLOWED_ORIGINS", "").strip()
+    if not raw_origins:
+        return app
+    origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+    if not origins or "*" in origins:
+        raise ValueError("MEHR_ALLOWED_ORIGINS must contain explicit origins; wildcards are forbidden")
+    return CORSMiddleware(
+        app,
+        allow_origins=origins,
+        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "Mcp-Session-Id",
+            "Mcp-Protocol-Version",
+            "Last-Event-ID",
+        ],
+        expose_headers=["Mcp-Session-Id", "Mcp-Protocol-Version"],
+        allow_credentials=False,
+        max_age=600,
+    )
 
 
 def main() -> None:
