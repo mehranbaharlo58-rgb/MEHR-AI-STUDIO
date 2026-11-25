@@ -382,5 +382,6 @@ function stopLiveDevices(){
 $("#liveCameraStop").addEventListener("click",()=>{if(liveState.camera){liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=null;}$("#liveCameraPreview").srcObject=null;$("#liveCameraPreview").hidden=true;$("#liveVideoPlaceholder").hidden=false;updateLiveState();});
 $("#liveStopAll").addEventListener("click",()=>{stopLiveDevices();say("تمام دسترسی‌های رسانه متوقف شد.");});
 window.addEventListener("pagehide",stopLiveDevices);
-\nlanguage("fa");
+
+language("fa");
 </script></body></html>
