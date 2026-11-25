@@ -5,6 +5,7 @@ an SDK TokenVerifier and AuthSettings from a configured authorization server.
 The local stdio server remains separate and unchanged.
 """
 
+from datetime import UTC, datetime
 from urllib.parse import urlparse
 
 from mcp.server.auth.provider import TokenVerifier
@@ -347,9 +348,7 @@ def build_authenticated_server(
                 "error": type(exc).__name__,
                 "status": "degraded",
             }
-        verified_at = __import__("datetime").datetime.now(
-            __import__("datetime").UTC
-        ).isoformat()
+        verified_at = datetime.now(UTC).isoformat()
         updated = model.model_copy(update={
             "status": "tested",
             "verification_status": "integration_tested",
