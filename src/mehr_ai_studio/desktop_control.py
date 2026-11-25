@@ -215,6 +215,10 @@ class ControlArbiter:
         self._agent_has_control = False
 
     @property
+    def stopped(self) -> bool:
+        return self._stopped
+
+    @property
     def agent_may_act(self) -> bool:
         return (
             not self._stopped
