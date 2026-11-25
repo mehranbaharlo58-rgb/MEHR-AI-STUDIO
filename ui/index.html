@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" dir="ltr">
+<html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f5f7fb"><title>MEHR AI STUDIO</title>
@@ -175,6 +175,67 @@ body.dark .ready{background:#294438;color:#a8d2b3}
 #resultPanel{display:none;margin-top:14px;padding:18px 20px;border:1px solid #d9e7dc;border-radius:14px;background:#f2f6ef;color:#2e463a;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.85;font-size:12px}
 #resultPanel.show{display:block}
 body.dark #resultPanel{background:#233a32;border-color:#3b5145;color:#e5eee5}
+
+/* MEHR AI STUDIO — premium AI workspace visual system */
+:root{
+ --bg:#f3f5fb;--surface:#ffffff;--surface2:#f7f8fc;--text:#18243a;--muted:#7e899f;
+ --line:#e7eaf2;--accent:#5968df;--soft:#eef0ff;--shadow:0 16px 42px rgba(27,39,75,.075);
+}
+body{background:radial-gradient(ellipse at 78% 0%,rgba(215,220,255,.42),transparent 34%),var(--bg);color:var(--text)}
+.sidebar{background:#111a2b;color:#edf1ff;border-color:#202b40}
+.brand{color:#f5f7ff}
+.brandcopy small{color:#9aa8c4}
+.mark{background:linear-gradient(145deg,#5869e8,#8b70ed);box-shadow:0 8px 20px #5869e844}
+.workspace{background:#1a263b;border-color:#2b3850;color:#e3e9f8}
+.navlabel{color:#7888a7}
+.nav button{color:#a9b5cc}
+.nav button:hover{background:#1c2b44;color:#fff;transform:translateX(2px)}
+.nav button.active{background:linear-gradient(90deg,#29365a,#202c48);color:#fff;box-shadow:inset 3px 0 #8790ff}
+html[dir=rtl] .nav button.active{box-shadow:inset -3px 0 #8790ff}
+.count{background:#35416c;color:#d9ddff}
+.help{background:linear-gradient(145deg,#1d2c47,#202a40);border-color:#34425f}
+.help b{color:#f0f3ff}.help p{color:#aab6ce}.help button{color:#b5bcff}
+.profile{border-color:#2b3850}.avatar{background:#34416a;color:#e5e8ff}
+.profilecopy b{color:#f2f5ff}.profilecopy small{color:#9aa8c4}
+.top{background:rgba(255,255,255,.88);backdrop-filter:blur(18px);border-color:#e7eaf2}
+.content{max-width:1280px}
+.welcome h1{color:#1a2740}
+.welcome h1 em{color:#5968df}
+.eyebrow{color:#6877d8}
+.primary,.send{background:linear-gradient(115deg,#5667dc,#7668e8);box-shadow:0 8px 18px #5968df30}
+.primary:hover,.send:hover{background:linear-gradient(115deg,#4658cf,#6758d9)}
+.composer{background:linear-gradient(120deg,#fff 0%,#fff 72%,#f1f2ff 100%);border-color:#e3e7f3;box-shadow:0 18px 48px rgba(33,45,91,.08)}
+.composer:before{background:linear-gradient(#8a78f1,#5268dc)}
+.orb{background:linear-gradient(145deg,#eef0ff,#e8eaff);color:#5d68d9}
+.comptop b,.section h2{color:#1c2941}
+.model{background:#f4f5ff;border-color:#e4e6fb;color:#6874c9}
+.grid{gap:14px}
+.card{background:#fff;border-color:#e6e9f2;border-radius:16px;box-shadow:0 5px 18px rgba(31,43,83,.035)}
+.card:hover{border-color:#c9cef8;box-shadow:0 16px 34px rgba(44,56,120,.10)}
+.violet{background:#f0edff;color:#7864d8}.blue{background:#eaf2ff;color:#4e7ed0}
+.amber{background:#fff4e5;color:#c38a3c}.green{background:#e9f7f0;color:#3f9a78}
+.list{background:#fff;border-color:#e6e9f2}
+.projecticon{background:#eef0ff;color:#5b69d9}
+.state{background:#fff4e5;color:#a97831}.ready{background:#e9f7f0;color:#358a69}
+.linkbtn{color:#5868d9}
+.toast{background:#17233a}
+body.dark{--bg:#0f1727;--surface:#172338;--surface2:#1c2b43;--text:#edf2ff;--muted:#9eacc5;--line:#2a3954;--soft:#29345b;--accent:#8992ff;--shadow:0 18px 48px #0004;background:radial-gradient(ellipse at 78% 0%,rgba(79,86,160,.18),transparent 34%),var(--bg)}
+body.dark .sidebar{background:#0c1423;border-color:#202d44}
+body.dark .top{background:rgba(23,35,56,.9);border-color:#2a3954}
+body.dark .workspace{background:#172338;border-color:#2a3954}
+body.dark .nav button:hover,body.dark .nav button.active{background:#27345a;color:#fff}
+body.dark .help{background:#1a2a43;border-color:#30415e}
+body.dark .composer,body.dark .card,body.dark .list{background:#172338;border-color:#2a3954}
+body.dark .composer{background:linear-gradient(120deg,#172338,#1e2b4b)}
+body.dark .welcome h1,body.dark .comptop b,body.dark .section h2,body.dark .cardtitle,body.dark .projectinfo b{color:#edf2ff}
+body.dark .model{background:#202d4d;border-color:#39466f;color:#c3c9ff}
+body.dark .orb,body.dark .projecticon{background:#29345b;color:#c5caff}
+body.dark .row+.row{border-color:#2a3954}
+body.dark .state{background:#493b27;color:#f1cf91}
+body.dark .ready{background:#1d4236;color:#a7dfc4}
+html[dir=rtl] .brandcopy{letter-spacing:0}
+@media(max-width:700px){.sidebar{background:#111a2b}.content{padding-top:30px}.composer{border-radius:17px}.card{border-radius:14px}}
+
 </style></head>
 <body><div class="shell">
 <aside class="sidebar" id="sidebar"><a class="brand" href="#"><span class="mark">M</span><span class="brandcopy"><b>MEHR</b><small>AI STUDIO</small></span></a>
@@ -242,5 +303,5 @@ $("#connectionForm").addEventListener("submit",e=>{e.preventDefault();const url=
 $("#testConnection").addEventListener("click",async()=>{const status=$("#connectionStatus");status.textContent="Testing connection…";try{const url=$("#apiUrl").value.trim().replace(/\/+$/,"");const token=$("#apiToken").value.trim();const parsed=new URL(url);if(parsed.protocol!=="https:"||token.length<32)throw new Error("Enter a valid HTTPS Worker URL and a token of at least 32 characters.");const r=await fetch(url+"/api/health",{headers:{Authorization:"Bearer "+token}});if(!r.ok)throw new Error("Health check failed (HTTP "+r.status+").");const data=await r.json();status.textContent=data.provider_configured?"Connected. Provider settings detected.":"Worker reachable, but AI provider secrets are not configured.";if(data.provider_configured)document.querySelector(".status span").textContent="API connected";}catch(err){status.textContent=err.message;}});
 $("#form").addEventListener("submit",async e=>{e.preventDefault();const prompt=$("#prompt").value.trim();if(!prompt){say(tr("empty"));$("#prompt").focus();return;}const c=getConnection();if(!c.url||!c.token){page("settings");say("Configure the private API connection first.");return;}const send=$("#form button[type=submit]");send.disabled=true;send.style.opacity=".6";showResult("Working…");try{const r=await fetch(c.url+"/api/generate",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+c.token},body:JSON.stringify({prompt})});const data=await r.json();if(!r.ok||!data.ok)throw new Error(data.error||("Request failed (HTTP "+r.status+")."));showResult(data.generated.text);document.querySelector(".status span").textContent="API connected";say("Generation completed.");}catch(err){showResult("Connection error: "+err.message,true);say("The request could not be completed.");}finally{send.disabled=false;send.style.opacity="";}});
 
-language("en");
+language("fa");
 </script></body></html>
