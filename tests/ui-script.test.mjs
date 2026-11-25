@@ -8,6 +8,11 @@ const scriptStart = html.indexOf("<script>");
 const scriptEnd = html.indexOf("</script>", scriptStart);
 const appScript = html.slice(scriptStart + 8, scriptEnd);
 
+test("dashboard defaults to Persian right-to-left layout", () => {
+  assert.ok(html.includes('<html lang="fa" dir="rtl">'));
+  assert.ok(appScript.endsWith('language("fa");\n'));
+});
+
 test("dashboard contains one parseable inline application script", () => {
   assert.notEqual(scriptStart, -1);
   assert.notEqual(scriptEnd, -1);
