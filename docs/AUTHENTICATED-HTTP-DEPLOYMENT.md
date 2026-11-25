@@ -21,7 +21,9 @@ platform requires a public container bind:
 For a public deployment, bind to the platform-required interface and terminate
 TLS at a trusted ingress/reverse proxy. Do not expose the service over plaintext
 HTTP on a public network. The application deliberately does not trust forwarded
-proxy headers by default.\n\nFor browser clients on a different origin, set MEHR_ALLOWED_ORIGINS to a comma-separated allowlist of exact HTTPS origins (for example, https://studio.example.com). Wildcards are rejected. Authorization and MCP session/protocol headers are allowed; credentials mode is disabled. Leave this variable unset for same-origin or server-to-server use.
+proxy headers by default.
+
+For browser clients on a different origin, set MEHR_ALLOWED_ORIGINS to a comma-separated allowlist of exact HTTPS origins (for example, https://studio.example.com). Wildcards are rejected. Authorization and MCP session/protocol headers are allowed; credentials mode is disabled. Leave this variable unset for same-origin or server-to-server use.
 
 ## Required OIDC resource-server configuration
 
