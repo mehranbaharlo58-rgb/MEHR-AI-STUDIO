@@ -98,6 +98,7 @@ def test_hook_lifecycle_and_callback_ignore_injected_events(monkeypatch):
         windows_input_hook.ctypes, "WINFUNCTYPE",
         windows_input_hook.ctypes.CFUNCTYPE, raising=False
     )
+    monkeypatch.setattr(windows_input_hook.sys, "platform", "win32")
     notifications = []
     hook = windows_input_hook.WindowsPhysicalInputHook(
         lambda: notifications.append("physical")
