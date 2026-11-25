@@ -72,13 +72,13 @@ class OpenAICompatibleAdapter:
             response.raise_for_status()
             data = response.json()
         if not isinstance(data, dict):
-            raise ValueError("provider_response_must_be_object")
+            raise TypeError("provider_response_must_be_object")
         choices = data.get("choices")
         if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
             raise ValueError("provider_response_missing_choices")
         message = choices[0].get("message")
         if not isinstance(message, dict):
-            raise ValueError("provider_response_missing_message")
+            raise TypeError("provider_response_missing_message")
         content = message.get("content")
         if not isinstance(content, str) or not content.strip():
             raise ValueError("provider_response_empty_content")
