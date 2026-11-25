@@ -39,7 +39,9 @@ python -m build
 
 Run the MCP server with `python -m mehr_ai_studio` or the installed `mehr-ai-studio` command. It uses stdio by default.
 
-For installation from the tested GitHub Actions wheel artifact and local MCP setup, see [Local MVP Quick Start](docs/LOCAL-MVP-QUICKSTART.md).\n\nFor the opt-in authenticated Streamable HTTP server, OIDC environment variables, and deployment boundary, see [Authenticated HTTP Deployment](docs/AUTHENTICATED-HTTP-DEPLOYMENT.md). Start it with `mehr-ai-studio-http` only after configuring a real OIDC issuer.
+For installation from the tested GitHub Actions wheel artifact and local MCP setup, see [Local MVP Quick Start](docs/LOCAL-MVP-QUICKSTART.md).
+
+For the opt-in authenticated Streamable HTTP server, OIDC environment variables, and deployment boundary, see [Authenticated HTTP Deployment](docs/AUTHENTICATED-HTTP-DEPLOYMENT.md). Start it with `mehr-ai-studio-http` only after configuring a real OIDC issuer.
 
 Run the offline installation check with `python -m mehr_ai_studio.selfcheck`. It verifies SQLite write/read, content-brief creation, and structural assessment without an API key or network connection. A successful offline check does not claim that a live AI provider or hosted HTTP authentication has been tested.
 
