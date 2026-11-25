@@ -45,7 +45,7 @@ The runtime is deliberately not exposed over a network. A future pairing service
 - Monitor-relative coordinates are translated to virtual-desktop coordinates, including monitors positioned left of the primary display.
 - Non-ASCII text is rejected by the first Windows adapter. Persian and other Unicode input require a later clipboard adapter with safe clipboard restoration.
 - Foreground application identity is process-level, not window/tab-level.
-- Physical keyboard/mouse event hooks are not implemented yet. The arbitration API exists, but real hardware-event preemption is not yet wired to Windows.
+- An opt-in Windows low-level keyboard/mouse hook is now implemented in `windows_input_hook.py`. It reports only that physical input occurred; it does not record keys or coordinates. OS-tagged injected events are ignored to avoid self-preemption. It must be started only for a consented session. Windows runtime behavior still requires a real Windows smoke test.
 - The current adapter does not verify that the requested UI action achieved the intended task result. A later observation and verification layer must do that.
 - USB and Wi-Fi are transport choices for a future authenticated pairing layer; neither is implemented in this increment.
 
@@ -55,6 +55,6 @@ The runtime is deliberately not exposed over a network. A future pairing service
 2. Confirm screenshot dimensions and image decoding for primary and secondary monitors.
 3. Verify pointer coordinates on primary and offset secondary monitors.
 4. Verify PyAutoGUI fail-safe and immediate stop behavior.
-5. Add a Windows physical-input hook that ignores injected events and reliably preempts agent input.
+5. Smoke-test the opt-in Windows low-level input hook on Windows 10/11, including physical keyboard/mouse events, injected PyAutoGUI events, hook shutdown, and failure to install either hook.
 6. Add a pairing protocol with short-lived credentials, replay protection, explicit user confirmation, and TLS or an equivalent authenticated encrypted channel.
 7. Add Android pairing and end-to-end tests before claiming phone-to-desktop control.
