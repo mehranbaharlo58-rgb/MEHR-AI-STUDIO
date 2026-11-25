@@ -242,3 +242,76 @@ def test_authenticated_tool_handlers_enforce_sqlite_tenant_partitioning(
     assert app.tools["read_project_memory"]("private")["value"] == "alpha-secret"
     assert store.feedback_insights(tenant_id="tenant-alpha")["feedback_count"] == 0
     assert store.feedback_insights(tenant_id="tenant-beta")["feedback_count"] == 0
+
+
+def test_authenticated_ai_registry_tools_are_tenant_scoped(monkeypatch, tmp_path):
+    """AI registry reads/writes must follow the verified tenant claim."""
+    import inspect
+
+    from mehr_ai_studio.ai_registry_store import AIRegistryStore
+
+    monkeypatch.setattr(authenticated_server, "FastMCP", FakeMCP)
+    monkeypatch.setattr(
+        authenticated_server,
+        "settings",
+        SimpleNamespace(
+            database_path=tmp_path / "tenant-ai-registry.sqlite3",
+            provider_base_url=None,
+            provider_api_key=None,
+            request_timeout=1,
+        ),
+    )
+    active_tenant = {"id": "tenant-alpha"}
+    monkeypatch.setattr(
+        authenticated_server,
+        "current_request_tenant_id",
+        lambda: active_tenant["id"],
+    )
+    app = authenticated_server.build_authenticated_server(
+        token_verifier=FakeVerifier(),
+        auth_settings=valid_auth_settings(),
+    )
+
+    model = {
+        "id": "local.test",
+        "name": "Local Test",
+        "provider": "Local Runtime",
+        "category": "reasoning",
+        "capabilities": ["reasoning"],
+        "task_tags": ["analysis"],
+        "access_mode": "local_runtime",
+        "availability": "local",
+        "status": "configured",
+        "model_id": "test-model",
+        "endpoint": "http://127.0.0.1:11434/v1",
+        "auth_required": False,
+    }
+    assert app.tools["register_ai_model"](model)["saved"] is True
+    alpha = app.tools["list_ai_models"]()
+    assert alpha["counts"]["configured"] == 1
+    assert alpha["models"][0]["id"] == "local.test"
+    assert app.tools["match_ai_models"]("analysis")["matches"][0]["model_id"] == "local.test"
+
+    active_tenant["id"] = "tenant-beta"
+    beta = app.tools["list_ai_models"]()
+    assert beta["counts"]["total"] == 0
+    assert beta["models"] == []
+    assert app.tools["match_ai_models"]("analysis")["matches"] == []
+
+    active_tenant["id"] = "tenant-alpha"
+    assert app.tools["list_ai_models"]()["counts"]["total"] == 1
+
+    for name in (
+        "register_ai_model",
+        "list_ai_models",
+        "match_ai_models",
+        "seed_ai_catalog",
+        "execute_ai_task",
+        "test_ai_connector",
+    ):
+        assert "tenant_id" not in inspect.signature(app.tools[name]).parameters
+
+    # A separately constructed tenant store cannot see the caller's records.
+    assert AIRegistryStore(
+        tmp_path / "tenant-ai-registry.sqlite3", "tenant-beta"
+    ).list() == []
