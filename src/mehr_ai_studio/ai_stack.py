@@ -9,8 +9,8 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 AIStatus = Literal["catalog_only", "configured", "tested", "degraded", "disabled"]
-AccessMode = Literal["native_api", "openai_compatible", "local_runtime", "mcp", "web_app"]
-Availability = Literal["free", "freemium", "paid", "local"]
+AccessMode = Literal["native_api", "openai_compatible", "local_runtime", "mcp", "web_app", "sdk"]
+Availability = Literal["free", "freemium", "paid", "local", "unknown"]
 Modality = Literal["text", "image", "audio", "video", "code", "structured_data"]
 
 
@@ -36,6 +36,10 @@ class AIModel(BaseModel):
     quality_score: float | None = Field(default=None, ge=0, le=100)
     latency_ms: int | None = Field(default=None, ge=1, le=600000)
     notes: str | None = Field(default=None, max_length=2000)
+    website_url: str | None = Field(default=None, max_length=1000)
+    docs_url: str | None = Field(default=None, max_length=1000)
+    source_urls: list[str] = Field(default_factory=list, max_length=10)
+    verification_status: Literal["unverified", "source_checked", "api_checked", "integration_tested"] = "unverified"
 
     @field_validator("capabilities", "task_tags")
     @classmethod
