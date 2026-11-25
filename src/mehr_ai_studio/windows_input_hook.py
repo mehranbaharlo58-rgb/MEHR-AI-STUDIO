@@ -11,7 +11,7 @@ import ctypes
 import sys
 import threading
 from ctypes import wintypes
-from typing import Callable
+from collections.abc import Callable
 
 
 WH_KEYBOARD_LL = 13
@@ -108,8 +108,8 @@ class WindowsPhysicalInputHook:
     def _notify(self) -> None:
         try:
             self._on_input()
-        except Exception:
-            # Never allow application callback failures to break the OS hook.
+        except (RuntimeError, OSError, ValueError):
+            # Never allow expected callback failures to break the OS hook.
             return
 
     def _message_loop(self) -> None:
@@ -179,7 +179,7 @@ class WindowsPhysicalInputHook:
                     break
                 user32.TranslateMessage(ctypes.byref(message))
                 user32.DispatchMessageW(ctypes.byref(message))
-        except Exception as exc:
+        except (OSError, RuntimeError, ValueError, TypeError) as exc:
             self._error = f"input_hook_install_or_loop_failed:{type(exc).__name__}"
             self._ready.set()
         finally:
