@@ -4,9 +4,9 @@ from mcp.server.fastmcp import FastMCP
 from . import __version__
 from .ai_registry_store import AIRegistryStore
 from .ai_stack import AIExecutionManager, AIModel, AIRegistry, MatchRequest
-from .connectors import build_adapters
 from .catalog import seed_ai_catalog as seed_catalog_records
 from .config import settings
+from .connectors import build_adapters
 from .core import assess_text, build_content_brief
 from .provider import ProviderError, ProviderNotConfigured, generate_text
 from .store import DEFAULT_TENANT_ID, StudioStore
