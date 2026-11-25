@@ -2,7 +2,11 @@
 from mcp.server.fastmcp import FastMCP
 
 from . import __version__
+from .ai_registry_store import AIRegistryStore
+from .ai_stack import AIExecutionManager, AIModel, AIRegistry, MatchRequest
+from .catalog import seed_ai_catalog as seed_catalog_records
 from .config import settings
+from .connectors import build_adapters
 from .core import assess_text, build_content_brief
 from .provider import ProviderError, ProviderNotConfigured, generate_text
 from .store import DEFAULT_TENANT_ID, StudioStore
@@ -11,6 +15,7 @@ from .workflow import run_content_workflow as execute_content_workflow
 
 app = FastMCP("MEHR AI STUDIO")
 store = StudioStore(settings.database_path)
+ai_registry = AIRegistryStore(settings.database_path)
 
 
 @app.tool()
@@ -104,6 +109,106 @@ def run_content_workflow(goal: str, audience: str, channel: str,
                          context_key: str = "brand") -> dict:
     """Load saved context, build a brief, generate content, and assess structure."""
     return execute_content_workflow(store, goal, audience, channel, language, tone, context_key)
+
+
+
+@app.tool()
+def register_ai_model(model: dict) -> dict:
+    """Register or update an AI model/tool record; registration does not connect it."""
+    try:
+        return ai_registry.upsert(AIModel.model_validate(model))
+    except Exception as exc:  # noqa: BLE001 - return contract errors to the caller
+        return {"saved": False, "error": "invalid_model", "detail": str(exc)[:500]}
+
+
+@app.tool()
+def list_ai_models(status: str | None = None, category: str | None = None) -> dict:
+    """List registered AI entries and operational-state counts."""
+    return {
+        "models": [item.model_dump() for item in ai_registry.list(status=status, category=category)],
+        "counts": ai_registry.counts(),
+    }
+
+
+@app.tool()
+def match_ai_models(
+    task: str,
+    category: str | None = None,
+    required_capabilities: list[str] | None = None,
+    input_modality: str = "text",
+    output_modality: str = "text",
+    prefer_free: bool = True,
+    operational_only: bool = True,
+    limit: int = 10,
+) -> dict:
+    """Rank registered AI entries for a task with explicit operational-state gating."""
+    request = MatchRequest(
+        task=task, category=category,
+        required_capabilities=required_capabilities or [],
+        input_modality=input_modality, output_modality=output_modality,
+        prefer_free=prefer_free, operational_only=operational_only, limit=limit,
+    )
+    return {"matches": ai_registry.match(request), "counts": ai_registry.counts()}
+
+
+
+@app.tool()
+def seed_ai_catalog() -> dict:
+    """Seed the curated 100-entry AI catalogue without overwriting existing records."""
+    return seed_catalog_records(ai_registry)
+
+
+
+@app.tool()
+async def execute_ai_task(
+    task: str,
+    category: str | None = None,
+    limit: int = 3,
+) -> dict:
+    """Match and execute only configured models with usable connector credentials."""
+    if not 1 <= limit <= 10:
+        return {"ok": False, "error": "limit_must_be_between_1_and_10"}
+    models = ai_registry.list()
+    matches = ai_registry.match(MatchRequest(
+        task=task,
+        category=category,
+        prefer_free=True,
+        operational_only=True,
+        limit=limit,
+    ))
+    adapters = build_adapters(
+        models,
+        default_endpoint=settings.provider_base_url,
+        default_api_key=settings.provider_api_key,
+    )
+    selected_ids = [item["model_id"] for item in matches if item["model_id"] in adapters]
+    skipped = [
+        {"model_id": item["model_id"], "reason": "connector_or_credentials_not_configured"}
+        for item in matches if item["model_id"] not in adapters
+    ]
+    if not selected_ids:
+        return {
+            "ok": False,
+            "error": "no_runnable_models",
+            "matches": matches,
+            "skipped": skipped,
+            "registry_counts": ai_registry.counts(),
+        }
+    registry = AIRegistry(model for model in models if model.id in selected_ids)
+    manager = AIExecutionManager(
+        registry,
+        {model_id: adapters[model_id] for model_id in selected_ids},
+        max_parallel=min(3, len(selected_ids)),
+        timeout_s=settings.request_timeout,
+    )
+    results = await manager.execute_parallel(selected_ids, task)
+    return {
+        "ok": any(item["ok"] for item in results),
+        "selected_model_ids": selected_ids,
+        "skipped": skipped,
+        "results": results,
+        "registry_counts": ai_registry.counts(),
+    }
 
 
 def main() -> None:
