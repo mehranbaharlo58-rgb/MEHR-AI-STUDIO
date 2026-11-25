@@ -31,3 +31,8 @@ HTTPS is required for remote providers. Plain HTTP is accepted only for loopback
 ## Verification boundary
 
 Automated tests use an in-memory HTTP mock and verify request shape, response parsing, auth injection, local unauthenticated use, and endpoint rejection. These tests do not prove connectivity to any real provider. An entry must remain `configured` until a real smoke test succeeds, then may be marked `tested` with recorded evidence.
+
+
+## Explicit connector verification
+
+The MCP tool `test_ai_connector(model_id)` performs one small live request to the selected configured connector. A successful response records `status=tested`, `verification_status=integration_tested`, latency, and an ISO verification timestamp. A failed live probe marks the connector `degraded` without exposing provider response bodies or credentials. Catalogue-only entries cannot be probed. This tool is not called automatically: an operator should invoke it only after deciding that a real provider request is acceptable; hosted providers may charge for the request.

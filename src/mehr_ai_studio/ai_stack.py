@@ -41,6 +41,7 @@ class AIModel(BaseModel):
     docs_url: str | None = Field(default=None, max_length=1000)
     source_urls: list[str] = Field(default_factory=list, max_length=10)
     verification_status: Literal["unverified", "source_checked", "api_checked", "integration_tested"] = "unverified"
+    last_verified_at: str | None = Field(default=None, max_length=40)
 
     @field_validator("capabilities", "task_tags")
     @classmethod

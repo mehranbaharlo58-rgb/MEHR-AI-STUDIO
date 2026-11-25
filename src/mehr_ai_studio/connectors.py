@@ -1,8 +1,10 @@
 """Config-driven OpenAI-compatible connectors for hosted and local runtimes."""
 from __future__ import annotations
 
+import asyncio
 import os
 import re
+import time
 from collections.abc import Mapping, Sequence
 from urllib.parse import urlsplit
 
@@ -127,3 +129,24 @@ def build_adapters(
             timeout_s=request_timeout,
         )
     return adapters
+
+
+
+async def smoke_test_adapter(adapter, model: AIModel, timeout_s: float = 20.0) -> dict:
+    """Run one explicit, low-payload connector probe and return its latency."""
+    if timeout_s <= 0:
+        raise ValueError("timeout_s_must_be_positive")
+    started = time.perf_counter()
+    result = await asyncio.wait_for(
+        adapter(model, "Reply with exactly: MEHR AI connector check passed."),
+        timeout=timeout_s,
+    )
+    if not isinstance(result, dict) or not isinstance(result.get("text"), str):
+        raise TypeError("connector_probe_response_invalid")
+    response_text = result["text"].strip()
+    if not response_text:
+        raise ValueError("connector_probe_response_empty")
+    return {
+        "latency_ms": round((time.perf_counter() - started) * 1000, 2),
+        "response": response_text,
+    }

@@ -1,4 +1,6 @@
 """MCP server entry point and tool registry."""
+from datetime import UTC, datetime
+
 from mcp.server.fastmcp import FastMCP
 
 from . import __version__
@@ -6,7 +8,7 @@ from .ai_registry_store import AIRegistryStore
 from .ai_stack import AIExecutionManager, AIModel, AIRegistry, MatchRequest
 from .catalog import seed_ai_catalog as seed_catalog_records
 from .config import settings
-from .connectors import build_adapters
+from .connectors import build_adapters, smoke_test_adapter
 from .core import assess_text, build_content_brief
 from .provider import ProviderError, ProviderNotConfigured, generate_text
 from .store import DEFAULT_TENANT_ID, StudioStore
@@ -208,6 +210,59 @@ async def execute_ai_task(
         "skipped": skipped,
         "results": results,
         "registry_counts": ai_registry.counts(),
+    }
+
+
+
+@app.tool()
+async def test_ai_connector(model_id: str) -> dict:
+    """Explicitly smoke-test one configured connector and record verified health."""
+    models = ai_registry.list()
+    model = next((item for item in models if item.id == model_id), None)
+    if model is None:
+        return {"ok": False, "error": "model_not_registered"}
+    if model.status not in {"configured", "tested"}:
+        return {"ok": False, "error": "model_not_operational", "status": model.status}
+    adapters = build_adapters(
+        models,
+        default_endpoint=settings.provider_base_url,
+        default_api_key=settings.provider_api_key,
+    )
+    adapter = adapters.get(model_id)
+    if adapter is None:
+        return {"ok": False, "error": "connector_or_credentials_not_configured"}
+    try:
+        probe = await smoke_test_adapter(
+            adapter, model, timeout_s=min(settings.request_timeout, 20.0)
+        )
+    except TimeoutError:
+        updated = model.model_copy(update={"status": "degraded"})
+        ai_registry.upsert(updated)
+        return {"ok": False, "error": "timeout", "status": "degraded"}
+    except Exception as exc:  # noqa: BLE001 - never expose provider response bodies or secrets
+        updated = model.model_copy(update={"status": "degraded"})
+        ai_registry.upsert(updated)
+        return {
+            "ok": False,
+            "error": type(exc).__name__,
+            "status": "degraded",
+        }
+    verified_at = datetime.now(UTC).isoformat()
+    updated = model.model_copy(update={
+        "status": "tested",
+        "verification_status": "integration_tested",
+        "last_verified_at": verified_at,
+        "latency_ms": max(1, round(probe["latency_ms"])),
+    })
+    ai_registry.upsert(updated)
+    return {
+        "ok": True,
+        "model_id": model_id,
+        "status": "tested",
+        "verification_status": "integration_tested",
+        "last_verified_at": verified_at,
+        "latency_ms": probe["latency_ms"],
+        "response": probe["response"],
     }
 
 

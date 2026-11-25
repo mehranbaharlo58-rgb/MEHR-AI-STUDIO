@@ -9,6 +9,7 @@ from mehr_ai_studio.connectors import (
     ConnectorConfigurationError,
     OpenAICompatibleAdapter,
     build_adapters,
+    smoke_test_adapter,
 )
 
 
@@ -108,3 +109,22 @@ def test_catalog_only_entries_are_not_connected_by_adapter_factory():
     # Connector construction is independent of operational status; the execution
     # manager remains the authoritative gate that prevents catalogue-only dispatch.
     assert list(build_adapters([catalog], environ={})) == ["local.ollama"]
+
+
+
+def test_smoke_test_adapter_returns_probe_and_latency():
+    async def adapter(_model, _task):
+        return {"text": "MEHR AI connector check passed."}
+
+    result = asyncio.run(smoke_test_adapter(adapter, model(), timeout_s=1))
+    assert result["response"] == "MEHR AI connector check passed."
+    assert result["latency_ms"] >= 0
+
+
+def test_smoke_test_adapter_enforces_timeout():
+    async def adapter(_model, _task):
+        await asyncio.sleep(0.05)
+        return {"text": "late"}
+
+    with pytest.raises(TimeoutError):
+        asyncio.run(smoke_test_adapter(adapter, model(), timeout_s=0.001))
