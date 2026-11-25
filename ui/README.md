@@ -21,7 +21,7 @@ Then open `http://127.0.0.1:8000/ui/` on the same device.
 ## Current integration boundary
 This is an interactive front-end prototype with a limited single-provider generation adapter. Navigation, Persian/English switching, theme switching, prompt templates, local file-name display, session-only API credentials, health checks and text generation against the configured Worker can work when that Worker is deployed and configured.
 
-It is not yet the full MEHR AI orchestration product. Project records, agent dispatch, model matching, parallel execution, persistent workflow history, real progress events, validated file uploads, user accounts and multi-user authorization are not connected to this UI. The current Worker proxies a single configured OpenAI-compatible model; it does not dispatch across the model catalogue or invoke the Python MCP workflow engine.
+It is not yet the full MEHR AI orchestration product. The authenticated Python MCP server now exposes tenant-scoped AI registry, matching, catalogue seeding, bounded execution and connector health tools. An opt-in OIDC-protected Streamable HTTP endpoint is available through the mehr-ai-studio-http command. The current dashboard is not yet an MCP client and still calls the separate single-provider Cloudflare Worker; it is not connected to the tenant-scoped orchestration tools. Project records, browser-to-registry dispatch, persistent workflow history, real progress events, validated file uploads and end-user account onboarding remain unconnected.
 
 ## Next integration sequence
 1. Connect the browser UI to a secure HTTP facade for the existing registry, matcher and bounded execution manager.

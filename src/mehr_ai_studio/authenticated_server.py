@@ -5,6 +5,7 @@ an SDK TokenVerifier and AuthSettings from a configured authorization server.
 The local stdio server remains separate and unchanged.
 """
 
+from datetime import UTC, datetime
 from urllib.parse import urlparse
 
 from mcp.server.auth.provider import TokenVerifier
@@ -12,8 +13,12 @@ from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
 
 from . import __version__
+from .ai_registry_store import AIRegistryStore
+from .ai_stack import AIExecutionManager, AIModel, AIRegistry, MatchRequest
 from .auth_context import current_request_tenant_id
+from .catalog import seed_ai_catalog as seed_catalog_records
 from .config import settings
+from .connectors import build_adapters, smoke_test_adapter
 from .core import assess_text, build_content_brief
 from .oidc import OIDCJWTTokenVerifier
 from .provider import ProviderError, ProviderNotConfigured, generate_text
@@ -184,6 +189,193 @@ def build_authenticated_server(
             context_key,
             tenant_id=current_request_tenant_id(),
         )
+
+
+    def tenant_ai_registry() -> AIRegistryStore:
+        """Resolve the registry from the verified caller tenant, never tool input."""
+        return AIRegistryStore(
+            settings.database_path,
+            tenant_id=current_request_tenant_id(),
+        )
+
+    @mcp.tool()
+    def register_ai_model(model: dict) -> dict:
+        """Register an AI model in the authenticated tenant; this does not connect it."""
+        try:
+            parsed = AIModel.model_validate(model)
+        except Exception:  # noqa: BLE001 - do not echo submitted values or secrets
+            return {"saved": False, "error": "invalid_model"}
+        if (
+            parsed.status not in {"catalog_only", "configured", "disabled"}
+            or parsed.verification_status == "integration_tested"
+            or parsed.last_verified_at is not None
+            or parsed.latency_ms is not None
+        ):
+            return {
+                "saved": False,
+                "error": "health_state_must_be_set_by_connector_test",
+            }
+        return tenant_ai_registry().upsert(parsed)
+
+    @mcp.tool()
+    def list_ai_models(status: str | None = None, category: str | None = None) -> dict:
+        """List only the authenticated tenant's AI catalogue and status counts."""
+        registry = tenant_ai_registry()
+        return {
+            "models": [
+                item.model_dump() for item in registry.list(
+                    status=status, category=category
+                )
+            ],
+            "counts": registry.counts(),
+        }
+
+    @mcp.tool()
+    def match_ai_models(
+        task: str,
+        category: str | None = None,
+        required_capabilities: list[str] | None = None,
+        input_modality: str = "text",
+        output_modality: str = "text",
+        prefer_free: bool = True,
+        operational_only: bool = True,
+        limit: int = 10,
+    ) -> dict:
+        """Rank tenant-owned AI entries with operational-state gating."""
+        registry = tenant_ai_registry()
+        request = MatchRequest(
+            task=task,
+            category=category,
+            required_capabilities=required_capabilities or [],
+            input_modality=input_modality,
+            output_modality=output_modality,
+            prefer_free=prefer_free,
+            operational_only=operational_only,
+            limit=limit,
+        )
+        return {"matches": registry.match(request), "counts": registry.counts()}
+
+    @mcp.tool()
+    def seed_ai_catalog() -> dict:
+        """Seed the curated catalogue into this tenant without overwriting operator edits."""
+        return seed_catalog_records(tenant_ai_registry())
+
+    @mcp.tool()
+    async def execute_ai_task(
+        task: str,
+        category: str | None = None,
+        limit: int = 3,
+    ) -> dict:
+        """Match and run only configured tenant models with usable connectors."""
+        if not 1 <= limit <= 10:
+            return {"ok": False, "error": "limit_must_be_between_1_and_10"}
+        ai_registry = tenant_ai_registry()
+        models = ai_registry.list()
+        matches = ai_registry.match(MatchRequest(
+            task=task,
+            category=category,
+            prefer_free=True,
+            operational_only=True,
+            limit=limit,
+        ))
+        adapters = build_adapters(
+            models,
+            default_endpoint=settings.provider_base_url,
+            default_api_key=settings.provider_api_key,
+        )
+        selected_ids = [
+            item["model_id"] for item in matches
+            if item["model_id"] in adapters
+        ]
+        skipped = [
+            {
+                "model_id": item["model_id"],
+                "reason": "connector_or_credentials_not_configured",
+            }
+            for item in matches if item["model_id"] not in adapters
+        ]
+        if not selected_ids:
+            return {
+                "ok": False,
+                "error": "no_runnable_models",
+                "matches": matches,
+                "skipped": skipped,
+                "registry_counts": ai_registry.counts(),
+            }
+        runnable_registry = AIRegistry(
+            model for model in models if model.id in selected_ids
+        )
+        manager = AIExecutionManager(
+            runnable_registry,
+            {model_id: adapters[model_id] for model_id in selected_ids},
+            max_parallel=min(3, len(selected_ids)),
+            timeout_s=settings.request_timeout,
+        )
+        results = await manager.execute_parallel(selected_ids, task)
+        return {
+            "ok": any(item["ok"] for item in results),
+            "selected_model_ids": selected_ids,
+            "skipped": skipped,
+            "results": results,
+            "registry_counts": ai_registry.counts(),
+        }
+
+    @mcp.tool()
+    async def test_ai_connector(model_id: str) -> dict:
+        """Explicitly probe a configured connector and save tenant-scoped health."""
+        ai_registry = tenant_ai_registry()
+        models = ai_registry.list()
+        model = next((item for item in models if item.id == model_id), None)
+        if model is None:
+            return {"ok": False, "error": "model_not_registered"}
+        if model.status not in {"configured", "tested", "degraded"}:
+            return {
+                "ok": False,
+                "error": "model_not_operational",
+                "status": model.status,
+            }
+        adapters = build_adapters(
+            models,
+            default_endpoint=settings.provider_base_url,
+            default_api_key=settings.provider_api_key,
+        )
+        adapter = adapters.get(model_id)
+        if adapter is None:
+            return {
+                "ok": False,
+                "error": "connector_or_credentials_not_configured",
+            }
+        try:
+            probe = await smoke_test_adapter(
+                adapter, model, timeout_s=min(settings.request_timeout, 20.0)
+            )
+        except TimeoutError:
+            ai_registry.upsert(model.model_copy(update={"status": "degraded"}))
+            return {"ok": False, "error": "timeout", "status": "degraded"}
+        except Exception as exc:  # noqa: BLE001 - never expose provider bodies or secrets
+            ai_registry.upsert(model.model_copy(update={"status": "degraded"}))
+            return {
+                "ok": False,
+                "error": type(exc).__name__,
+                "status": "degraded",
+            }
+        verified_at = datetime.now(UTC).isoformat()
+        updated = model.model_copy(update={
+            "status": "tested",
+            "verification_status": "integration_tested",
+            "last_verified_at": verified_at,
+            "latency_ms": max(1, round(probe["latency_ms"])),
+        })
+        ai_registry.upsert(updated)
+        return {
+            "ok": True,
+            "model_id": model_id,
+            "status": "tested",
+            "verification_status": "integration_tested",
+            "last_verified_at": verified_at,
+            "latency_ms": probe["latency_ms"],
+            "response": probe["response"],
+        }
 
     return mcp
 
