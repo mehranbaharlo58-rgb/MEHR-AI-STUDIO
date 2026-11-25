@@ -29,3 +29,20 @@ test("dashboard keeps API credentials in session-only browser storage", () => {
 test("dashboard warns that file selection is not a real upload", () => {
   assert.ok(html.includes("File names shown only; upload/content processing is not implemented yet"));
 });
+
+
+test("MEHR Live exposes local microphone and camera controls without claiming AI connectivity", () => {
+  assert.ok(html.includes('id="livePanel"'));
+  assert.ok(html.includes('id="liveMicStart"'));
+  assert.ok(html.includes('id="liveCameraStart"'));
+  assert.ok(html.includes("ارتباط هوش مصنوعی متصل نیست"));
+  assert.ok(html.includes("هیچ داده‌ای ارسال نمی‌شود"));
+});
+
+test("MEHR Live uses separate local media permissions and stops tracks", () => {
+  assert.ok(appScript.includes('getUserMedia({audio:true,video:false})'));
+  assert.ok(appScript.includes('getUserMedia({audio:false,video:'));
+  assert.ok(appScript.includes('getTracks().forEach(t=>t.stop())'));
+  assert.ok(appScript.includes('window.addEventListener("pagehide",stopLiveDevices)'));
+  assert.ok(appScript.includes('if(p!=="live"&&typeof stopLiveDevices==="function")stopLiveDevices()'));
+});
