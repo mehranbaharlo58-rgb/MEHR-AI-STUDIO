@@ -3,6 +3,7 @@ from mcp.server.fastmcp import FastMCP
 
 from . import __version__
 from .ai_registry_store import AIRegistryStore
+from .catalog import seed_ai_catalog as seed_catalog_records
 from .ai_stack import AIModel, MatchRequest
 from .config import settings
 from .core import assess_text, build_content_brief
@@ -147,6 +148,13 @@ def match_ai_models(
         prefer_free=prefer_free, operational_only=operational_only, limit=limit,
     )
     return {"matches": ai_registry.match(request), "counts": ai_registry.counts()}
+
+
+
+@app.tool()
+def seed_ai_catalog() -> dict:
+    """Seed the curated 100-entry AI catalogue without overwriting existing records."""
+    return seed_catalog_records(ai_registry)
 
 
 def main() -> None:
