@@ -1,17 +1,24 @@
 """Tests for AI registry matching and execution scheduling."""
 import asyncio
+
 import pytest
 from pydantic import ValidationError
-from mehr_ai_studio.ai_stack import AIExecutionManager, AIModel, AIRegistry, MatchRequest
+
+from mehr_ai_studio.ai_stack import (
+    AIExecutionManager,
+    AIModel,
+    AIRegistry,
+    MatchRequest,
+)
 
 
 def entry(**changes):
-    data = dict(id="local.llama", name="Local Llama", provider="Ollama",
-        category="reasoning", capabilities=["reasoning", "summarization"],
-        task_tags=["analysis", "research"], input_modalities=["text"],
-        output_modalities=["text"], access_mode="local_runtime",
-        availability="local", status="tested", max_concurrency=1,
-        quality_score=80, latency_ms=900)
+    data = {"id": "local.llama", "name": "Local Llama", "provider": "Ollama",
+        "category": "reasoning", "capabilities": ["reasoning", "summarization"],
+        "task_tags": ["analysis", "research"], "input_modalities": ["text"],
+        "output_modalities": ["text"], "access_mode": "local_runtime",
+        "availability": "local", "status": "tested", "max_concurrency": 1,
+        "quality_score": 80, "latency_ms": 900}
     data.update(changes)
     return AIModel(**data)
 
