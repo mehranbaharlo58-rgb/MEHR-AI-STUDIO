@@ -79,6 +79,9 @@ class WindowsPhysicalInputHook:
         """Start hooks and fail closed if Windows cannot install both hooks."""
         if self._thread is not None:
             raise RuntimeError("input_hook_already_started")
+        self._ready = threading.Event()
+        self._stopped = threading.Event()
+        self._error = None
         if not 0.1 <= timeout <= 30:
             raise ValueError("invalid_hook_start_timeout")
         self._thread = threading.Thread(
