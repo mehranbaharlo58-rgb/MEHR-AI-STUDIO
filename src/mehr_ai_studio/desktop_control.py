@@ -5,12 +5,14 @@ requests and models consent, approvals, replay protection, and human priority.
 A platform bridge must enforce these decisions again immediately before I/O.
 """
 
+# isort: off
 from __future__ import annotations
 
 from collections import deque
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+# isort: on
 
 
 ActionKind = Literal[
