@@ -13,11 +13,11 @@ from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
 
 from . import __version__
-from .auth_context import current_request_tenant_id
-from .config import settings
 from .ai_registry_store import AIRegistryStore
 from .ai_stack import AIExecutionManager, AIModel, AIRegistry, MatchRequest
+from .auth_context import current_request_tenant_id
 from .catalog import seed_ai_catalog as seed_catalog_records
+from .config import settings
 from .connectors import build_adapters, smoke_test_adapter
 from .core import assess_text, build_content_brief
 from .oidc import OIDCJWTTokenVerifier
@@ -202,9 +202,20 @@ def build_authenticated_server(
     def register_ai_model(model: dict) -> dict:
         """Register an AI model in the authenticated tenant; this does not connect it."""
         try:
-            return tenant_ai_registry().upsert(AIModel.model_validate(model))
+            parsed = AIModel.model_validate(model)
         except Exception:  # noqa: BLE001 - do not echo submitted values or secrets
             return {"saved": False, "error": "invalid_model"}
+        if (
+            parsed.status not in {"catalog_only", "configured", "disabled"}
+            or parsed.verification_status == "integration_tested"
+            or parsed.last_verified_at is not None
+            or parsed.latency_ms is not None
+        ):
+            return {
+                "saved": False,
+                "error": "health_state_must_be_set_by_connector_test",
+            }
+        return tenant_ai_registry().upsert(parsed)
 
     @mcp.tool()
     def list_ai_models(status: str | None = None, category: str | None = None) -> dict:
