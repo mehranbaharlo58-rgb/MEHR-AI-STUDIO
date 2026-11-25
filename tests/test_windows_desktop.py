@@ -1,6 +1,7 @@
 """Platform guard tests for the optional Windows desktop adapter."""
 
 import pytest
+from typing import ClassVar
 
 from mehr_ai_studio import windows_desktop
 
@@ -22,7 +23,7 @@ def test_monitor_id_parser_accepts_only_explicit_monitor_ids():
 
 
 class FakeCapture:
-    monitors = [
+    monitors: ClassVar[list[dict[str, int]]] = [
         {"left": 0, "top": 0, "width": 3000, "height": 1200},
         {"left": -1920, "top": 0, "width": 1920, "height": 1080},
         {"left": 0, "top": 0, "width": 1920, "height": 1080},
