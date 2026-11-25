@@ -25,7 +25,7 @@ class FakeAdapter:
         self.capture_count += 1
         return b"ephemeral-image"
 
-    def execute_action(self, action):
+    def execute_action(self, action, cancel_event):
         self.actions.append(action)
 
 
@@ -150,3 +150,36 @@ def test_execute_rejects_out_of_bounds_coordinates():
             make_action(x=3000), explicitly_approved=True
         )
     assert adapter.actions == []
+
+
+
+def test_human_input_can_preempt_during_adapter_io():
+    adapter = FakeAdapter()
+    runtime = DesktopBridgeRuntime(policy=make_policy(), adapter=adapter)
+    runtime.yield_human_control()
+
+    def preempt_during_action(action, cancel_event):
+        adapter.actions.append(action)
+        runtime.on_human_input()
+        assert cancel_event.is_set()
+
+    adapter.execute_action = preempt_during_action
+    result = runtime.execute(make_action(), explicitly_approved=True)
+    assert result.accepted is False
+    assert result.reason == "preempted_during_dispatch"
+    assert len(adapter.actions) == 1
+
+
+def test_runtime_enforces_session_action_limit():
+    adapter = FakeAdapter()
+    runtime = DesktopBridgeRuntime(
+        policy=make_policy(max_actions=1), adapter=adapter
+    )
+    runtime.yield_human_control()
+    first = runtime.execute(make_action(), explicitly_approved=True)
+    second = runtime.execute(
+        make_action(action_id="action-0002"), explicitly_approved=True
+    )
+    assert first.accepted is True
+    assert second.reason == "session_action_limit"
+    assert len(adapter.actions) == 1
