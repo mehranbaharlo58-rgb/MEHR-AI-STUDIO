@@ -1,7 +1,5 @@
 """Tests for the opt-in authenticated HTTP entry point."""
 
-from types import SimpleNamespace
-
 import pytest
 
 from mehr_ai_studio import http_server
