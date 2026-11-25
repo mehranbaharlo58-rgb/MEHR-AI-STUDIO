@@ -127,7 +127,7 @@ def test_human_input_preempts_agent_and_emergency_stop_is_sticky():
     result = runtime.execute(
         make_action(action_id="action-0002"), explicitly_approved=True
     )
-    assert result.reason == "human_has_control"
+    assert result.reason == "emergency_stopped"
     assert adapter.actions == []
 
 
