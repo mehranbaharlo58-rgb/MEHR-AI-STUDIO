@@ -51,6 +51,8 @@ class LiveSessionRequest(BaseModel):
     def validate_consent_and_limits(self) -> LiveSessionRequest:
         if not self.consent.microphone:
             raise ValueError("microphone consent is required for a live session")
+        if self.mode is LiveMode.VOICE_VISION_AVATAR and not self.consent.avatar:
+            raise ValueError("avatar consent is required for avatar mode")
         if self.mode in {LiveMode.VOICE_VISION, LiveMode.VOICE_VISION_AVATAR}:
             if not self.consent.camera:
                 raise ValueError("camera consent is required for the selected mode")
@@ -58,8 +60,6 @@ class LiveSessionRequest(BaseModel):
                 raise ValueError("vision mode requires a positive frame sampling limit")
         elif self.consent.camera or self.max_image_frames_per_minute != 0:
             raise ValueError("voice-only mode must not enable camera sampling")
-        if self.mode is LiveMode.VOICE_VISION_AVATAR and not self.consent.avatar:
-            raise ValueError("avatar consent is required for avatar mode")
         if self.mode is not LiveMode.VOICE_VISION_AVATAR and self.consent.avatar:
             raise ValueError("avatar consent is only valid in avatar mode")
         return self
