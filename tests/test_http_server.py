@@ -74,8 +74,8 @@ def test_create_app_wraps_mcp_with_exact_cors_allowlist(monkeypatch):
         "https://preview.example.test",
     ]
     assert app.allow_credentials is False
-    assert "Authorization" in app.allow_headers
-    assert "Mcp-Session-Id" in app.allow_headers
+    assert "authorization" in app.allow_headers
+    assert "mcp-session-id" in app.allow_headers
 
 
 def test_create_app_rejects_wildcard_cors_origin(monkeypatch):
