@@ -82,3 +82,59 @@ def test_dispatch_rejects_duplicate_or_over_100_models():
         asyncio.run(manager.execute_parallel(["local.llama"] * 2, "task"))
     with pytest.raises(ValueError):
         asyncio.run(manager.execute_parallel(["x"] * 101, "task"))
+
+
+
+def test_dispatch_enforces_provider_limit_across_models():
+    async def run():
+        registry = AIRegistry([
+            entry(id=f"p{i}", name=f"Provider Model {i}", provider="SharedProvider",
+                  max_concurrency=4)
+            for i in range(4)
+        ])
+        active, peak = 0, 0
+
+        async def adapter(model, task):
+            nonlocal active, peak
+            active += 1
+            peak = max(peak, active)
+            await asyncio.sleep(.01)
+            active -= 1
+            return {"text": task}
+
+        manager = AIExecutionManager(
+            registry,
+            {f"p{i}": adapter for i in range(4)},
+            max_parallel=4,
+            provider_limits={"SharedProvider": 1},
+        )
+        results = await manager.execute_parallel([f"p{i}" for i in range(4)], "hello")
+        assert peak == 1
+        assert all(item["ok"] for item in results)
+        assert all("latency_ms" in item for item in results)
+
+    asyncio.run(run())
+
+
+def test_dispatch_times_out_slow_adapter():
+    async def run():
+        registry = AIRegistry([entry()])
+        async def slow_adapter(model, task):
+            await asyncio.sleep(.05)
+            return {"text": task}
+
+        manager = AIExecutionManager(
+            registry, {"local.llama": slow_adapter}, timeout_s=.001
+        )
+        result = await manager.execute_parallel(["local.llama"], "hello")
+        assert result[0]["ok"] is False
+        assert result[0]["error"] == "timeout"
+
+    asyncio.run(run())
+
+
+def test_dispatch_rejects_unsafe_scheduler_limits():
+    with pytest.raises(ValueError):
+        AIExecutionManager(AIRegistry(), {}, max_parallel=101)
+    with pytest.raises(ValueError):
+        AIExecutionManager(AIRegistry(), {}, timeout_s=0)
