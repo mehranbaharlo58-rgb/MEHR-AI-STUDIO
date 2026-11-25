@@ -13,7 +13,7 @@ from __future__ import annotations
 import io
 import sys
 from pathlib import Path
-from threading import RLock
+from threading import Event, RLock
 
 from .desktop_control import DesktopAction
 
@@ -110,10 +110,12 @@ class WindowsDesktopAdapter:
             image.save(buffer, format="PNG")
             return buffer.getvalue()
 
-    def execute_action(self, action: DesktopAction) -> None:
-        """Dispatch one typed action; no arbitrary command or script execution."""
+    def execute_action(self, action: DesktopAction, cancel_event: Event) -> None:
+        """Dispatch typed UI input and check cancellation between input steps."""
         with self._lock:
             mouse = self._pyautogui
+            if cancel_event.is_set():
+                return
             if action.kind in {
                 "move", "click", "double_click", "context_click", "scroll", "drag"
             }:
@@ -131,16 +133,29 @@ class WindowsDesktopAdapter:
             elif action.kind == "drag":
                 end = self._absolute_point(action.end_x, action.end_y, action.display_id)
                 mouse.moveTo(*start)
-                mouse.dragTo(*end, button=action.button)
+                mouse.mouseDown(button=action.button)
+                try:
+                    for step in range(1, 13):
+                        if cancel_event.is_set():
+                            break
+                        ratio = step / 12
+                        x = round(start[0] + (end[0] - start[0]) * ratio)
+                        y = round(start[1] + (end[1] - start[1]) * ratio)
+                        mouse.moveTo(x, y, duration=0.02)
+                finally:
+                    mouse.mouseUp(button=action.button)
             elif action.kind == "keypress":
                 if len(action.keys) == 1:
                     mouse.press(action.keys[0])
                     mouse.release(action.keys[0])
-                else:
+                elif not cancel_event.is_set():
                     mouse.hotkey(*action.keys)
             elif action.kind == "type_text":
                 if not action.text.isascii():
                     raise ValueError("unicode_text_requires_clipboard_adapter")
-                mouse.write(action.text, interval=0.01)
+                for character in action.text:
+                    if cancel_event.is_set():
+                        break
+                    mouse.write(character, interval=0)
             else:
                 raise ValueError("unsupported_desktop_action")
