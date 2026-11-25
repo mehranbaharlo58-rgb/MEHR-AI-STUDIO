@@ -1,69 +1,88 @@
-# MEHR Live — Voice & Vision Architecture
+# MEHR Live — Voice, Vision & Avatar Architecture
 
 ## Product decision
 
-MEHR Live is a first-class interaction mode in MEHR AI STUDIO, not a microphone button attached to ordinary chat. The first release targets mobile and desktop browsers and supports:
+MEHR Live is a first-class interaction mode in MEHR AI STUDIO, not a microphone button attached to ordinary chat. The product target is a natural, two-way audiovisual conversation on mobile and desktop, with both the user-visible camera experience and a visible speaking agent avatar.
+
+The complete experience must support:
 
 - Full-duplex spoken conversation with the selected lead agent.
-- Microphone and speaker controls, interruption/barge-in, live transcript, reconnect and explicit end-session controls.
-- Optional camera sharing. The browser captures frames from the local camera and submits selected still images to the live session while audio remains on the real-time media channel.
+- The agent perceiving the user's voice and, with explicit consent, selected camera frames.
+- Spoken agent responses with interruption/barge-in, live transcript, reconnect and explicit end-session controls.
+- A visible animated agent avatar whose mouth movement is synchronized to generated speech, with expressive states where supported. The avatar is a required product capability, not a decorative mock or a substitute for the actual agent.
 - Tool delegation from the live agent to the authenticated MEHR orchestration backend. Private provider credentials and privileged tools remain server-side.
 - Session history, usage accounting, explicit consent, and user-controlled camera/microphone shutdown.
 
-The first release does **not** promise a continuously understood raw video stream or a photorealistic talking-avatar video feed. Those are separate capabilities and require a provider that explicitly supports them. The agent's first-release response is spoken audio plus a live visual workspace, transcript, status and optional generated artifacts.
+The implementation must distinguish three different capabilities: still-image understanding from sampled camera frames, continuous video understanding, and generated live avatar video. A provider supporting one does not imply support for the others. The interface must label the actual active mode and must never represent sampled images as continuous video.
 
 ## Interaction modes
 
 1. **Voice** — microphone and spoken agent response, no camera.
-2. **Voice + Vision** — voice session plus user-approved camera frames. This is the initial video-related capability.
-3. **Visual workspace** — share an image, document, screenshot or engineering drawing during a voice session.
-4. **Agent avatar (later)** — optional generated/live avatar output, behind a separate provider adapter and explicit cost/latency gate.
+2. **Voice + Vision** — voice session plus user-approved camera frames or shared images.
+3. **Voice + Vision + Avatar** — the full target experience: the user can be seen/heard and the agent appears as a synchronized speaking avatar.
+4. **Visual workspace** — share an image, document, screenshot or engineering drawing during a voice session.
+
+The product may release modes incrementally, but the full target is mode 3. Until an avatar provider is configured and tested, show a clear non-avatar visual workspace rather than a fake talking head.
 
 ## Technical architecture
 
 ~~~text
 Mobile / Desktop Browser
-  ├─ Live Room UI (mic, speaker, camera, transcript, controls)
-  ├─ WebRTC peer connection (audio in/out)
-  └─ Camera frame sampler (opt-in still images)
+  ├─ Live Room UI (mic, speaker, camera, transcript, consent, controls)
+  ├─ WebRTC peer connection (low-latency audio in/out)
+  ├─ Camera frame sampler (opt-in still images; continuous video only if supported)
+  └─ Avatar renderer (provider video stream or synchronized audio-driven avatar)
           │
           ├── HTTPS: authenticated session bootstrap
           ▼
 MEHR Live Gateway (OIDC + tenant + quotas + policy)
   ├─ short-lived provider client credential
   ├─ session registry / usage ledger
+  ├─ voice/vision provider adapter
+  ├─ avatar provider adapter
   └─ private server-side control channel
           │
-          ├── WebRTC media plane
+          ├── realtime audio / image events / avatar output
           ▼
-Realtime Voice/Vision Provider
-          │
-          └── server-side events / tool delegation
-                    ▼
-             MEHR Agent Orchestrator
-               ├─ Router / Supervisor
-               ├─ specialist agents
-               ├─ MCP tools and connectors
-               └─ verification and final response
+Realtime Voice & Vision Provider  ───── Avatar Provider (when separate)
+          │                                      │
+          └──────── normalized session events ──┘
+                           │
+                           ▼
+                 MEHR Agent Orchestrator
+                   ├─ Router / Supervisor
+                   ├─ specialist agents
+                   ├─ MCP tools and connectors
+                   └─ verification and final response
 ~~~
 
-## Provider adapter contract
+## Provider adapter contracts
 
-The application must not couple the UI to one vendor's SDK or event schema. Define a provider adapter with:
+The application must not couple the UI to one vendor's SDK or event schema.
 
-- `capabilities()`: voice input/output, image input, continuous video input, avatar output, interruption, tool calling.
+Voice/vision adapter:
+- `capabilities()`: voice input/output, image input, continuous video input, interruption, tool calling, supported transports.
 - `create_session(tenant, policy, mode)`: returns only short-lived client connection material and safe session metadata.
 - `attach_control_channel(session_id)`: optional server-side event/control connection.
 - `close_session(session_id)`: closes the provider session and records final usage.
 - `normalize_event(event)`: maps provider-specific events to MEHR's internal event contract.
 
-The router must choose a provider only when its declared capabilities satisfy the requested mode. A catalogue entry is not proof of a working real-time connector; live health status must come from a real smoke test.
+Avatar adapter:
+- `capabilities()`: live video output, audio-driven lip sync, emotion/expression controls, latency, resolution, transport and session limits.
+- `create_avatar_session(voice_session, avatar_profile, policy)`: binds the avatar to the active agent session without exposing provider secrets.
+- `synchronize(audio_timing, avatar_stream)`: maintains speech-to-mouth timing and reports drift.
+- `close_avatar_session(session_id)`: terminates the stream and records usage.
+- `normalize_avatar_event(event)`: maps provider events and failures into MEHR's internal event contract.
+
+The orchestrator selects providers only when declared capabilities satisfy the requested mode. A catalogue entry is not proof of a working connector; live health must come from real smoke tests. If voice and avatar are separate providers, the gateway owns correlation IDs, timing, interruption propagation, cancellation and cleanup.
 
 ## Initial provider path
 
-OpenAI Realtime is a candidate implementation for low-latency browser speech-to-speech over WebRTC. The documented secure browser pattern keeps the standard API key on the server and issues a short-lived client secret. The browser then uses WebRTC for audio and a data channel for session events.
+OpenAI Realtime is a candidate implementation for low-latency browser speech-to-speech over WebRTC. The secure browser pattern keeps the standard API key on the server and issues a short-lived client secret. The browser then uses WebRTC for audio and a data channel for session events.
 
-Realtime image input is documented as an image content part in a conversation event. For camera mode, MEHR can capture user-approved frames and submit them as images; this is not equivalent to sending a continuous video stream. Model availability, image support, supported regions, payment and account eligibility must be verified before enabling a live provider.
+Realtime image input can be delivered as image content in conversation events. Camera mode can therefore sample user-approved frames where supported; this is not equivalent to continuous video input. A separate avatar provider may be required for generated live video and synchronized lip movement. Do not assume that the voice provider also provides avatar output.
+
+Model/provider availability, image and avatar support, supported regions, payment and account eligibility must be verified before enabling a live provider. Provider selection must consider latency, quality, licensing, data handling, regional availability, reliability and total per-minute cost.
 
 ## Security and privacy requirements
 
@@ -74,9 +93,11 @@ Realtime image input is documented as an image content part in a conversation ev
 - Microphone and camera are opt-in, visibly active, and can be stopped independently at any time.
 - Camera frames are sampled only while camera mode is enabled; no background capture.
 - Do not persist raw audio/video by default. Transcript retention is configurable and disclosed.
+- Avatar generation must use an approved avatar profile and licensed assets; no impersonation or undisclosed synthetic identity.
 - Tool calls from a live session are re-authorized by the backend against the tenant and tool policy. Destructive, financial or externally visible actions require explicit approval.
 - Apply per-tenant concurrency, session-duration, usage and spend limits before public launch.
 - Sanitize provider errors and redact credentials and sensitive event payloads.
+- Ending a session must stop browser media tracks, provider voice sessions, avatar streams and delegated tasks according to cancellation policy.
 
 ## Release sequence
 
@@ -84,7 +105,7 @@ Realtime image input is documented as an image content part in a conversation ev
 Responsive Live Room UI, device permission handling, camera preview, mute/camera toggles, connection states, transcript area and explicit end-session control. No claim of AI connectivity.
 
 ### L1 — Secure voice session
-OIDC login and authorization-code + PKCE browser flow, authenticated session bootstrap, provider adapter, short-lived credential, WebRTC audio, interruption, reconnect and usage accounting. Live tests require a configured provider account and approved budget.
+OIDC login and authorization-code + PKCE browser flow, authenticated session bootstrap, voice provider adapter, short-lived credential, WebRTC audio, interruption, reconnect and usage accounting. Live tests require a configured provider account and approved budget.
 
 ### L2 — Voice + Vision
 Camera frame sampling with user consent, image-event transport, frame-rate/resolution limits, visible capture indicator, and tests for pause/stop and no-capture states.
@@ -92,20 +113,22 @@ Camera frame sampling with user consent, image-event transport, frame-rate/resol
 ### L3 — Agent orchestration
 Private backend control channel, tenant-scoped MCP tools, supervisor routing, specialist handoffs, verified tool results, event timeline and human approval gates.
 
-### L4 — Optional avatar output
-Evaluate live-avatar providers independently for latency, quality, licensing, regional availability, data handling and per-minute cost. Do not block L1-L3 on avatar generation.
+### L4 — Live avatar
+Integrate and test an avatar provider adapter, speech-to-avatar synchronization, interruption and cancellation propagation, reconnect behavior, graceful fallback, avatar profile controls and per-session cost accounting. This phase is required to claim the complete Voice + Vision + Avatar product; it is not required to falsely block the earlier usable voice/vision releases.
 
 ## Acceptance gates
 
 - Audio round-trip, interruption and reconnect verified on Android Chrome and desktop Chromium.
 - Camera permission denied, revoked, paused and stopped paths tested.
+- Avatar speech synchronization measured; drift, interruption, provider failure and fallback tested.
 - No provider master key appears in browser bundles, requests or logs.
 - Expired, wrong-audience, wrong-tenant and insufficient-scope tokens are rejected.
 - Tenant A cannot read or operate Tenant B sessions or tool results.
 - Per-tenant concurrency and spend limits enforced server-side.
-- Session close stops media tracks and provider usage.
-- No "live video" marketing claim until continuous video input/output is supported and tested end-to-end.
+- Session close stops media tracks, voice provider usage, avatar stream and delegated tasks.
+- No "continuous live video understanding" claim until continuous video input is supported and tested end-to-end.
+- No "live avatar" claim until real synchronized avatar output is demonstrated on supported mobile and desktop browsers.
 
 ## Current repository boundary
 
-The existing static dashboard currently uses a separate single-provider Cloudflare Worker and has no OIDC browser login. The Python authenticated MCP server has tenant-scoped tools and an opt-in Streamable HTTP entry point, but it does not yet expose a Realtime session bootstrap endpoint. Therefore the repository is not yet capable of a live AI voice/video call. This architecture document is a design baseline, not evidence of a working call.
+The existing static dashboard currently uses a separate single-provider Cloudflare Worker and has no OIDC browser login. The Python authenticated MCP server has tenant-scoped tools and an opt-in Streamable HTTP entry point, but it does not yet expose a Realtime session bootstrap endpoint. The repository is not yet capable of a live AI voice/video/avatar call. This architecture document is a design baseline, not evidence of a working call.
