@@ -19,6 +19,7 @@ from ctypes import wintypes
 WH_KEYBOARD_LL = 13
 WH_MOUSE_LL = 14
 WM_QUIT = 0x0012
+PM_NOREMOVE = 0x0000
 WM_KEYDOWN = 0x0100
 WM_SYSKEYDOWN = 0x0104
 WM_MOUSEMOVE = 0x0200
@@ -135,6 +136,10 @@ class WindowsPhysicalInputHook:
         user32.GetMessageW.argtypes = [
             ctypes.POINTER(wintypes.MSG), wintypes.HWND, wintypes.UINT, wintypes.UINT
         ]
+        user32.PeekMessageW.argtypes = [
+            ctypes.POINTER(wintypes.MSG), wintypes.HWND, wintypes.UINT,
+            wintypes.UINT, wintypes.UINT,
+        ]
         kernel32.GetModuleHandleW.restype = wintypes.HMODULE
         self._thread_id = kernel32.GetCurrentThreadId()
         module = kernel32.GetModuleHandleW(None)
@@ -176,8 +181,13 @@ class WindowsPhysicalInputHook:
             )
             if not self._mouse_hook:
                 raise OSError(ctypes.get_last_error(), "mouse_hook_install_failed")
-            self._ready.set()
             message = wintypes.MSG()
+            # Ensure the thread message queue exists before start() can return;
+            # otherwise an immediate stop() could race PostThreadMessageW.
+            user32.PeekMessageW(
+                ctypes.byref(message), None, 0, 0, PM_NOREMOVE
+            )
+            self._ready.set()
             while True:
                 result = user32.GetMessageW(ctypes.byref(message), None, 0, 0)
                 if result <= 0:
