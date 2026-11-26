@@ -302,6 +302,13 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
       <p class="live-note">هیچ صدا یا تصویری ضبط یا ارسال نمی‌شود. برای خروج، «پایان آزمایش» را بزنید.</p>
     </div>
     <aside class="live-side">
+      <h2 class="live-title" style="font-size:15px">اتصال واقعی به سرور</h2>
+      <label for="liveOidcToken">توکن دسترسی OIDC (موقت تا تکمیل ورود PKCE)</label>
+      <input id="liveOidcToken" type="password" autocomplete="off" placeholder="OIDC access token">
+      <button type="button" id="liveConnect">شروع ارتباط زنده</button>
+      <button type="button" id="liveDisconnect" disabled>قطع ارتباط زنده</button>
+      <audio id="liveRemoteAudio" autoplay playsinline></audio>
+      <p class="live-note">ابتدا میکروفون را فعال کنید. برای ارسال تصویر، دوربین را نیز جداگانه فعال کنید. با فشردن شروع، رسانه انتخاب‌شده به سرور منتقل می‌شود.</p>
       <h2 class="live-title" style="font-size:15px">وضعیت دستگاه‌ها</h2>
       <div class="live-device"><span>میکروفون</span><span id="liveMicState">خاموش</span></div>
       <div class="live-device"><span>دوربین</span><span id="liveCameraState">خاموش</span></div>
@@ -381,7 +388,72 @@ function stopLiveDevices(){
 }
 $("#liveCameraStop").addEventListener("click",()=>{if(liveState.camera){liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=null;}$("#liveCameraPreview").srcObject=null;$("#liveCameraPreview").hidden=true;$("#liveVideoPlaceholder").hidden=false;updateLiveState();});
 $("#liveStopAll").addEventListener("click",()=>{stopLiveDevices();say("تمام دسترسی‌های رسانه متوقف شد.");});
-window.addEventListener("pagehide",stopLiveDevices);
+window.addEventListener("pagehide",()=>{disconnectLiveSession();stopLiveDevices();});
 
+let liveConnection=null;
+async function liveApi(path, options={}){
+ const token=$("#liveOidcToken").value.trim();
+ const base=getConnection().url.replace(/\\/+$/,"");
+ if(!base)throw new Error("ابتدا نشانی Worker را در تنظیمات ثبت کنید.");
+ if(!token)throw new Error("توکن OIDC معتبر را وارد کنید.");
+ const response=await fetch(base+path,{...options,headers:{Authorization:"Bearer "+token,"Content-Type":"application/json",...(options.headers||{})}});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok||data.ok===false)throw new Error(data.error||("HTTP "+response.status));
+ return data;
+}
+function waitForIceGathering(pc){
+ if(pc.iceGatheringState==="complete")return Promise.resolve();
+ return new Promise((resolve,reject)=>{
+  const timeout=setTimeout(()=>{pc.removeEventListener("icegatheringstatechange",check);reject(new Error("ICE gathering timeout"));},12000);
+  function check(){if(pc.iceGatheringState==="complete"){clearTimeout(timeout);pc.removeEventListener("icegatheringstatechange",check);resolve();}}
+  pc.addEventListener("icegatheringstatechange",check);
+ });
+}
+async function disconnectLiveSession(){
+ const active=liveConnection;liveConnection=null;
+ if(active?.pc){active.pc.ontrack=null;active.pc.close();}
+ $("#liveRemoteAudio").srcObject=null;
+ $("#liveConnect").disabled=false;$("#liveDisconnect").disabled=true;
+ if(active?.sessionId){try{await liveApi("/api/live/sessions/"+active.sessionId,{method:"DELETE"});}catch(err){console.warn("Live session close was not confirmed:",err.message);}}
+ updateLiveState();
+}
+$("#liveConnect").addEventListener("click",async()=>{
+ const connect=$("#liveConnect");connect.disabled=true;
+ let sessionId=null,pc=null;
+ try{
+  if(!liveState.mic?.getAudioTracks().some(t=>t.readyState==="live"))throw new Error("ابتدا میکروفون را فعال کنید.");
+  const cameraTrack=liveState.camera?.getVideoTracks().find(t=>t.readyState==="live");
+  const mode=cameraTrack?"voice_vision":"voice";
+  const session=await liveApi("/api/live/sessions",{method:"POST",body:JSON.stringify({mode,consent:{microphone:true,camera:!!cameraTrack}})});
+  sessionId=session.session.id;
+  pc=new RTCPeerConnection({iceServers:[]});
+  const remoteStream=new MediaStream();
+  pc.ontrack=event=>{remoteStream.addTrack(event.track);$("#liveRemoteAudio").srcObject=remoteStream;};
+  const audioTrack=liveState.mic.getAudioTracks().find(t=>t.readyState==="live");
+  pc.addTrack(audioTrack,liveState.mic);
+  if(cameraTrack)pc.addTrack(cameraTrack,liveState.camera);
+  const offer=await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await waitForIceGathering(pc);
+  const tracks=pc.getTransceivers().filter(t=>t.sender.track).map(t=>({
+   location:"local",mid:t.mid,trackName:t.sender.track.kind==="audio"?"microphone":"camera"
+  }));
+  const published=await liveApi("/api/live/sessions/"+sessionId+"/publish",{
+   method:"POST",body:JSON.stringify({sessionDescription:pc.localDescription,tracks})
+  });
+  if(published.sessionDescription.type!=="answer")throw new Error("پاسخ SFU از نوع answer نیست؛ مذاکره مجدد هنوز پشتیبانی نمی‌شود.");
+  await pc.setRemoteDescription(published.sessionDescription);
+  liveConnection={sessionId,pc};
+  $("#liveDisconnect").disabled=false;
+  $("#liveStatus").textContent=published.partial?"ارتباط برقرار شد؛ بخشی از رسانه‌ها منتشر نشدند.":"رسانه به SFU ارسال شد؛ موتور مکالمه هوشمند هنوز متصل نیست.";
+  say("اتصال رسانه‌ای به SFU برقرار شد.");
+ }catch(err){
+  if(pc)pc.close();
+  if(sessionId){try{await liveApi("/api/live/sessions/"+sessionId,{method:"DELETE"});}catch(cleanupError){console.warn("Session cleanup failed:",cleanupError.message);}}
+  $("#liveStatus").textContent="اتصال زنده ناموفق: "+err.message;
+  say("ارتباط زنده برقرار نشد.");
+ }finally{connect.disabled=false;}
+});
+$("#liveDisconnect").addEventListener("click",async()=>{await disconnectLiveSession();$("#liveStatus").textContent="ارتباط شبکه‌ای قطع شد؛ پیش‌نمایش‌های محلی مستقل هستند.";});
 language("fa");
 </script></body></html>
