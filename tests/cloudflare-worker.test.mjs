@@ -481,3 +481,93 @@ test("compensates published SFU tracks when durable MID persistence fails", asyn
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("forwards an authenticated SFU renegotiation answer only for the owned session", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const originalFetch = globalThis.fetch;
+  let forwarded = null;
+  globalThis.fetch = async (url, init = {}) => {
+    const target = String(url);
+    if (target.endsWith("/jwks-live-renegotiate.json")) {
+      return new Response(JSON.stringify({ keys: [jwk] }), {
+        status: 200, headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (target === "https://rtc.live.cloudflare.com/v1/apps/test-app/sessions/provider-session/renegotiate") {
+      forwarded = { method: init.method, body: JSON.parse(init.body), authorization: new Headers(init.headers).get("authorization") };
+      return Response.json({ success: true });
+    }
+    assert.fail("Unexpected outbound request: " + target);
+  };
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/sessions/123e4567-e89b-12d3-a456-426614174000/renegotiate", {
+      method: "PUT",
+      headers: { ...origin, Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionDescription: { type: "answer", sdp: "v=0\\r\\nvalid-renegotiation-answer" } }),
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks-live-renegotiate.json",
+      OIDC_AUDIENCE: "mehr-api",
+      CLOUDFLARE_SFU_APP_ID: "test-app",
+      CLOUDFLARE_SFU_APP_SECRET: "test-secret",
+      LIVE_SESSIONS: {
+        idFromName: (id) => id,
+        get: () => ({
+          fetch: async (url) => {
+            assert.equal(new URL(url).pathname, "/authorize");
+            return Response.json({ providerSessionId: "provider-session", mids: [] });
+          },
+        }),
+      },
+    });
+    assert.equal(response.status, 200);
+    assert.equal(forwarded.method, "PUT");
+    assert.deepEqual(forwarded.body, { sessionDescription: { type: "answer", sdp: "v=0\\r\\nvalid-renegotiation-answer" } });
+    assert.equal(forwarded.authorization, "Bearer test-secret");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("rejects malformed renegotiation SDP before contacting the SFU", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const originalFetch = globalThis.fetch;
+  let sfuCalled = false;
+  globalThis.fetch = async (url) => {
+    const target = String(url);
+    if (target.endsWith("/jwks-live-invalid-renegotiate.json")) {
+      return new Response(JSON.stringify({ keys: [jwk] }), {
+        status: 200, headers: { "Content-Type": "application/json" },
+      });
+    }
+    sfuCalled = true;
+    throw new Error("SFU must not be called");
+  };
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/sessions/123e4567-e89b-12d3-a456-426614174000/renegotiate", {
+      method: "PUT",
+      headers: { ...origin, Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionDescription: { type: "offer", sdp: "bad" } }),
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks-live-invalid-renegotiate.json",
+      OIDC_AUDIENCE: "mehr-api",
+    });
+    assert.equal(response.status, 422);
+    assert.equal(sfuCalled, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("CORS preflight explicitly permits the renegotiation PUT method", async () => {
+  const response = await worker.fetch(new Request("https://worker.test/api/live/sessions/123e4567-e89b-12d3-a456-426614174000/renegotiate", {
+    method: "OPTIONS",
+    headers: { ...origin, "Access-Control-Request-Method": "PUT" },
+  }), env);
+  assert.equal(response.status, 204);
+  assert.match(response.headers.get("access-control-allow-methods"), /PUT/);
+});
