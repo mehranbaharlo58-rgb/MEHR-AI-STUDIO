@@ -1,5 +1,7 @@
 """Server-side LiveKit access-token issuance with least-privilege room grants."""
 
+# ruff: noqa: I001
+
 from __future__ import annotations
 
 import re
@@ -69,7 +71,7 @@ class LiveKitTokenIssuer:
             ("can_publish_data", can_publish_data),
         ):
             if not isinstance(value, bool):
-                raise ValueError(f"{name} must be a boolean")
+                raise TypeError(f"{name} must be a boolean")
 
         now = int(time.time())
         payload = {
