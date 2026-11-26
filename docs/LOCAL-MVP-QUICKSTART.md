@@ -16,7 +16,7 @@ Open `http://127.0.0.1:8000/ui/`.
 
 The dashboard is a static HTML/CSS/JavaScript app. It includes the bilingual workspace, the 100-entry discovery catalogue, search and filters, model/agent status counters, and the MEHR Live interface. The static preview does not require a frontend build step.
 
-On a phone, the phone and computer must be on the same trusted Wi-Fi network to open the computer's LAN address, and the local server must be configured to listen on that interface. Do not expose the development server to the public internet.
+On a phone, the phone and computer must be on the same trusted Wi-Fi network to open the computer's LAN address. The Python development server listens on available interfaces by default; restrict network access to the trusted LAN and do not expose it to the public internet. Important: browser microphone/camera access requires a secure context (HTTPS, or localhost on the same device). A dashboard opened on a phone through a plain `http://<computer-LAN-IP>` address may display normally but will not be allowed to use microphone/camera. Use a trusted HTTPS development host for phone media testing.
 
 ## 2. Run the local Python MCP service
 
