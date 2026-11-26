@@ -74,6 +74,12 @@ The response contains an opaque application session ID and expiry. The provider'
 
 Body contains the browser's gathered local SDP offer and one or two local tracks named `microphone` and optionally `camera`. The browser must request media permission only after explicit user action. Camera publication must match the session's recorded camera consent.
 
+### Inspect an application session
+
+`GET /api/live/sessions/{applicationSessionId}`
+
+Returns only sanitized track identifiers, names, locations, and provider lifecycle states for the verified owner. It never returns the provider session ID or credentials. An `active` track status is not proof that media packets are arriving or being played.
+
 ### Complete SFU renegotiation
 
 `PUT /api/live/sessions/{applicationSessionId}/renegotiate`
@@ -90,7 +96,7 @@ Only the verified owner in the same tenant can close the session. The Worker ask
 
 - The OIDC verifier uses a five-minute in-memory JWKS cache and forces one refresh when a key is unknown or signature verification fails. Validate this behavior against the selected identity provider's key-rotation policy.
 - The current session registry enforces ownership and expiry, but does not yet provide per-user concurrency quotas or distributed rate limiting.
-- Session setup and SFU negotiation must be serialized per PeerConnection. The browser now handles an SFU offer marked `requiresImmediateRenegotiation` and submits its gathered answer through the authenticated renegotiation route. Concurrent mutations are not yet protected by a distributed per-session lock.
+- Session setup and SFU negotiation must be serialized per PeerConnection. The browser now performs an authenticated, owner-scoped SFU session inspection after connecting and handles an SFU offer marked `requiresImmediateRenegotiation` and submits its gathered answer through the authenticated renegotiation route. Concurrent mutations are not yet protected by a distributed per-session lock.
 - The close route closes media tracks; it does not claim to terminate a provider-side session with a dedicated DELETE operation.
 - If an SFU create succeeds but registry persistence fails, an orphaned provider session may remain until SFU resource cleanup. Add compensating cleanup and reconciliation before production.
 - The publish route records only successful track MIDs returned by the SFU and exposes a `partial` flag. Validate the exact per-track response shape against live SFU responses before production.
