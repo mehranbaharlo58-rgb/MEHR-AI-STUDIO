@@ -286,8 +286,8 @@ def build_authenticated_server(
         limit: int = 3,
     ) -> dict:
         """Match and run only configured tenant models with usable connectors."""
-        if not 1 <= limit <= 10:
-            return {"ok": False, "error": "limit_must_be_between_1_and_10"}
+        if not 1 <= limit <= 100:
+            return {"ok": False, "error": "limit_must_be_between_1_and_100"}
         ai_registry = tenant_ai_registry()
         models = ai_registry.list()
         matches = ai_registry.match(MatchRequest(
