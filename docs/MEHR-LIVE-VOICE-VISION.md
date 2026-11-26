@@ -132,3 +132,16 @@ Integrate and test an avatar provider adapter, speech-to-avatar synchronization,
 ## Current repository boundary
 
 The existing static dashboard currently uses a separate single-provider Cloudflare Worker and has no OIDC browser login. The Python authenticated MCP server has tenant-scoped tools and an opt-in Streamable HTTP entry point, but it does not yet expose a Realtime session bootstrap endpoint. The repository is not yet capable of a live AI voice/video/avatar call. This architecture document is a design baseline, not evidence of a working call.
+
+
+## Direct Realtime voice and sampled camera vision
+
+The dashboard now has a direct one-to-one WebRTC path at `POST /api/live/realtime/calls`. The Worker validates the user's OIDC access token, keeps `OPENAI_API_KEY` server-side, sends the browser SDP offer and a server-owned session configuration to the Realtime API, and returns only the SDP answer. The browser receives model audio as a remote WebRTC track and receives Realtime events over a data channel.
+
+The optional camera path is **sampled still-image input**, not a continuous video stream: when the user explicitly enables the camera and starts the session, the browser sends a downscaled JPEG frame approximately every three seconds over the Realtime data channel. The direct Realtime SDP route rejects video media tracks; camera images are not sent unless camera permission was granted. This sampling rate and image size are initial product defaults and still require device and cost testing.
+
+The dashboard includes a generic Authorization Code + PKCE (S256) browser flow. Configure these Worker variables from the selected identity provider: `OIDC_AUTHORIZATION_URL`, `OIDC_TOKEN_URL`, `OIDC_CLIENT_ID`, `OIDC_REDIRECT_URI`, `OIDC_PUBLIC_SCOPES`, plus the existing issuer, JWKS URL, audience, and required scopes. The redirect URI must use the configured allowed origin. The identity provider must allow the dashboard origin for token-endpoint CORS and register the exact redirect URI. Access tokens are held in page memory; the PKCE verifier/state are temporary session-storage values and are cleared after callback exchange. The Worker additionally binds the validated token's authorized client claim to `OIDC_CLIENT_ID`.
+
+Set `OPENAI_API_KEY` as a Cloudflare Worker secret, not as a committed variable or browser setting. `OPENAI_REALTIME_MODEL` and `OPENAI_REALTIME_VOICE` are optional Worker variables. Do not enable this route until the selected account, model access, geographic availability, payment route, and data-handling requirements have been checked.
+
+**Not yet verified:** no production OIDC provider is configured; no OpenAI secret is installed; no live provider call has been made; no Android/desktop device test or end-to-end audio/image verification has been run. This code path is implemented and covered by mocked Worker/UI tests only. Sampled image input is not a substitute for continuous video understanding.
