@@ -725,16 +725,24 @@ export default {
     if (url.pathname === "/api/live/capabilities" && request.method === "GET") {
       const principal = await verifyOidcAccessToken(request, env);
       if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
-      const configured = Boolean(env.CLOUDFLARE_SFU_APP_ID && env.CLOUDFLARE_SFU_APP_SECRET && env.LIVE_SESSIONS);
+      // Direct Realtime WebRTC is the primary AI voice/vision path. The SFU is
+      // an optional media relay and must not gate direct voice or sampled-image input.
+      const realtimeConfigured = typeof env.OPENAI_API_KEY === "string" && env.OPENAI_API_KEY.trim().length > 0;
+      const sfuConfigured = Boolean(env.CLOUDFLARE_SFU_APP_ID && env.CLOUDFLARE_SFU_APP_SECRET && env.LIVE_SESSIONS);
       return response({
         ok: true,
         authenticated: true,
-        live_transport: configured ? "cloudflare_realtime_sfu" : "not_configured",
-        modes: configured ? ["voice", "voice_vision"] : [],
-        session_creation_enabled: configured,
-        reason: configured ? null : "sfu_credentials_missing",
+        live_transport: realtimeConfigured ? "openai_realtime_webrtc" : "not_configured",
+        voice_enabled: realtimeConfigured,
+        voice_vision_enabled: realtimeConfigured,
+        modes: realtimeConfigured ? ["voice", "voice_vision"] : [],
+        sfu_transport: sfuConfigured ? "cloudflare_realtime_sfu" : "not_configured",
+        sfu_video_bridge_enabled: sfuConfigured,
+        session_creation_enabled: sfuConfigured,
+        reason: realtimeConfigured ? null : "realtime_provider_not_configured",
+        sfu_reason: sfuConfigured ? null : "sfu_credentials_missing",
         consent_required: { microphone: true, camera: "voice_vision_only" },
-      }, configured ? 200 : 503, cors);
+      }, realtimeConfigured ? 200 : 503, cors);
     }
 
     if (url.pathname === "/api/health" && request.method === "GET") {
