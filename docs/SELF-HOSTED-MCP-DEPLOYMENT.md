@@ -7,17 +7,18 @@ Linux host or container platform; adding the files does not deploy the service.
 ## Configure
 
 1. Copy `.env.mcp.example` to `.env.mcp`. This file contains only the Python MCP service's environment and is intentionally separate from the Cloudflare Worker secrets.
-2. Set the four required Python resource-server values:
+2. Restrict access to the file with `chmod 600 .env.mcp`.
+3. Set the four required Python resource-server values:
    - `MEHR_OIDC_ISSUER_URL`
    - `MEHR_OIDC_JWKS_URL`
    - `MEHR_OIDC_AUDIENCE`
    - `MEHR_MCP_RESOURCE_URL`
-3. Set `MEHR_ALLOWED_ORIGINS` to the exact HTTPS dashboard origin if the
+4. Set `MEHR_ALLOWED_ORIGINS` to the exact HTTPS dashboard origin if the
    browser and MCP service use different origins.
-4. Configure provider credentials server-side using `AI_BASE_URL`,
+5. Configure provider credentials server-side using `AI_BASE_URL`,
    `AI_API_KEY`, `AI_MODEL`, or the supported provider-specific secret
    environment. Never put provider keys in the browser or catalogue.
-5. Ensure the identity provider issues short-lived RS256 access tokens with
+6. Ensure the identity provider issues short-lived RS256 access tokens with
    the configured audience, required scope, and a trusted tenant claim.
 
 Do not commit `.env.mcp`. The Docker build context excludes environment files.
@@ -25,6 +26,7 @@ Do not commit `.env.mcp`. The Docker build context excludes environment files.
 ## Run
 
 ~~~bash
+docker compose config --quiet
 docker compose build
 docker compose up -d
 docker compose logs -f mehr-mcp
