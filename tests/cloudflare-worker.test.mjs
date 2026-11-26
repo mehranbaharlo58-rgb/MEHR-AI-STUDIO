@@ -889,22 +889,29 @@ test("rejects a validly signed OIDC token issued to a different configured clien
 });
 
 
-test("live rate limiter enforces per-user action quotas in a fixed window", async () => {
+test("live rate limiter atomically enforces per-user quotas under concurrent requests", async () => {
   const values = new Map();
-  const registry = new LiveSessionRegistry({ storage: {
+  let queue = Promise.resolve();
+  let storage;
+  storage = {
     get: async (key) => values.get(key),
     put: async (key, value) => values.set(key, value),
     delete: async (key) => values.delete(key),
-  }});
-  for (let i = 0; i < 3; i += 1) {
-    const allowed = await registry.fetch(new Request("https://session.internal/consume", {
-      method: "POST", body: JSON.stringify({ action: "create" }),
-    }));
-    assert.equal(allowed.status, 200);
-  }
-  const limited = await registry.fetch(new Request("https://session.internal/consume", {
+    transaction: async (callback) => {
+      const previous = queue;
+      let release;
+      queue = new Promise((resolve) => { release = resolve; });
+      await previous;
+      try { return await callback(storage); }
+      finally { release(); }
+    },
+  };
+  const registry = new LiveSessionRegistry({ storage });
+  const requests = Array.from({ length: 4 }, () => registry.fetch(new Request("https://session.internal/consume", {
     method: "POST", body: JSON.stringify({ action: "create" }),
-  }));
-  assert.equal(limited.status, 429);
+  })));
+  const responses = await Promise.all(requests);
+  assert.deepEqual(responses.map((response) => response.status).sort(), [200, 200, 200, 429]);
+  const limited = responses.find((response) => response.status === 429);
   assert.ok((await limited.json()).retryAfter > 0);
 });
