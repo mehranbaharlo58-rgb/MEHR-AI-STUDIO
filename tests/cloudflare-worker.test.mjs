@@ -725,7 +725,7 @@ test("creates an authenticated direct Realtime WebRTC call without exposing the 
     }
     assert.equal(target, "https://api.openai.com/v1/realtime/calls");
     captured = { init, form: init.body };
-    return new Response("v=0\\r\\nvalid-realtime-answer-sdp", {
+    return new Response(["v=0", "valid-realtime-answer-sdp"].join("\r\n"), {
       status: 200, headers: { "Content-Type": "application/sdp" },
     });
   };
@@ -734,7 +734,7 @@ test("creates an authenticated direct Realtime WebRTC call without exposing the 
       method: "POST",
       headers: { ...origin, Authorization: "Bearer " + token, "Content-Type": "application/json" },
       body: JSON.stringify({
-        sessionDescription: "v=0\\r\\no=- 1 1 IN IP4 127.0.0.1\\r\\nm=audio 9 UDP/TLS/RTP/SAVPF 111\\r\\nm=application 9 UDP/DTLS/SCTP webrtc-datachannel",
+        sessionDescription: ["v=0", "o=- 1 1 IN IP4 127.0.0.1", "m=audio 9 UDP/TLS/RTP/SAVPF 111", "m=application 9 UDP/DTLS/SCTP webrtc-datachannel"].join("\r\n"),
         consent: { microphone: true, camera: false },
       }),
     }), {
@@ -748,7 +748,7 @@ test("creates an authenticated direct Realtime WebRTC call without exposing the 
     const answer = await response.text();
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("content-type"), "application/sdp");
-    assert.equal(answer, "v=0\\r\\nvalid-realtime-answer-sdp");
+    assert.equal(answer, ["v=0", "valid-realtime-answer-sdp"].join("\r\n"));
     assert.equal(captured.init.redirect, "manual");
     assert.equal(new Headers(captured.init.headers).get("authorization"), "Bearer server-only-realtime-secret");
     assert.match(new Headers(captured.init.headers).get("OpenAI-Safety-Identifier"), /^[a-f0-9]{64}$/);
@@ -781,7 +781,7 @@ test("rejects direct Realtime offers containing video tracks because vision uses
       method: "POST",
       headers: { ...origin, Authorization: "Bearer " + token, "Content-Type": "application/json" },
       body: JSON.stringify({
-        sessionDescription: "v=0\\r\\nm=audio 9 UDP/TLS/RTP/SAVPF 111\\r\\nm=video 9 UDP/TLS/RTP/SAVPF 96",
+        sessionDescription: ["v=0", "m=audio 9 UDP/TLS/RTP/SAVPF 111", "m=video 9 UDP/TLS/RTP/SAVPF 96"].join("\r\n"),
         consent: { microphone: true, camera: true },
       }),
     }), {
