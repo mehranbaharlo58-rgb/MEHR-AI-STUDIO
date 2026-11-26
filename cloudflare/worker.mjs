@@ -282,8 +282,6 @@ export default {
     }
     const cors = corsHeaders(request, env);
     if (!cors) return response({ ok: false, error: "origin_not_allowed" }, 403);
-
-    const url = new URL(request.url);
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: cors });
     }
