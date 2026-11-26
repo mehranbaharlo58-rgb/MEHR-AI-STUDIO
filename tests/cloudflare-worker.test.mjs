@@ -462,7 +462,7 @@ test("compensates published SFU tracks when durable MID persistence fails", asyn
         get: () => ({
           fetch: async (url) => {
             const path = new URL(url).pathname;
-            if (path === "/consume") return new Response(null, { status: 200 });
+            if (path === "/consume" || path === "/lock" || path === "/unlock") return new Response(null, { status: 200 });
             if (path === "/authorize") {
               return Response.json({
                 providerSessionId: "provider-session",
@@ -520,7 +520,7 @@ test("forwards an authenticated SFU renegotiation answer only for the owned sess
         get: () => ({
           fetch: async (url) => {
             const path = new URL(url).pathname;
-            if (path === "/consume") return new Response(null, { status: 200 });
+            if (path === "/consume" || path === "/lock" || path === "/unlock") return new Response(null, { status: 200 });
             assert.equal(path, "/authorize");
             return Response.json({ providerSessionId: "provider-session", mids: [] });
           },
@@ -610,6 +610,7 @@ test("does not delete an application session when SFU track closure has unresolv
         get: () => ({
           fetch: async (url) => {
             const path = new URL(url).pathname;
+            if (path === "/consume" || path === "/lock" || path === "/unlock") return new Response(null, { status: 200 });
             if (path === "/authorize") return Response.json({
               providerSessionId: "provider-session", mids: ["0"],
             });
@@ -914,4 +915,40 @@ test("live rate limiter atomically enforces per-user quotas under concurrent req
   assert.deepEqual(responses.map((response) => response.status).sort(), [200, 200, 200, 429]);
   const limited = responses.find((response) => response.status === 429);
   assert.ok((await limited.json()).retryAfter > 0);
+});
+
+
+
+test("live session registry serializes mutations with an owner-scoped expiring lock", async () => {
+  const values = new Map([["session", {
+    subject: "user-1", tenantId: "tenant-1", providerSessionId: "sfu-1",
+    expiresAt: Math.floor(Date.now() / 1000) + 300, mids: [],
+  }]]);
+  let queue = Promise.resolve();
+  let storage;
+  storage = {
+    get: async (key) => values.get(key),
+    put: async (key, value) => values.set(key, value),
+    delete: async (key) => values.delete(key),
+    transaction: async (callback) => {
+      const previous = queue;
+      let release;
+      queue = new Promise((resolve) => { release = resolve; });
+      await previous;
+      try { return await callback(storage); }
+      finally { release(); }
+    },
+  };
+  const registry = new LiveSessionRegistry({ storage });
+  const lock = (lockToken, path = "lock") => registry.fetch(new Request("https://session.internal/" + path, {
+    method: "POST",
+    body: JSON.stringify({ subject: "user-1", tenantId: "tenant-1", lockToken }),
+  }));
+  const [first, competing] = await Promise.all([lock("11111111-1111-4111-8111-111111111111"), lock("22222222-2222-4222-8222-222222222222")]);
+  assert.deepEqual([first.status, competing.status].sort(), [200, 409]);
+  const winner = first.status === 200 ? "11111111-1111-4111-8111-111111111111" : "22222222-2222-4222-8222-222222222222";
+  const loser = winner.startsWith("111") ? "22222222-2222-4222-8222-222222222222" : "11111111-1111-4111-8111-111111111111";
+  assert.equal((await lock(loser, "unlock")).status, 409);
+  assert.equal((await lock(winner, "unlock")).status, 200);
+  assert.equal((await lock(loser)).status, 200);
 });
