@@ -187,3 +187,25 @@ test("Agent workspace connects to the authenticated tenant-scoped MCP registry",
   assert.ok(!appScript.includes('localStorage.setItem("mehr-mcp-token"'));
   assert.ok(!appScript.includes('sessionStorage.setItem("mehr-mcp-token"'));
 });
+
+
+test("SFU viewer loss falls back to sampled camera frames without dropping voice", () => {
+  const start = appScript.indexOf('socket.addEventListener("close",()=>{');
+  const end = appScript.indexOf('active.sfu={sessionId,pc,socket};', start);
+  assert.ok(start >= 0 && end > start);
+  const closeHandler = appScript.slice(start, end);
+  assert.ok(closeHandler.includes("active.sfu?.socket!==socket"));
+  assert.ok(closeHandler.includes("stopSfuVideoBridge(active)"));
+  assert.ok(closeHandler.includes("liveConnection===active&&liveState.camera"));
+  assert.ok(closeHandler.includes("startLiveCameraSampling()"));
+});
+
+test("Realtime peer failure performs full session teardown instead of dropping the session reference", () => {
+  const start = appScript.indexOf('if(pc.connectionState==="failed"||pc.connectionState==="closed"){');
+  const end = appScript.indexOf('\n  });', start);
+  assert.ok(start >= 0 && end > start);
+  const failureHandler = appScript.slice(start, end);
+  assert.ok(failureHandler.includes("disconnectLiveSession()"));
+  assert.ok(failureHandler.includes("updateLiveState()"));
+  assert.ok(!failureHandler.includes("liveConnection=null"));
+});
