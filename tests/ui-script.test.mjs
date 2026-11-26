@@ -156,7 +156,7 @@ test("MCP endpoint validation rejects unsafe URL components and normalizes the e
   const end = appScript.indexOf("function showMcpOutput", start);
   assert.ok(start >= 0 && end > start);
   const source = appScript.slice(start, end);
-  const evaluate = value => vm.runInNewContext(source + "\\nmcpEndpoint();", {
+  const evaluate = value => vm.runInNewContext(source + "\nmcpEndpoint();", {
     URL,
     $: () => ({ value }),
   });
