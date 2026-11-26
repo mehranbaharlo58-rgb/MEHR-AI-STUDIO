@@ -1,0 +1,3486 @@
+[
+  {
+    "id": "openai.api",
+    "name": "OpenAI API",
+    "provider": "OpenAI",
+    "category": "llm",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "reasoning",
+      "text-generation",
+      "vision",
+      "tool-calling"
+    ],
+    "task_tags": [
+      "reasoning",
+      "writing",
+      "analysis",
+      "coding",
+      "vision"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text",
+      "image",
+      "audio"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://openai.com",
+    "source_urls": [
+      "https://openai.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "anthropic.api",
+    "name": "Claude API",
+    "provider": "Anthropic",
+    "category": "llm",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "reasoning",
+      "text-generation",
+      "vision",
+      "tool-calling"
+    ],
+    "task_tags": [
+      "reasoning",
+      "writing",
+      "analysis",
+      "coding",
+      "documents"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://anthropic.com",
+    "source_urls": [
+      "https://anthropic.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "google.gemini",
+    "name": "Gemini API",
+    "provider": "Google",
+    "category": "llm",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "reasoning",
+      "text-generation",
+      "vision",
+      "audio"
+    ],
+    "task_tags": [
+      "reasoning",
+      "writing",
+      "analysis",
+      "coding",
+      "multimodal"
+    ],
+    "input_modalities": [
+      "text",
+      "image",
+      "audio",
+      "video"
+    ],
+    "output_modalities": [
+      "text",
+      "image",
+      "audio"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://ai.google.dev",
+    "source_urls": [
+      "https://ai.google.dev"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "deepseek.api",
+    "name": "DeepSeek API",
+    "provider": "DeepSeek",
+    "category": "llm",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "reasoning",
+      "text-generation",
+      "coding"
+    ],
+    "task_tags": [
+      "reasoning",
+      "analysis",
+      "coding",
+      "math"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://deepseek.com",
+    "source_urls": [
+      "https://deepseek.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "xai.api",
+    "name": "xAI API",
+    "provider": "xAI",
+    "category": "llm",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "reasoning",
+      "text-generation",
+      "vision"
+    ],
+    "task_tags": [
+      "reasoning",
+      "analysis",
+      "writing",
+      "vision"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://x.ai",
+    "source_urls": [
+      "https://x.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "qwen.api",
+    "name": "Qwen / Alibaba Model Studio",
+    "provider": "Alibaba",
+    "category": "llm",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "reasoning",
+      "text-generation",
+      "vision",
+      "tool-calling"
+    ],
+    "task_tags": [
+      "reasoning",
+      "coding",
+      "multilingual",
+      "vision"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://alibabacloud.com",
+    "source_urls": [
+      "https://alibabacloud.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "mistral.api",
+    "name": "Mistral API",
+    "provider": "Mistral AI",
+    "category": "llm",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "reasoning",
+      "text-generation",
+      "coding"
+    ],
+    "task_tags": [
+      "reasoning",
+      "writing",
+      "coding",
+      "classification"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://mistral.ai",
+    "source_urls": [
+      "https://mistral.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "cohere.api",
+    "name": "Cohere Platform",
+    "provider": "Cohere",
+    "category": "llm",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "text-generation",
+      "embeddings",
+      "reranking"
+    ],
+    "task_tags": [
+      "rag",
+      "search",
+      "classification",
+      "retrieval"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://cohere.com",
+    "source_urls": [
+      "https://cohere.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "perplexity.api",
+    "name": "Perplexity API",
+    "provider": "Perplexity",
+    "category": "llm",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "web-search",
+      "research",
+      "citations"
+    ],
+    "task_tags": [
+      "research",
+      "search",
+      "fact-finding",
+      "citations"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://perplexity.ai",
+    "source_urls": [
+      "https://perplexity.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "meta.llama",
+    "name": "Llama Models",
+    "provider": "Meta",
+    "category": "llm",
+    "access_mode": "local_runtime",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "open-weights",
+      "reasoning",
+      "text-generation"
+    ],
+    "task_tags": [
+      "local-inference",
+      "reasoning",
+      "coding",
+      "summarization"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://llama.com",
+    "source_urls": [
+      "https://llama.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "microsoft.copilot",
+    "name": "Microsoft Copilot",
+    "provider": "Microsoft",
+    "category": "assistant",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "assistant",
+      "productivity",
+      "office"
+    ],
+    "task_tags": [
+      "office",
+      "writing",
+      "analysis",
+      "productivity"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text",
+      "image"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://copilot.microsoft.com",
+    "source_urls": [
+      "https://copilot.microsoft.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "aws.bedrock",
+    "name": "Amazon Bedrock",
+    "provider": "Amazon Web Services",
+    "category": "model_platform",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "model-hosting",
+      "model-routing",
+      "enterprise"
+    ],
+    "task_tags": [
+      "model-hosting",
+      "inference",
+      "enterprise"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text",
+      "image"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://aws.amazon.com",
+    "source_urls": [
+      "https://aws.amazon.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "nvidia.nim",
+    "name": "NVIDIA NIM",
+    "provider": "NVIDIA",
+    "category": "model_platform",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "inference",
+      "model-serving",
+      "gpu"
+    ],
+    "task_tags": [
+      "inference",
+      "deployment",
+      "serving"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://nvidia.com",
+    "source_urls": [
+      "https://nvidia.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "moonshot.kimi",
+    "name": "Kimi Platform",
+    "provider": "Moonshot AI",
+    "category": "assistant",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "assistant",
+      "reasoning",
+      "long-context"
+    ],
+    "task_tags": [
+      "research",
+      "documents",
+      "reasoning",
+      "writing"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://kimi.com",
+    "source_urls": [
+      "https://kimi.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "zai.glm",
+    "name": "GLM Platform",
+    "provider": "Z.ai",
+    "category": "llm",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "reasoning",
+      "text-generation",
+      "tool-calling"
+    ],
+    "task_tags": [
+      "reasoning",
+      "coding",
+      "writing"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://z.ai",
+    "source_urls": [
+      "https://z.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "minimax.api",
+    "name": "MiniMax API",
+    "provider": "MiniMax",
+    "category": "llm",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "text-generation",
+      "audio",
+      "video"
+    ],
+    "task_tags": [
+      "writing",
+      "voice",
+      "video",
+      "multimodal"
+    ],
+    "input_modalities": [
+      "text",
+      "audio"
+    ],
+    "output_modalities": [
+      "text",
+      "audio",
+      "video"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://minimax.io",
+    "source_urls": [
+      "https://minimax.io"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "huggingface.inference",
+    "name": "Hugging Face Inference",
+    "provider": "Hugging Face",
+    "category": "model_platform",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "model-hosting",
+      "inference",
+      "open-models"
+    ],
+    "task_tags": [
+      "inference",
+      "embeddings",
+      "classification",
+      "generation"
+    ],
+    "input_modalities": [
+      "text",
+      "image",
+      "audio"
+    ],
+    "output_modalities": [
+      "text",
+      "image",
+      "audio"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://huggingface.co",
+    "source_urls": [
+      "https://huggingface.co"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "openrouter.api",
+    "name": "OpenRouter",
+    "provider": "OpenRouter",
+    "category": "model_gateway",
+    "access_mode": "openai_compatible",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "model-routing",
+      "fallback",
+      "multi-provider"
+    ],
+    "task_tags": [
+      "routing",
+      "model-selection",
+      "fallback",
+      "inference"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://openrouter.ai",
+    "source_urls": [
+      "https://openrouter.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "ollama.local",
+    "name": "Ollama",
+    "provider": "Ollama",
+    "category": "local_runtime",
+    "access_mode": "local_runtime",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "local-inference",
+      "model-management",
+      "open-models"
+    ],
+    "task_tags": [
+      "local-inference",
+      "offline",
+      "model-serving"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://ollama.com",
+    "source_urls": [
+      "https://ollama.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "lmstudio.local",
+    "name": "LM Studio",
+    "provider": "LM Studio",
+    "category": "local_runtime",
+    "access_mode": "local_runtime",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "local-inference",
+      "model-management",
+      "open-models"
+    ],
+    "task_tags": [
+      "local-inference",
+      "offline",
+      "model-serving"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://lmstudio.ai",
+    "source_urls": [
+      "https://lmstudio.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "github.copilot",
+    "name": "GitHub Copilot",
+    "provider": "GitHub",
+    "category": "coding",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "code-generation",
+      "code-review",
+      "ide"
+    ],
+    "task_tags": [
+      "coding",
+      "debugging",
+      "refactoring",
+      "tests"
+    ],
+    "input_modalities": [
+      "text",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://github.com/features/copilot",
+    "source_urls": [
+      "https://github.com/features/copilot"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "cursor.ide",
+    "name": "Cursor",
+    "provider": "Anysphere",
+    "category": "coding",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "code-generation",
+      "agentic-coding",
+      "ide"
+    ],
+    "task_tags": [
+      "coding",
+      "debugging",
+      "refactoring",
+      "repository"
+    ],
+    "input_modalities": [
+      "text",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://cursor.com",
+    "source_urls": [
+      "https://cursor.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "windsurf.ide",
+    "name": "Windsurf",
+    "provider": "Codeium",
+    "category": "coding",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "code-generation",
+      "agentic-coding",
+      "ide"
+    ],
+    "task_tags": [
+      "coding",
+      "debugging",
+      "refactoring",
+      "repository"
+    ],
+    "input_modalities": [
+      "text",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://windsurf.com",
+    "source_urls": [
+      "https://windsurf.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "claude.code",
+    "name": "Claude Code",
+    "provider": "Anthropic",
+    "category": "coding",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "agentic-coding",
+      "terminal",
+      "repository"
+    ],
+    "task_tags": [
+      "coding",
+      "debugging",
+      "refactoring",
+      "terminal"
+    ],
+    "input_modalities": [
+      "text",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://claude.com",
+    "source_urls": [
+      "https://claude.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "openai.codex",
+    "name": "OpenAI Codex",
+    "provider": "OpenAI",
+    "category": "coding",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "agentic-coding",
+      "repository",
+      "code-review"
+    ],
+    "task_tags": [
+      "coding",
+      "debugging",
+      "refactoring",
+      "tests"
+    ],
+    "input_modalities": [
+      "text",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://openai.com",
+    "source_urls": [
+      "https://openai.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "replit.agent",
+    "name": "Replit Agent",
+    "provider": "Replit",
+    "category": "coding",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "app-generation",
+      "agentic-coding",
+      "deployment"
+    ],
+    "task_tags": [
+      "coding",
+      "web-app",
+      "prototype",
+      "deployment"
+    ],
+    "input_modalities": [
+      "text",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://replit.com",
+    "source_urls": [
+      "https://replit.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "vercel.v0",
+    "name": "v0",
+    "provider": "Vercel",
+    "category": "coding",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "ui-generation",
+      "frontend",
+      "code-generation"
+    ],
+    "task_tags": [
+      "frontend",
+      "react",
+      "ui",
+      "prototype"
+    ],
+    "input_modalities": [
+      "text",
+      "image",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://v0.dev",
+    "source_urls": [
+      "https://v0.dev"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "stackblitz.bolt",
+    "name": "Bolt.new",
+    "provider": "StackBlitz",
+    "category": "coding",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "app-generation",
+      "frontend",
+      "code-generation"
+    ],
+    "task_tags": [
+      "web-app",
+      "prototype",
+      "frontend",
+      "coding"
+    ],
+    "input_modalities": [
+      "text",
+      "image",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://bolt.new",
+    "source_urls": [
+      "https://bolt.new"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "lovable.app",
+    "name": "Lovable",
+    "provider": "Lovable",
+    "category": "coding",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "app-generation",
+      "full-stack",
+      "prototype"
+    ],
+    "task_tags": [
+      "web-app",
+      "prototype",
+      "frontend",
+      "database"
+    ],
+    "input_modalities": [
+      "text",
+      "image",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://lovable.dev",
+    "source_urls": [
+      "https://lovable.dev"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "cognition.devin",
+    "name": "Devin",
+    "provider": "Cognition",
+    "category": "coding",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "agentic-coding",
+      "software-engineering",
+      "repository"
+    ],
+    "task_tags": [
+      "coding",
+      "debugging",
+      "issue-resolution",
+      "repository"
+    ],
+    "input_modalities": [
+      "text",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://devin.ai",
+    "source_urls": [
+      "https://devin.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "tabnine.code",
+    "name": "Tabnine",
+    "provider": "Tabnine",
+    "category": "coding",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "code-completion",
+      "code-generation",
+      "enterprise"
+    ],
+    "task_tags": [
+      "coding",
+      "completion",
+      "ide"
+    ],
+    "input_modalities": [
+      "text",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://tabnine.com",
+    "source_urls": [
+      "https://tabnine.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "continue.dev",
+    "name": "Continue",
+    "provider": "Continue",
+    "category": "coding",
+    "access_mode": "sdk",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "open-source",
+      "ide",
+      "model-routing"
+    ],
+    "task_tags": [
+      "coding",
+      "ide",
+      "local-models"
+    ],
+    "input_modalities": [
+      "text",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://continue.dev",
+    "source_urls": [
+      "https://continue.dev"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "cline.agent",
+    "name": "Cline",
+    "provider": "Cline",
+    "category": "coding",
+    "access_mode": "sdk",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "agentic-coding",
+      "ide",
+      "tool-use"
+    ],
+    "task_tags": [
+      "coding",
+      "repository",
+      "terminal",
+      "tools"
+    ],
+    "input_modalities": [
+      "text",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://cline.bot",
+    "source_urls": [
+      "https://cline.bot"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "aider.code",
+    "name": "Aider",
+    "provider": "Aider",
+    "category": "coding",
+    "access_mode": "sdk",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "open-source",
+      "terminal",
+      "repository"
+    ],
+    "task_tags": [
+      "coding",
+      "git",
+      "refactoring",
+      "terminal"
+    ],
+    "input_modalities": [
+      "text",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://aider.chat",
+    "source_urls": [
+      "https://aider.chat"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "sourcegraph.cody",
+    "name": "Sourcegraph Cody",
+    "provider": "Sourcegraph",
+    "category": "coding",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "code-search",
+      "code-generation",
+      "repository"
+    ],
+    "task_tags": [
+      "coding",
+      "code-search",
+      "repository",
+      "refactoring"
+    ],
+    "input_modalities": [
+      "text",
+      "code"
+    ],
+    "output_modalities": [
+      "text",
+      "code"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://sourcegraph.com",
+    "source_urls": [
+      "https://sourcegraph.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "google.notebooklm",
+    "name": "NotebookLM",
+    "provider": "Google",
+    "category": "research",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "source-grounded-qa",
+      "document-synthesis",
+      "citations"
+    ],
+    "task_tags": [
+      "research",
+      "documents",
+      "summarization",
+      "citations"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://notebooklm.google.com",
+    "source_urls": [
+      "https://notebooklm.google.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "elicit.research",
+    "name": "Elicit",
+    "provider": "Elicit",
+    "category": "research",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "literature-review",
+      "paper-search",
+      "evidence-synthesis"
+    ],
+    "task_tags": [
+      "research",
+      "papers",
+      "literature-review",
+      "citations"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://elicit.com",
+    "source_urls": [
+      "https://elicit.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "consensus.research",
+    "name": "Consensus",
+    "provider": "Consensus",
+    "category": "research",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "scientific-search",
+      "evidence-synthesis",
+      "citations"
+    ],
+    "task_tags": [
+      "research",
+      "papers",
+      "evidence",
+      "citations"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://consensus.app",
+    "source_urls": [
+      "https://consensus.app"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "scispace.research",
+    "name": "SciSpace",
+    "provider": "SciSpace",
+    "category": "research",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "paper-analysis",
+      "literature-review",
+      "citations"
+    ],
+    "task_tags": [
+      "research",
+      "papers",
+      "summarization",
+      "citations"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://scispace.com",
+    "source_urls": [
+      "https://scispace.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "semanticscholar.api",
+    "name": "Semantic Scholar API",
+    "provider": "Allen Institute for AI",
+    "category": "research",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "academic-search",
+      "paper-metadata",
+      "citations"
+    ],
+    "task_tags": [
+      "research",
+      "papers",
+      "citations",
+      "metadata"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://semanticscholar.org",
+    "source_urls": [
+      "https://semanticscholar.org"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "tavily.search",
+    "name": "Tavily",
+    "provider": "Tavily",
+    "category": "research",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "web-search",
+      "research",
+      "extraction"
+    ],
+    "task_tags": [
+      "research",
+      "search",
+      "web",
+      "citations"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://tavily.com",
+    "source_urls": [
+      "https://tavily.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "exa.search",
+    "name": "Exa",
+    "provider": "Exa",
+    "category": "research",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "semantic-search",
+      "web-search",
+      "extraction"
+    ],
+    "task_tags": [
+      "research",
+      "search",
+      "semantic",
+      "web"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://exa.ai",
+    "source_urls": [
+      "https://exa.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "firecrawl.api",
+    "name": "Firecrawl",
+    "provider": "Firecrawl",
+    "category": "research",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "web-crawling",
+      "extraction",
+      "search"
+    ],
+    "task_tags": [
+      "research",
+      "web",
+      "scraping",
+      "extraction"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://firecrawl.dev",
+    "source_urls": [
+      "https://firecrawl.dev"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "brave.search",
+    "name": "Brave Search API",
+    "provider": "Brave",
+    "category": "research",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "web-search",
+      "privacy",
+      "search-api"
+    ],
+    "task_tags": [
+      "research",
+      "search",
+      "web"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://brave.com",
+    "source_urls": [
+      "https://brave.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "you.research",
+    "name": "You.com Research",
+    "provider": "You.com",
+    "category": "research",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "web-research",
+      "citations",
+      "synthesis"
+    ],
+    "task_tags": [
+      "research",
+      "search",
+      "citations",
+      "summarization"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://you.com",
+    "source_urls": [
+      "https://you.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "midjourney.image",
+    "name": "Midjourney",
+    "provider": "Midjourney",
+    "category": "image",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "image-generation",
+      "style-control"
+    ],
+    "task_tags": [
+      "image",
+      "design",
+      "concept-art"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "image"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://midjourney.com",
+    "source_urls": [
+      "https://midjourney.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "openai.image",
+    "name": "OpenAI Image Generation",
+    "provider": "OpenAI",
+    "category": "image",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "image-generation",
+      "image-editing"
+    ],
+    "task_tags": [
+      "image",
+      "design",
+      "editing"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "image"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://openai.com",
+    "source_urls": [
+      "https://openai.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "google.imagen",
+    "name": "Google Imagen",
+    "provider": "Google",
+    "category": "image",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "image-generation",
+      "photorealism"
+    ],
+    "task_tags": [
+      "image",
+      "design",
+      "photography"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "image"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://deepmind.google",
+    "source_urls": [
+      "https://deepmind.google"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "blackforest.flux",
+    "name": "FLUX Models",
+    "provider": "Black Forest Labs",
+    "category": "image",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "image-generation",
+      "open-weights"
+    ],
+    "task_tags": [
+      "image",
+      "design",
+      "photorealism"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "image"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://blackforestlabs.ai",
+    "source_urls": [
+      "https://blackforestlabs.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "ideogram.image",
+    "name": "Ideogram",
+    "provider": "Ideogram",
+    "category": "image",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "image-generation",
+      "text-rendering"
+    ],
+    "task_tags": [
+      "image",
+      "typography",
+      "design"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "image"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://ideogram.ai",
+    "source_urls": [
+      "https://ideogram.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "recraft.image",
+    "name": "Recraft",
+    "provider": "Recraft",
+    "category": "image",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "image-generation",
+      "vector-design"
+    ],
+    "task_tags": [
+      "image",
+      "vector",
+      "branding",
+      "design"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "image"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://recraft.ai",
+    "source_urls": [
+      "https://recraft.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "stability.image",
+    "name": "Stable Diffusion / Stability AI",
+    "provider": "Stability AI",
+    "category": "image",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "image-generation",
+      "open-weights"
+    ],
+    "task_tags": [
+      "image",
+      "design",
+      "local-generation"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "image"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://stability.ai",
+    "source_urls": [
+      "https://stability.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "leonardo.image",
+    "name": "Leonardo AI",
+    "provider": "Leonardo",
+    "category": "image",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "image-generation",
+      "asset-creation"
+    ],
+    "task_tags": [
+      "image",
+      "game-assets",
+      "design"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "image"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://leonardo.ai",
+    "source_urls": [
+      "https://leonardo.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "adobe.firefly",
+    "name": "Adobe Firefly",
+    "provider": "Adobe",
+    "category": "image",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "image-generation",
+      "image-editing"
+    ],
+    "task_tags": [
+      "image",
+      "design",
+      "editing",
+      "branding"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "image"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://adobe.com",
+    "source_urls": [
+      "https://adobe.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "canva.magic",
+    "name": "Canva Magic Studio",
+    "provider": "Canva",
+    "category": "image",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "design-generation",
+      "image-generation",
+      "layout"
+    ],
+    "task_tags": [
+      "design",
+      "image",
+      "presentations",
+      "social"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "image"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://canva.com",
+    "source_urls": [
+      "https://canva.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "runway.video",
+    "name": "Runway",
+    "provider": "Runway",
+    "category": "video",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "video-generation",
+      "video-editing"
+    ],
+    "task_tags": [
+      "video",
+      "editing",
+      "storytelling"
+    ],
+    "input_modalities": [
+      "text",
+      "image",
+      "video"
+    ],
+    "output_modalities": [
+      "video"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://runwayml.com",
+    "source_urls": [
+      "https://runwayml.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "kling.video",
+    "name": "Kling AI",
+    "provider": "Kuaishou",
+    "category": "video",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "video-generation",
+      "image-to-video"
+    ],
+    "task_tags": [
+      "video",
+      "animation",
+      "image-to-video"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "video"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://klingai.com",
+    "source_urls": [
+      "https://klingai.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "google.veo",
+    "name": "Google Veo",
+    "provider": "Google",
+    "category": "video",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "video-generation",
+      "audio-video"
+    ],
+    "task_tags": [
+      "video",
+      "generation",
+      "storytelling"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "video"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://deepmind.google",
+    "source_urls": [
+      "https://deepmind.google"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "openai.sora",
+    "name": "Sora",
+    "provider": "OpenAI",
+    "category": "video",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "video-generation",
+      "storyboarding"
+    ],
+    "task_tags": [
+      "video",
+      "storytelling",
+      "generation"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "video"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://openai.com",
+    "source_urls": [
+      "https://openai.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "luma.dreammachine",
+    "name": "Luma Dream Machine",
+    "provider": "Luma AI",
+    "category": "video",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "video-generation",
+      "image-to-video"
+    ],
+    "task_tags": [
+      "video",
+      "image-to-video",
+      "cinematic"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "video"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://lumalabs.ai",
+    "source_urls": [
+      "https://lumalabs.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "pika.video",
+    "name": "Pika",
+    "provider": "Pika",
+    "category": "video",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "video-generation",
+      "video-effects"
+    ],
+    "task_tags": [
+      "video",
+      "effects",
+      "animation"
+    ],
+    "input_modalities": [
+      "text",
+      "image",
+      "video"
+    ],
+    "output_modalities": [
+      "video"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://pika.art",
+    "source_urls": [
+      "https://pika.art"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "heygen.video",
+    "name": "HeyGen",
+    "provider": "HeyGen",
+    "category": "video",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "avatar-video",
+      "dubbing",
+      "translation"
+    ],
+    "task_tags": [
+      "video",
+      "avatar",
+      "voiceover",
+      "translation"
+    ],
+    "input_modalities": [
+      "text",
+      "audio",
+      "image"
+    ],
+    "output_modalities": [
+      "video"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://heygen.com",
+    "source_urls": [
+      "https://heygen.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "synthesia.video",
+    "name": "Synthesia",
+    "provider": "Synthesia",
+    "category": "video",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "avatar-video",
+      "training-video"
+    ],
+    "task_tags": [
+      "video",
+      "avatar",
+      "training",
+      "business"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "video"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://synthesia.io",
+    "source_urls": [
+      "https://synthesia.io"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "elevenlabs.audio",
+    "name": "ElevenLabs",
+    "provider": "ElevenLabs",
+    "category": "audio",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "text-to-speech",
+      "voice-cloning",
+      "dubbing"
+    ],
+    "task_tags": [
+      "audio",
+      "voice",
+      "speech",
+      "dubbing"
+    ],
+    "input_modalities": [
+      "text",
+      "audio"
+    ],
+    "output_modalities": [
+      "audio"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://elevenlabs.io",
+    "source_urls": [
+      "https://elevenlabs.io"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "deepgram.speech",
+    "name": "Deepgram",
+    "provider": "Deepgram",
+    "category": "audio",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "speech-to-text",
+      "text-to-speech"
+    ],
+    "task_tags": [
+      "audio",
+      "transcription",
+      "speech",
+      "voice"
+    ],
+    "input_modalities": [
+      "audio",
+      "text"
+    ],
+    "output_modalities": [
+      "text",
+      "audio"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://deepgram.com",
+    "source_urls": [
+      "https://deepgram.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "assemblyai.speech",
+    "name": "AssemblyAI",
+    "provider": "AssemblyAI",
+    "category": "audio",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "speech-to-text",
+      "summarization",
+      "speaker-diarization"
+    ],
+    "task_tags": [
+      "audio",
+      "transcription",
+      "meeting",
+      "summarization"
+    ],
+    "input_modalities": [
+      "audio"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://assemblyai.com",
+    "source_urls": [
+      "https://assemblyai.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "openai.whisper",
+    "name": "Whisper",
+    "provider": "OpenAI",
+    "category": "audio",
+    "access_mode": "local_runtime",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "speech-to-text",
+      "open-weights"
+    ],
+    "task_tags": [
+      "audio",
+      "transcription",
+      "speech"
+    ],
+    "input_modalities": [
+      "audio"
+    ],
+    "output_modalities": [
+      "text"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://openai.com",
+    "source_urls": [
+      "https://openai.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "cartesia.voice",
+    "name": "Cartesia",
+    "provider": "Cartesia",
+    "category": "audio",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "text-to-speech",
+      "real-time-voice"
+    ],
+    "task_tags": [
+      "audio",
+      "voice",
+      "speech",
+      "realtime"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "audio"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://cartesia.ai",
+    "source_urls": [
+      "https://cartesia.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "playht.voice",
+    "name": "PlayHT",
+    "provider": "PlayHT",
+    "category": "audio",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "text-to-speech",
+      "voice-generation"
+    ],
+    "task_tags": [
+      "audio",
+      "voice",
+      "speech"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "audio"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://play.ht",
+    "source_urls": [
+      "https://play.ht"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "suno.music",
+    "name": "Suno",
+    "provider": "Suno",
+    "category": "audio",
+    "access_mode": "web_app",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "music-generation",
+      "audio-generation"
+    ],
+    "task_tags": [
+      "music",
+      "audio",
+      "composition"
+    ],
+    "input_modalities": [
+      "text"
+    ],
+    "output_modalities": [
+      "audio"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://suno.com",
+    "source_urls": [
+      "https://suno.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "auphonic.audio",
+    "name": "Auphonic",
+    "provider": "Auphonic",
+    "category": "audio",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "audio-postproduction",
+      "noise-reduction"
+    ],
+    "task_tags": [
+      "audio",
+      "podcast",
+      "mastering",
+      "cleanup"
+    ],
+    "input_modalities": [
+      "audio"
+    ],
+    "output_modalities": [
+      "audio"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://auphonic.com",
+    "source_urls": [
+      "https://auphonic.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "zapier.automation",
+    "name": "Zapier",
+    "provider": "Zapier",
+    "category": "automation",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "workflow-automation",
+      "app-connectors"
+    ],
+    "task_tags": [
+      "automation",
+      "integrations",
+      "workflow"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://zapier.com",
+    "source_urls": [
+      "https://zapier.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "make.automation",
+    "name": "Make",
+    "provider": "Make",
+    "category": "automation",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "workflow-automation",
+      "visual-workflows"
+    ],
+    "task_tags": [
+      "automation",
+      "integrations",
+      "workflow"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://make.com",
+    "source_urls": [
+      "https://make.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "n8n.automation",
+    "name": "n8n",
+    "provider": "n8n",
+    "category": "automation",
+    "access_mode": "local_runtime",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "workflow-automation",
+      "self-hosted"
+    ],
+    "task_tags": [
+      "automation",
+      "integrations",
+      "self-hosted"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://n8n.io",
+    "source_urls": [
+      "https://n8n.io"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "dify.platform",
+    "name": "Dify",
+    "provider": "Dify",
+    "category": "agent",
+    "access_mode": "local_runtime",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "agent-workflows",
+      "rag",
+      "self-hosted"
+    ],
+    "task_tags": [
+      "agents",
+      "rag",
+      "workflow",
+      "automation"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://dify.ai",
+    "source_urls": [
+      "https://dify.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "flowise.platform",
+    "name": "Flowise",
+    "provider": "Flowise",
+    "category": "agent",
+    "access_mode": "local_runtime",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "agent-workflows",
+      "visual-builder",
+      "rag"
+    ],
+    "task_tags": [
+      "agents",
+      "rag",
+      "workflow",
+      "automation"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://flowiseai.com",
+    "source_urls": [
+      "https://flowiseai.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "langgraph.sdk",
+    "name": "LangGraph",
+    "provider": "LangChain",
+    "category": "agent",
+    "access_mode": "sdk",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "agent-orchestration",
+      "state-machines",
+      "checkpointing"
+    ],
+    "task_tags": [
+      "agents",
+      "orchestration",
+      "workflow",
+      "memory"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://langchain.com",
+    "source_urls": [
+      "https://langchain.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "autogen.sdk",
+    "name": "AutoGen",
+    "provider": "Microsoft",
+    "category": "agent",
+    "access_mode": "sdk",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "multi-agent",
+      "agent-orchestration"
+    ],
+    "task_tags": [
+      "agents",
+      "multi-agent",
+      "orchestration"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://microsoft.com",
+    "source_urls": [
+      "https://microsoft.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "crewai.sdk",
+    "name": "CrewAI",
+    "provider": "CrewAI",
+    "category": "agent",
+    "access_mode": "sdk",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "multi-agent",
+      "role-based-agents"
+    ],
+    "task_tags": [
+      "agents",
+      "multi-agent",
+      "delegation"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://crewai.com",
+    "source_urls": [
+      "https://crewai.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "pydanticai.sdk",
+    "name": "PydanticAI",
+    "provider": "Pydantic",
+    "category": "agent",
+    "access_mode": "sdk",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "typed-agents",
+      "tool-calling",
+      "validation"
+    ],
+    "task_tags": [
+      "agents",
+      "python",
+      "validation",
+      "tools"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://ai.pydantic.dev",
+    "source_urls": [
+      "https://ai.pydantic.dev"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "openai.agents",
+    "name": "OpenAI Agents SDK",
+    "provider": "OpenAI",
+    "category": "agent",
+    "access_mode": "sdk",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "agent-orchestration",
+      "tool-calling",
+      "handoffs"
+    ],
+    "task_tags": [
+      "agents",
+      "orchestration",
+      "tools",
+      "handoffs"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://openai.github.io",
+    "source_urls": [
+      "https://openai.github.io"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "unstructured.docs",
+    "name": "Unstructured",
+    "provider": "Unstructured",
+    "category": "document_ai",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "document-parsing",
+      "ocr",
+      "chunking"
+    ],
+    "task_tags": [
+      "documents",
+      "pdf",
+      "ocr",
+      "rag"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://unstructured.io",
+    "source_urls": [
+      "https://unstructured.io"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "llamaparse.docs",
+    "name": "LlamaParse",
+    "provider": "LlamaIndex",
+    "category": "document_ai",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "document-parsing",
+      "ocr",
+      "layout"
+    ],
+    "task_tags": [
+      "documents",
+      "pdf",
+      "tables",
+      "ocr"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://llamaindex.ai",
+    "source_urls": [
+      "https://llamaindex.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "docling.docs",
+    "name": "Docling",
+    "provider": "IBM",
+    "category": "document_ai",
+    "access_mode": "local_runtime",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "document-parsing",
+      "layout",
+      "ocr"
+    ],
+    "task_tags": [
+      "documents",
+      "pdf",
+      "tables",
+      "ocr"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://docling.ai",
+    "source_urls": [
+      "https://docling.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "azure.docintel",
+    "name": "Azure AI Document Intelligence",
+    "provider": "Microsoft",
+    "category": "document_ai",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "document-parsing",
+      "ocr",
+      "forms"
+    ],
+    "task_tags": [
+      "documents",
+      "ocr",
+      "forms",
+      "invoices"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://azure.microsoft.com",
+    "source_urls": [
+      "https://azure.microsoft.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "google.docai",
+    "name": "Google Document AI",
+    "provider": "Google",
+    "category": "document_ai",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "document-parsing",
+      "ocr",
+      "forms"
+    ],
+    "task_tags": [
+      "documents",
+      "ocr",
+      "forms",
+      "invoices"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://cloud.google.com",
+    "source_urls": [
+      "https://cloud.google.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "aws.textract",
+    "name": "Amazon Textract",
+    "provider": "Amazon Web Services",
+    "category": "document_ai",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "ocr",
+      "forms",
+      "tables"
+    ],
+    "task_tags": [
+      "documents",
+      "ocr",
+      "forms",
+      "tables"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://aws.amazon.com",
+    "source_urls": [
+      "https://aws.amazon.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "nanonets.docs",
+    "name": "Nanonets",
+    "provider": "Nanonets",
+    "category": "document_ai",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "document-parsing",
+      "ocr",
+      "workflow"
+    ],
+    "task_tags": [
+      "documents",
+      "ocr",
+      "invoices",
+      "automation"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://nanonets.com",
+    "source_urls": [
+      "https://nanonets.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "rossum.docs",
+    "name": "Rossum",
+    "provider": "Rossum",
+    "category": "document_ai",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "document-processing",
+      "invoices",
+      "data-extraction"
+    ],
+    "task_tags": [
+      "documents",
+      "invoices",
+      "accounts-payable"
+    ],
+    "input_modalities": [
+      "text",
+      "image"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://rossum.ai",
+    "source_urls": [
+      "https://rossum.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "qdrant.vector",
+    "name": "Qdrant",
+    "provider": "Qdrant",
+    "category": "vector_database",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "vector-search",
+      "filtering",
+      "hybrid-search"
+    ],
+    "task_tags": [
+      "vectors",
+      "rag",
+      "retrieval",
+      "search"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://qdrant.tech",
+    "source_urls": [
+      "https://qdrant.tech"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "weaviate.vector",
+    "name": "Weaviate",
+    "provider": "Weaviate",
+    "category": "vector_database",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "vector-search",
+      "hybrid-search",
+      "retrieval"
+    ],
+    "task_tags": [
+      "vectors",
+      "rag",
+      "retrieval",
+      "search"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://weaviate.io",
+    "source_urls": [
+      "https://weaviate.io"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "pinecone.vector",
+    "name": "Pinecone",
+    "provider": "Pinecone",
+    "category": "vector_database",
+    "access_mode": "native_api",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "vector-search",
+      "managed-database"
+    ],
+    "task_tags": [
+      "vectors",
+      "rag",
+      "retrieval",
+      "search"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://pinecone.io",
+    "source_urls": [
+      "https://pinecone.io"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "chroma.vector",
+    "name": "Chroma",
+    "provider": "Chroma",
+    "category": "vector_database",
+    "access_mode": "local_runtime",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "vector-search",
+      "local-database"
+    ],
+    "task_tags": [
+      "vectors",
+      "rag",
+      "retrieval",
+      "local"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://trychroma.com",
+    "source_urls": [
+      "https://trychroma.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "milvus.vector",
+    "name": "Milvus",
+    "provider": "Zilliz",
+    "category": "vector_database",
+    "access_mode": "local_runtime",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "vector-search",
+      "open-source"
+    ],
+    "task_tags": [
+      "vectors",
+      "rag",
+      "retrieval",
+      "local"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://milvus.io",
+    "source_urls": [
+      "https://milvus.io"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "langfuse.obs",
+    "name": "Langfuse",
+    "provider": "Langfuse",
+    "category": "observability",
+    "access_mode": "local_runtime",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "llm-tracing",
+      "evaluation",
+      "observability"
+    ],
+    "task_tags": [
+      "tracing",
+      "evaluation",
+      "monitoring",
+      "llm"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://langfuse.com",
+    "source_urls": [
+      "https://langfuse.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "phoenix.obs",
+    "name": "Arize Phoenix",
+    "provider": "Arize AI",
+    "category": "observability",
+    "access_mode": "local_runtime",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "llm-tracing",
+      "evaluation",
+      "observability"
+    ],
+    "task_tags": [
+      "tracing",
+      "evaluation",
+      "monitoring",
+      "llm"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://arize.com",
+    "source_urls": [
+      "https://arize.com"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "promptfoo.eval",
+    "name": "Promptfoo",
+    "provider": "Promptfoo",
+    "category": "evaluation",
+    "access_mode": "sdk",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "llm-evaluation",
+      "red-teaming",
+      "testing"
+    ],
+    "task_tags": [
+      "evaluation",
+      "testing",
+      "security",
+      "prompts"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://promptfoo.dev",
+    "source_urls": [
+      "https://promptfoo.dev"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "ragas.eval",
+    "name": "Ragas",
+    "provider": "Ragas",
+    "category": "evaluation",
+    "access_mode": "sdk",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "rag-evaluation",
+      "llm-evaluation"
+    ],
+    "task_tags": [
+      "evaluation",
+      "rag",
+      "retrieval",
+      "testing"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://ragas.io",
+    "source_urls": [
+      "https://ragas.io"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "llamaindex.framework",
+    "name": "LlamaIndex",
+    "provider": "LlamaIndex",
+    "category": "agent",
+    "access_mode": "sdk",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "rag",
+      "data-connectors",
+      "agent-workflows"
+    ],
+    "task_tags": [
+      "rag",
+      "documents",
+      "agents",
+      "retrieval"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://llamaindex.ai",
+    "source_urls": [
+      "https://llamaindex.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  },
+  {
+    "id": "haystack.framework",
+    "name": "Haystack",
+    "provider": "deepset",
+    "category": "agent",
+    "access_mode": "sdk",
+    "availability": "unknown",
+    "status": "catalog_only",
+    "capabilities": [
+      "rag",
+      "pipelines",
+      "agent-workflows"
+    ],
+    "task_tags": [
+      "rag",
+      "pipelines",
+      "agents",
+      "retrieval"
+    ],
+    "input_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "output_modalities": [
+      "text",
+      "structured_data"
+    ],
+    "auth_required": true,
+    "max_concurrency": 1,
+    "website_url": "https://haystack.deepset.ai",
+    "source_urls": [
+      "https://haystack.deepset.ai"
+    ],
+    "verification_status": "unverified",
+    "notes": "Catalog candidate; integration not verified."
+  }
+]
