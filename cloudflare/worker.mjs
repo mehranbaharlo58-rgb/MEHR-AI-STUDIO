@@ -117,6 +117,43 @@ async function verifyOidcAccessToken(request, env) {
   }
 }
 
+
+const MAX_LIVE_BODY_BYTES = 128 * 1024;
+const MAX_LIVE_DURATION_SECONDS = 600;
+
+async function readJsonLimited(request, limit) {
+  const raw = await readLimitedText(request, limit);
+  if (raw === null) return { error: "request_too_large" };
+  try { return { value: JSON.parse(raw || "{}") }; }
+  catch { return { error: "invalid_json" }; }
+}
+
+async function sfuRequest(env, path, init = {}) {
+  const appId = env.CLOUDFLARE_SFU_APP_ID;
+  const secret = env.CLOUDFLARE_SFU_APP_SECRET;
+  if (!appId || !secret) throw new Error("sfu_not_configured");
+  const url = "https://rtc.live.cloudflare.com/v1/apps/" + encodeURIComponent(appId) + path;
+  const result = await fetch(url, {
+    ...init, redirect: "manual",
+    headers: { authorization: "Bearer " + secret, "content-type": "application/json", ...(init.headers || {}) },
+    signal: AbortSignal.timeout(15000),
+  });
+  const contentType = (result.headers.get("content-type") || "").toLowerCase().split(";")[0];
+  if (!result.ok || contentType !== "application/json") throw new Error("sfu_request_failed");
+  const data = await result.json();
+  if (data.errorCode || data.error || data.success === false) throw new Error("sfu_request_failed");
+  return data;
+}
+
+async function sessionRegistry(env, appSessionId, operation, payload) {
+  if (!env.LIVE_SESSIONS) throw new Error("session_registry_not_configured");
+  const id = env.LIVE_SESSIONS.idFromName(appSessionId);
+  const stub = env.LIVE_SESSIONS.get(id);
+  return stub.fetch("https://live-session.internal/" + operation, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload),
+  });
+}
+
 async function readLimitedText(response, limit) {
   const declaredLength = Number(response.headers.get("Content-Length") || 0);
   if (declaredLength > limit) return null;
@@ -153,6 +190,107 @@ export default {
       return new Response(null, { status: 204, headers: cors });
     }
 
+
+
+    if (url.pathname === "/api/live/sessions" && request.method === "POST") {
+      const principal = await verifyOidcAccessToken(request, env);
+      if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
+      if (!env.CLOUDFLARE_SFU_APP_ID || !env.CLOUDFLARE_SFU_APP_SECRET || !env.LIVE_SESSIONS) {
+        return response({ ok: false, error: "live_transport_not_configured" }, 503, cors);
+      }
+      const parsed = await readJsonLimited(request, 4096);
+      if (parsed.error) return response({ ok: false, error: parsed.error }, 400, cors);
+      const body = parsed.value;
+      const mode = body?.mode;
+      const consent = body?.consent;
+      if (!["voice", "voice_vision"].includes(mode) ||
+          !consent || consent.microphone !== true ||
+          (mode === "voice_vision" && consent.camera !== true) ||
+          (mode === "voice" && consent.camera === true)) {
+        return response({ ok: false, error: "invalid_consent_or_mode" }, 422, cors);
+      }
+      try {
+        const created = await sfuRequest(env, "/sessions/new", { method: "POST", body: "{}" });
+        if (typeof created.sessionId !== "string" || !created.sessionId) throw new Error("sfu_response_invalid");
+        const appSessionId = crypto.randomUUID();
+        const expiresAt = Math.floor(Date.now() / 1000) + MAX_LIVE_DURATION_SECONDS;
+        const stored = await sessionRegistry(env, appSessionId, "create", {
+          subject: principal.subject, tenantId: principal.tenantId,
+          providerSessionId: created.sessionId, expiresAt, consent,
+        });
+        if (!stored.ok) throw new Error("session_registry_write_failed");
+        return response({ ok: true, session: { id: appSessionId, expiresAt, mode, consent } }, 201, cors);
+      } catch {
+        return response({ ok: false, error: "live_session_creation_failed" }, 502, cors);
+      }
+    }
+
+    const livePublishMatch = url.pathname.match(/^\\/api\\/live\\/sessions\\/([0-9a-f-]{36})\\/publish$/i);
+    if (livePublishMatch && request.method === "POST") {
+      const principal = await verifyOidcAccessToken(request, env);
+      if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
+      const appSessionId = livePublishMatch[1];
+      const parsed = await readJsonLimited(request, MAX_LIVE_BODY_BYTES);
+      if (parsed.error) return response({ ok: false, error: parsed.error }, 400, cors);
+      const body = parsed.value;
+      const sdp = body?.sessionDescription;
+      const tracks = body?.tracks;
+      if (!sdp || sdp.type !== "offer" || typeof sdp.sdp !== "string" ||
+          sdp.sdp.length < 20 || sdp.sdp.length > 100000 ||
+          !Array.isArray(tracks) || tracks.length < 1 || tracks.length > 2 ||
+          tracks.some((track) => !track || track.location !== "local" ||
+            !/^[0-9]{1,3}$/.test(String(track.mid)) ||
+            !["microphone", "camera"].includes(track.trackName)) ||
+          new Set(tracks.map((track) => track.trackName)).size !== tracks.length ||
+          !tracks.some((track) => track.trackName === "microphone")) {
+        return response({ ok: false, error: "invalid_publish_request" }, 422, cors);
+      }
+      try {
+        const auth = await sessionRegistry(env, appSessionId, "authorize", {
+          subject: principal.subject, tenantId: principal.tenantId,
+        });
+        if (!auth.ok) return response({ ok: false, error: "session_not_found" }, 404, cors);
+        const owned = await auth.json();
+        if (owned.consent?.camera !== tracks.some((track) => track.trackName === "camera")) {
+          return response({ ok: false, error: "consent_mismatch" }, 403, cors);
+        }
+        const result = await sfuRequest(env, "/sessions/" + encodeURIComponent(owned.providerSessionId) + "/tracks/new", {
+          method: "POST", body: JSON.stringify({ sessionDescription: sdp, tracks }),
+        });
+        const mids = tracks.map((track) => String(track.mid));
+        await sessionRegistry(env, appSessionId, "update", {
+          subject: principal.subject, tenantId: principal.tenantId, mids,
+        });
+        return response({ ok: true, sessionDescription: result.sessionDescription, tracks: result.tracks || [] }, 200, cors);
+      } catch {
+        return response({ ok: false, error: "live_publish_failed" }, 502, cors);
+      }
+    }
+
+    const liveCloseMatch = url.pathname.match(/^\\/api\\/live\\/sessions\\/([0-9a-f-]{36})$/i);
+    if (liveCloseMatch && request.method === "DELETE") {
+      const principal = await verifyOidcAccessToken(request, env);
+      if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
+      const appSessionId = liveCloseMatch[1];
+      try {
+        const auth = await sessionRegistry(env, appSessionId, "authorize", {
+          subject: principal.subject, tenantId: principal.tenantId,
+        });
+        if (!auth.ok) return response({ ok: false, error: "session_not_found" }, 404, cors);
+        const owned = await auth.json();
+        if (owned.mids?.length) {
+          await sfuRequest(env, "/sessions/" + encodeURIComponent(owned.providerSessionId) + "/tracks/close", {
+            method: "PUT", body: JSON.stringify({ tracks: owned.mids.map((mid) => ({ mid })), force: true }),
+          });
+        }
+        await sessionRegistry(env, appSessionId, "delete", {
+          subject: principal.subject, tenantId: principal.tenantId,
+        });
+        return response({ ok: true, closed: true }, 200, cors);
+      } catch {
+        return response({ ok: false, error: "live_session_close_failed" }, 502, cors);
+      }
+    }
 
     if (url.pathname === "/api/live/capabilities" && request.method === "GET") {
       const principal = await verifyOidcAccessToken(request, env);
@@ -274,3 +412,44 @@ export default {
     }
   },
 };
+
+
+export class LiveSessionRegistry {
+  constructor(state) { this.state = state; }
+
+  async fetch(request) {
+    if (request.method !== "POST") return new Response(null, { status: 405 });
+    let body;
+    try { body = await request.json(); } catch { return new Response(null, { status: 400 }); }
+    const path = new URL(request.url).pathname;
+    const existing = await this.state.storage.get("session");
+    if (path === "/create") {
+      if (existing || typeof body.subject !== "string" || typeof body.tenantId !== "string" ||
+          typeof body.providerSessionId !== "string" || !Number.isFinite(body.expiresAt) ||
+          body.expiresAt <= Math.floor(Date.now() / 1000)) return new Response(null, { status: 409 });
+      await this.state.storage.put("session", { ...body, mids: [] });
+      return new Response(null, { status: 201 });
+    }
+    if (!existing || existing.expiresAt <= Math.floor(Date.now() / 1000) ||
+        existing.subject !== body.subject || existing.tenantId !== body.tenantId) {
+      return new Response(null, { status: 404 });
+    }
+    if (path === "/authorize") {
+      const { providerSessionId, expiresAt, consent, mids } = existing;
+      return Response.json({ providerSessionId, expiresAt, consent, mids });
+    }
+    if (path === "/update") {
+      if (!Array.isArray(body.mids) || body.mids.some((mid) => !/^[0-9]{1,3}$/.test(String(mid)))) {
+        return new Response(null, { status: 400 });
+      }
+      const merged = [...new Set([...existing.mids, ...body.mids])];
+      await this.state.storage.put("session", { ...existing, mids: merged });
+      return new Response(null, { status: 200 });
+    }
+    if (path === "/delete") {
+      await this.state.storage.delete("session");
+      return new Response(null, { status: 200 });
+    }
+    return new Response(null, { status: 404 });
+  }
+}
