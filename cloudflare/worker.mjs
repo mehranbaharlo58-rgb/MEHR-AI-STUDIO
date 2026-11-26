@@ -667,6 +667,16 @@ export default {
         });
         if (!auth.ok) return response({ ok: false, error: "session_not_found" }, 404, cors);
         const owned = await auth.json();
+        if (owned.videoRelay?.adapterId) {
+          const adapterClosed = await sfuRequest(env, "/adapters/websocket/close", {
+            method: "POST", body: JSON.stringify({ tracks: [{ adapterId: owned.videoRelay.adapterId }] }),
+          });
+          const adapterResults = Array.isArray(adapterClosed.tracks) ? adapterClosed.tracks : [];
+          if (!adapterResults.some((item) => item && item.adapterId === owned.videoRelay.adapterId &&
+              (!item.errorCode || item.errorCode === "adapter_not_found"))) {
+            throw new Error("video_adapter_close_incomplete");
+          }
+        }
         if (owned.mids?.length) {
           const closed = await sfuRequest(env, "/sessions/" + encodeURIComponent(owned.providerSessionId) + "/tracks/close", {
             method: "PUT", body: JSON.stringify({ tracks: owned.mids.map((mid) => ({ mid })), force: true }),
