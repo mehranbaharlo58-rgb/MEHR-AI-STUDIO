@@ -411,3 +411,73 @@ test("creates an opaque app session after OIDC validation and durable ownership 
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("compensates published SFU tracks when durable MID persistence fails", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const originalFetch = globalThis.fetch;
+  const closed = [];
+  globalThis.fetch = async (url, init = {}) => {
+    const target = String(url);
+    if (target.endsWith("/jwks-live-compensation.json")) {
+      return new Response(JSON.stringify({ keys: [jwk] }), {
+        status: 200, headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (target === "https://rtc.live.cloudflare.com/v1/apps/test-app/sessions/provider-session/tracks/new") {
+      return Response.json({
+        sessionDescription: { type: "answer", sdp: "v=0\\r\\nvalid-answer" },
+        tracks: [{ mid: "0" }],
+      });
+    }
+    if (target === "https://rtc.live.cloudflare.com/v1/apps/test-app/sessions/provider-session/tracks/close") {
+      closed.push(JSON.parse(init.body));
+      return Response.json({ tracks: [{ mid: "0", errorCode: null }] });
+    }
+    assert.fail("Unexpected outbound request: " + target);
+  };
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/sessions/123e4567-e89b-12d3-a456-426614174000/publish", {
+      method: "POST",
+      headers: {
+        ...origin,
+        Authorization: "Bearer " + token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sessionDescription: { type: "offer", sdp: "v=0\\r\\noffer-sdp-content" },
+        tracks: [{ location: "local", mid: "0", trackName: "microphone" }],
+      }),
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks-live-compensation.json",
+      OIDC_AUDIENCE: "mehr-api",
+      CLOUDFLARE_SFU_APP_ID: "test-app",
+      CLOUDFLARE_SFU_APP_SECRET: "test-secret",
+      LIVE_SESSIONS: {
+        idFromName: (id) => id,
+        get: () => ({
+          fetch: async (url) => {
+            const path = new URL(url).pathname;
+            if (path === "/authorize") {
+              return Response.json({
+                providerSessionId: "provider-session",
+                consent: { microphone: true, camera: false },
+                mids: [],
+              });
+            }
+            if (path === "/update") return new Response(null, { status: 500 });
+            assert.fail("Unexpected registry operation: " + path);
+          },
+        }),
+      },
+    });
+    assert.equal(response.status, 502);
+    assert.equal((await response.json()).error, "live_publish_failed");
+    assert.equal(closed.length, 1);
+    assert.deepEqual(closed[0], { tracks: [{ mid: "0" }], force: true });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
