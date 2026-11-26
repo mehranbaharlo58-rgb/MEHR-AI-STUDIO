@@ -249,6 +249,34 @@ test("rejects an OIDC token with a modified signature", async () => {
 });
 
 
+test("live capabilities accurately report a configured session transport", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ keys: [jwk] }), {
+    status: 200, headers: { "Content-Type": "application/json" },
+  });
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/capabilities", {
+      headers: { ...origin, Authorization: "Bearer " + token },
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks-capabilities-configured.json",
+      OIDC_AUDIENCE: "mehr-api",
+      CLOUDFLARE_SFU_APP_ID: "test-app",
+      CLOUDFLARE_SFU_APP_SECRET: "test-secret",
+      LIVE_SESSIONS: { idFromName: () => "session-id", get: () => ({ fetch: async () => new Response(null, { status: 200 }) }) },
+    });
+    const body = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(body.session_creation_enabled, true);
+    assert.equal(body.live_transport, "cloudflare_realtime_sfu");
+    assert.equal(body.reason, null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("live session registry binds records to subject and tenant", async () => {
   const values = new Map();
   const state = { storage: {
