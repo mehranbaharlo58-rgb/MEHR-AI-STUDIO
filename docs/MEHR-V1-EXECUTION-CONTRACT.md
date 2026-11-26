@@ -23,7 +23,7 @@ Version 1 is the core Agent Stack product: a polished bilingual workspace, a cen
 | 13 | Validate inline UI JavaScript | Existing Node VM syntax test |
 | 14 | Validate 100 unique catalogue IDs | Done: new UI regression test |
 | 15 | Wire UI task composer to authenticated orchestrator API | Done at code level: browser MCP client initializes authenticated sessions, reads tenant registry, seeds empty registry and dispatches tasks; live IdP test pending |
-| 16 | Add provider credentials UI without exposing secrets | Pending: provider keys remain server-side; secure server secret provisioning documented, no browser key form |
+| 16 | Add provider credentials UI without exposing secrets | Partial: Agent workspace can configure model endpoint/model ID and status without exposing keys; provider secrets are provisioned in server-side `.env.mcp`, not yet through a managed secret vault |
 | 17 | Add provider-specific adapters and live smoke tests | Partial: OpenAI-compatible adapter exists; live provider proof pending |
 | 18 | Finish real-time audio end-to-end verification | Partial: browser/Worker path exists; provider/device test pending |
 | 19 | Verify camera vision path end-to-end | Partial: sampled image and SFU bridge code exists; deployed provider/device test pending |
