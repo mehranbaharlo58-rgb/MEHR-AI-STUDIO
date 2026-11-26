@@ -1,6 +1,6 @@
 # ADR 0004: Paired Desktop Bridge for MEHR Live
 
-- Status: Proposed
+- Status: Accepted for staged implementation
 - Date: 2026-11-26
 - Owners: MEHR AI STUDIO
 - Related: ADR 0002 (Realtime transport), ADR 0003 (Direct Realtime WebRTC)
@@ -141,4 +141,4 @@ Negative:
 
 ## Current status
 
-No desktop companion, relay endpoint, pairing flow, screen capture bridge, mouse/keyboard adapter, or desktop-control implementation is present in the current branch. This ADR records the proposed architecture only.
+The branch now contains a standalone version-1 message-envelope validator and automated protocol tests (`cloudflare/desktop-bridge-protocol.mjs`, `tests/desktop-bridge-protocol.test.mjs`). It enforces exact envelope/payload keys, bounded expiry, monotonic sequence checks, bounded encrypted-frame metadata, a narrow action allowlist, and mandatory local approval on action requests. This is protocol groundwork only: no pairing endpoint, durable replay store, relay/WebSocket lifecycle, desktop companion, screen capture, or input adapter is implemented. No desktop action can currently be executed through this module.
