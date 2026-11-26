@@ -131,7 +131,7 @@ Integrate and test an avatar provider adapter, speech-to-avatar synchronization,
 
 ## Current repository boundary
 
-The existing static dashboard currently uses a separate single-provider Cloudflare Worker and has no OIDC browser login. The Python authenticated MCP server has tenant-scoped tools and an opt-in Streamable HTTP entry point, but it does not yet expose a Realtime session bootstrap endpoint. The repository is not yet capable of a live AI voice/video/avatar call. This architecture document is a design baseline, not evidence of a working call.
+The dashboard now includes a generic OIDC Authorization Code + PKCE browser flow, an OIDC-protected Worker route that brokers direct Realtime WebRTC audio, and a consent-gated sampled-image path. The Cloudflare SFU session API and JPEG egress relay are separate transport foundations. These paths are implemented and covered by mocked Worker/UI tests, but no production identity provider, OpenAI secret, or SFU credentials are configured, and no real provider call or Android/desktop media test has been verified. Therefore this repository does not yet demonstrate a working live voice/vision session. The Python authenticated MCP server has tenant-scoped tools and an opt-in Streamable HTTP entry point; its integration with the live session orchestrator remains a separate task. The live avatar provider and paired desktop companion are not implemented. This document is an architecture and implementation baseline, not evidence of a working production call.
 
 
 ## Direct Realtime voice and sampled camera vision
