@@ -508,6 +508,15 @@ export default {
         return response({ ok: false, error: "live_transport_not_configured" }, 503, cors);
       }
       const appSessionId = liveVideoAdapterMatch[1];
+      // Serialize adapter creation with publish, renegotiation and session close.
+      // Without the shared lock, concurrent requests can create orphaned SFU adapters.
+      const lockToken = crypto.randomUUID();
+      const lock = await sessionRegistry(env, appSessionId, "lock", {
+        subject: principal.subject, tenantId: principal.tenantId, lockToken,
+      }).catch(() => null);
+      if (!lock) return response({ ok: false, error: "session_lock_unavailable" }, 503, cors);
+      if (lock.status === 409) return response({ ok: false, error: "session_busy" }, 409, cors);
+      if (!lock.ok) return response({ ok: false, error: "session_lock_unavailable" }, 503, cors);
       try {
         const auth = await sessionRegistry(env, appSessionId, "authorize", {
           subject: principal.subject, tenantId: principal.tenantId,
@@ -567,6 +576,10 @@ export default {
           subject: principal.subject, tenantId: principal.tenantId,
         }).catch(() => null);
         return response({ ok: false, error: "video_adapter_creation_failed" }, 502, cors);
+      } finally {
+        await sessionRegistry(env, appSessionId, "unlock", {
+          subject: principal.subject, tenantId: principal.tenantId, lockToken,
+        }).catch(() => null);
       }
     }
 
