@@ -579,10 +579,32 @@ $("#liveConnect").addEventListener("click",async()=>{
   const cameraTrack=liveState.camera?.getVideoTracks().find(t=>t.readyState==="live");
   pc=new RTCPeerConnection();
   const remoteStream=new MediaStream();
-  pc.ontrack=event=>{remoteStream.addTrack(event.track);$("#liveRemoteAudio").srcObject=remoteStream;};
+  pc.ontrack=event=>{
+   remoteStream.addTrack(event.track);
+   const playback=$("#liveRemoteAudio");
+   playback.srcObject=event.streams?.[0]||remoteStream;
+   const playResult=playback.play();
+   if(playResult?.catch)playResult.catch(()=>{$("#liveStatus").textContent="صدا دریافت شده؛ برای فعال‌شدن پخش، صدای مرورگر را مجاز کنید.";});
+  };
+  pc.addEventListener("connectionstatechange",()=>{
+   if(liveConnection?.pc!==pc)return;
+   if(pc.connectionState==="disconnected")$("#liveStatus").textContent="اختلال شبکه؛ WebRTC در حال تلاش برای بازیابی است.";
+   if(pc.connectionState==="failed"||pc.connectionState==="closed"){
+    const active=liveConnection;liveConnection=null;
+    if(active.frameTimer)clearInterval(active.frameTimer);
+    $("#liveRemoteAudio").srcObject=null;
+    $("#liveConnect").disabled=false;$("#liveDisconnect").disabled=true;
+    $("#liveAgentState").textContent="قطع";
+    $("#liveStatus").textContent="ارتباط صوتی به‌دلیل خطای شبکه قطع شد؛ دوباره متصل شوید.";
+    updateLiveState();
+   }
+  });
   pc.addTrack(audioTrack,liveState.mic);
   channel=pc.createDataChannel("oai-events");
   bindRealtimeEvents(channel);
+  channel.addEventListener("close",()=>{
+   if(liveConnection?.channel===channel)$("#liveStatus").textContent="کانال رویداد بسته شد؛ وضعیت صوت را جداگانه بررسی کنید.";
+  });
   const offer=await pc.createOffer();
   await pc.setLocalDescription(offer);
   await waitForIceGathering(pc);
