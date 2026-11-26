@@ -36,3 +36,20 @@ Automated tests use an in-memory HTTP mock and verify request shape, response pa
 ## Explicit connector verification
 
 The MCP tool `test_ai_connector(model_id)` performs one small live request to the selected configured connector. A successful response records `status=tested`, `verification_status=integration_tested`, latency, and an ISO verification timestamp. A failed live probe marks the connector `degraded` without exposing provider response bodies or credentials. Catalogue-only entries cannot be probed. This tool is not called automatically: an operator should invoke it only after deciding that a real provider request is acceptable; hosted providers may charge for the request.
+## OmniRoute gateway integration
+
+OmniRoute can be used as an upstream OpenAI-compatible gateway without adding a new provider SDK. The existing `provider.py` adapter already accepts a configurable base URL, API key, and model ID.
+
+For an OmniRoute instance reachable by the MEHR AI backend, configure these server-side environment variables:
+
+```dotenv
+AI_BASE_URL=https://<your-omniroute-host>/v1
+AI_API_KEY=<your-mehr-scoped-omniroute-api-key>
+AI_MODEL=auto
+```
+
+Use `AI_MODEL=auto` for OmniRoute's balanced Auto-Combo routing. If the operator explicitly wants to avoid billed fallback, use `AI_MODEL=auto/subscription`; this route can return HTTP 503 when no eligible subscription quota is available. Do not use `auto/thrifty` for a zero-spend policy because it may reach billed models. Exact model IDs or named OmniRoute combos may be used instead of `auto` when deterministic routing is required.
+
+The OmniRoute API key is distinct from upstream provider credentials. Configure provider accounts and their permitted quotas inside the trusted OmniRoute instance, then issue a separate, least-privilege MEHR API key. Never expose either key to browser JavaScript, commit them to the repository, or place them in the public UI. Remote OmniRoute endpoints must use HTTPS and must be operator-controlled; do not accept arbitrary gateway URLs from untrusted tenants.
+
+This integration is configuration-compatible, not a live connection claim. A real `test_ai_connector(model_id)` probe must succeed before the registry marks the connector as tested. Confirm the selected routing policy and provider terms before sending real prompts; OmniRoute's free-tier totals are aggregated across separately eligible provider accounts and are not credits granted by OmniRoute.

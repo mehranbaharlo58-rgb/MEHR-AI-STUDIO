@@ -18,7 +18,12 @@ from .ai_stack import AIExecutionManager, AIModel, AIRegistry, MatchRequest
 from .auth_context import current_request_tenant_id
 from .catalog import seed_ai_catalog as seed_catalog_records
 from .config import settings
-from .connectors import build_adapters, smoke_test_adapter
+from .connectors import (
+    ConnectorConfigurationError,
+    OpenAICompatibleAdapter,
+    build_adapters,
+    smoke_test_adapter,
+)
 from .core import assess_text, build_content_brief
 from .oidc import OIDCJWTTokenVerifier
 from .provider import ProviderError, ProviderNotConfigured, generate_text
@@ -41,14 +46,31 @@ def _validate_auth_configuration(
         ("resource_server_url", resource_url),
     ):
         parsed = urlparse(value)
-        if parsed.scheme != "https" or not parsed.netloc or parsed.username:
-            raise ValueError(f"OAuth {name} must be an absolute HTTPS URL")
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError(f"OAuth {name} must be an absolute HTTPS URL without credentials, query, or fragment")
     if (
         not isinstance(required_scopes, (list, tuple))
         or not required_scopes
         or any(not isinstance(scope, str) or not scope.strip() for scope in required_scopes)
     ):
         raise ValueError("At least one non-empty required OAuth scope must be configured")
+    if isinstance(token_verifier, OIDCJWTTokenVerifier):
+        verifier_issuer = str(token_verifier.issuer_url).rstrip("/")
+        verifier_resource = str(token_verifier.resource_server_url).rstrip("/")
+        verifier_scopes = set(token_verifier.required_scopes)
+        if verifier_issuer != issuer_url.rstrip("/"):
+            raise ValueError("OIDC verifier issuer does not match OAuth issuer_url")
+        if verifier_resource != resource_url.rstrip("/"):
+            raise ValueError("OIDC verifier resource does not match OAuth resource_server_url")
+        if verifier_scopes != set(required_scopes):
+            raise ValueError("OIDC verifier scopes do not match OAuth required_scopes")
 
 
 def build_authenticated_server(
@@ -215,6 +237,20 @@ def build_authenticated_server(
                 "saved": False,
                 "error": "health_state_must_be_set_by_connector_test",
             }
+        if parsed.status == "configured":
+            if parsed.access_mode not in {"openai_compatible", "local_runtime"}:
+                return {"saved": False, "error": "unsupported_connector_mode"}
+            try:
+                OpenAICompatibleAdapter(
+                    endpoint=parsed.endpoint or "",
+                    model_name=parsed.model_id or "",
+                    api_key="",
+                    timeout_s=settings.request_timeout,
+                )
+            except ConnectorConfigurationError:
+                return {"saved": False, "error": "invalid_connector_configuration"}
+            if parsed.auth_required and parsed.id not in build_adapters([parsed]):
+                return {"saved": False, "error": "provider_credentials_missing"}
         return tenant_ai_registry().upsert(parsed)
 
     @mcp.tool()
@@ -267,8 +303,8 @@ def build_authenticated_server(
         limit: int = 3,
     ) -> dict:
         """Match and run only configured tenant models with usable connectors."""
-        if not 1 <= limit <= 10:
-            return {"ok": False, "error": "limit_must_be_between_1_and_10"}
+        if not 1 <= limit <= 100:
+            return {"ok": False, "error": "limit_must_be_between_1_and_100"}
         ai_registry = tenant_ai_registry()
         models = ai_registry.list()
         matches = ai_registry.match(MatchRequest(

@@ -19,7 +19,11 @@ Feedback storage is **not** model training. The system does not silently train o
 - Persistent SQLite storage for project context and human feedback.
 - OpenAI-compatible chat-completions adapter with response validation.
 - MCP tools for status, memory, content planning, quality review, generation, and workflow orchestration.
-- Automated tests, lint checks, and package-build verification in GitHub Actions.
+- Tenant-scoped AI model/agent registry, 100-entry discovery catalogue, explainable matching, and bounded parallel execution.
+- Opt-in OIDC-protected Streamable HTTP MCP server for authenticated registry and orchestration tools.
+- Responsive bilingual dashboard with an authenticated MCP Agent workspace and MEHR Live voice/vision interface.
+- Docker/Compose packaging for self-hosting the Python MCP service.
+- Automated tests, lint checks, package-build, container-build, and compose validation in GitHub Actions.
 
 ## Requirements
 - Python 3.11+
@@ -41,7 +45,7 @@ Run the MCP server with `python -m mehr_ai_studio` or the installed `mehr-ai-stu
 
 For installation from the tested GitHub Actions wheel artifact and local MCP setup, see [Local MVP Quick Start](docs/LOCAL-MVP-QUICKSTART.md).
 
-For the opt-in authenticated Streamable HTTP server, OIDC environment variables, and deployment boundary, see [Authenticated HTTP Deployment](docs/AUTHENTICATED-HTTP-DEPLOYMENT.md). Start it with `mehr-ai-studio-http` only after configuring a real OIDC issuer.
+For the opt-in authenticated Streamable HTTP server, OIDC environment variables, and deployment boundary, see [Authenticated HTTP Deployment](docs/AUTHENTICATED-HTTP-DEPLOYMENT.md). For a containerized deployment with persistent SQLite storage, see [Self-hosted MCP Deployment](docs/SELF-HOSTED-MCP-DEPLOYMENT.md). The dashboard and V1 acceptance gates are described in [the UI guide](ui/README.md) and [the V1 execution contract](docs/MEHR-V1-EXECUTION-CONTRACT.md). Start the HTTP service only after configuring a real OIDC issuer.
 
 Run the offline installation check with `python -m mehr_ai_studio.selfcheck`. It verifies SQLite write/read, content-brief creation, and structural assessment without an API key or network connection. A successful offline check does not claim that a live AI provider or hosted HTTP authentication has been tested.
 
@@ -61,7 +65,7 @@ Authentication architecture decision: [ADR-0001 — Authentication boundary for 
 - Project memory is stored in local SQLite by default; it is not encrypted at rest by this application.
 - The default MCP entry point remains a local, single-user stdio process. The opt-in authenticated factory is separate and is not activated by default.
 - `StudioStore` supports tenant-scoped records, but its `tenant_id` argument is only a data-partitioning parameter. Only the opt-in authenticated factory supplies it from the verified request context.
-- Do not deploy the opt-in factory until a real provider-specific verifier has been implemented and tested against the selected issuer, including signature/introspection, issuer, audience/resource, expiry, scopes, and stable tenant mapping. Actual HTTP transport tests, TLS, secret management, logging redaction, rate limiting, and deployment hardening remain mandatory.
+- Do not deploy the opt-in factory publicly until the verifier has been tested against the selected live issuer and real tokens, and TLS, secret management, logging redaction, rate limiting, persistent storage, and deployment hardening have been verified.
 - No automatic publication, payments, or irreversible external actions are performed.
 - Content assessment is structural only; it does not verify factual accuracy, originality, or legal compliance.
 - Feedback is analytics data, not model training.

@@ -1,47 +1,57 @@
-# Cloudflare Worker API deployment
+# Cloudflare Worker deployment
 
-This is an initial, single-owner HTTP generation adapter. It does not turn the existing local SQLite/MCP application into a multi-user hosted service. It exposes only health and text-generation endpoints; project memory, workflow history, file storage, OAuth accounts, and multi-tenant access are not implemented here.
+Worker entrypoint: `cloudflare/worker.mjs`  
+Wrangler configuration: `wrangler.jsonc`  
+Worker script name: `mehr-ai-studio`  
+Browser origin: `https://mehranbaharlo58-rgb.github.io`
 
-## Runtime
+## Deployment workflow
 
-- Worker entrypoint: `cloudflare/worker.mjs`
-- Configuration: `wrangler.jsonc`
-- Browser origin: the existing GitHub Pages site, restricted by `ALLOWED_ORIGIN`
-- Provider credentials and owner token must be configured in Cloudflare, never committed to Git.
+The `deploy-cloudflare-worker` GitHub Actions workflow:
+1. Requires Cloudflare deployment credentials, OIDC configuration, and the OpenAI Realtime API key before deploying.
+2. Verifies the Cloudflare API token and account access.
+3. Deploys the Worker with Wrangler 4.168.0 and the checked-in Durable Object binding/migration.
+4. Synchronizes OIDC, OpenAI, and optional Cloudflare SFU configuration into Worker secrets without printing values.
 
-## Step 1 — Deploy the Worker
+It runs on pushes to `main` that change Worker/config/workflow files, or by manual dispatch from the default branch. It does not deploy feature branches or pull requests. Keep production deployment behind the repository's normal review and approval controls.
 
-A manually triggered workflow is available at **Actions → deploy-cloudflare-worker → Run workflow**. Before using it, add these two repository Actions secrets under **Settings → Secrets and variables → Actions**:
+## Required GitHub Actions secrets
 
-- `CLOUDFLARE_API_TOKEN`: Cloudflare API token with permission to edit Workers Scripts for the target account.
-- `CLOUDFLARE_ACCOUNT_ID`: the target Cloudflare account ID.
+Configure these under repository Settings → Secrets and variables → Actions:
 
-Find the Account ID in Cloudflare Dashboard → **Workers & Pages** → **Overview** → **Account Details**. Copy the 32-character hexadecimal **Account ID** (not the Zone ID, account name, or user ID). The deployment workflow validates its format and checks that the token can access the account's Workers Scripts API before running Wrangler.
+- `CLOUDFLARE_API_TOKEN`: token with Workers Scripts edit/deploy permissions.
+- `CLOUDFLARE_ACCOUNT_ID`: 32-character hexadecimal Account ID.
+- `OIDC_ISSUER_URL`: exact HTTPS token issuer.
+- `OIDC_JWKS_URL`: HTTPS JWKS endpoint.
+- `OIDC_AUDIENCE`: expected API audience.
+- `OIDC_CLIENT_ID`: public SPA client ID.
+- `OIDC_AUTHORIZATION_URL`: HTTPS authorization endpoint.
+- `OIDC_TOKEN_URL`: HTTPS token endpoint; it must allow browser PKCE token exchange from the GitHub Pages origin.
+- `OIDC_REDIRECT_URI`: exact registered callback URI: `https://mehranbaharlo58-rgb.github.io/MEHR-AI-STUDIO/`.
+- `OPENAI_API_KEY`: server-side key with access to the configured Realtime model.
 
-Run the workflow once to create/update the Worker. The workflow does not need the AI provider key or owner token and does not create or overwrite Worker runtime secrets.
+Optional secrets:
+- `OIDC_PUBLIC_SCOPES` (default `openid profile studio:access`).
+- `OIDC_REQUIRED_SCOPES` (default `studio:access`).
+- `OIDC_TENANT_CLAIM` (default `tenant_id`).
+- `OPENAI_REALTIME_MODEL` (default `gpt-realtime-2.1`).
+- `OPENAI_REALTIME_VOICE` (default `marin`).
+- `CLOUDFLARE_SFU_APP_ID` and `CLOUDFLARE_SFU_APP_SECRET`: optional pair for the SFU camera relay. Supply both or neither.
 
-## Step 2 — Configure Worker runtime values
+Do not paste credentials into chat, commit them to Git, or expose them in browser code.
 
-After the first deployment, open the Worker **mehr-ai-studio-api** in Cloudflare and add the following runtime bindings under Settings → Variables and Secrets:
+## Runtime behavior
 
-- `MEHR_API_TOKEN`: a randomly generated owner-only bearer token of at least 32 characters. Store it as a secret.
-- `AI_API_KEY`: provider API key. Store it as a secret.
-- `AI_BASE_URL`: HTTPS OpenAI-compatible API base URL, normally ending in `/v1`. A variable or secret is acceptable.
-- `AI_MODEL`: model identifier supported by that provider. A variable or secret is acceptable.
+The primary voice and sampled-image vision path uses direct OpenAI Realtime WebRTC. It requires OIDC and `OPENAI_API_KEY`. The Cloudflare SFU is an optional relay; it is not required for direct voice or the fallback sampled-image path. The Worker capability endpoint reports these two readiness states independently.
 
-Do not put provider credentials or `MEHR_API_TOKEN` in source code, GitHub workflow files, or chat messages. Keep the owner token private; it is entered only in the dashboard's Settings panel in the browser session.
+The existing text-generation endpoint remains a separate owner-token flow. Its legacy variables (`MEHR_API_TOKEN`, `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL`) are independent from the Realtime voice configuration. Do not treat the legacy text-generation endpoint as multi-user identity infrastructure.
 
-The non-secret `ALLOWED_ORIGIN` is already set to the current GitHub Pages origin in `wrangler.jsonc`. If the site hostname changes, update it before deployment.
+## Post-deployment verification
 
-## Endpoints
+- Check `GET /api/live/oidc/config` from the approved browser origin.
+- Complete OIDC Authorization Code + PKCE login using the registered callback URI.
+- Check authenticated `GET /api/live/capabilities`; it should report direct Realtime readiness independently from optional SFU readiness.
+- Test actual audio, remote playback, sampled camera frames, camera stop, disconnect, and reconnect on Android and desktop.
+- If SFU credentials are configured, verify real adapter frame delivery and viewer ticket replay rejection.
 
-- `GET /api/health`: returns service and provider-configuration status; it does not expose secrets.
-- `POST /api/generate`: requires `Authorization: Bearer <MEHR_API_TOKEN>` and JSON `{"prompt":"..." }`.
-
-The API rejects other browser origins, requires HTTPS for the upstream provider, limits request size and prompt length while streaming the request body, does not log prompt contents, and never returns provider credentials. Provider redirects are not followed, preventing the bearer credential from being forwarded to a redirect destination. Provider responses must be JSON and are capped at 1 MiB.
-
-## Deployment boundary
-
-After configuring runtime values, verify the health endpoint, then test generation using the owner token. Do not enable public multi-user access: this initial adapter is single-owner only and has no account lifecycle, durable rate limiting, or persistent workflow database.
-
-The GitHub Pages UI is connected to this API, but the Worker itself must still be deployed and configured separately. File upload/content processing is not implemented in the UI/API integration.
+A Wrangler dry-run or successful Worker deployment does not prove provider connectivity or media delivery. The live product is not release-ready until real provider and device tests pass.

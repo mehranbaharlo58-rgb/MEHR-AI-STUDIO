@@ -258,6 +258,41 @@ class AIExecutionManager:
                 "latency_ms": round((time.perf_counter() - started) * 1000, 2),
             }
 
+    async def execute_with_fallback(self, model_ids: list[str], task: str) -> dict[str, Any]:
+        """Try ranked candidates sequentially and stop at the first successful provider.
+
+        This is the cost-conscious failover path; execute_parallel remains available
+        for explicit multi-model fan-out and evaluation workloads.
+        """
+        if not task.strip():
+            raise ValueError("task must be non-empty")
+        if not model_ids or len(model_ids) > 100:
+            raise ValueError("dispatch batch must contain between 1 and 100 models")
+        if len(set(model_ids)) != len(model_ids):
+            raise ValueError("model_ids must be unique")
+
+        attempts: list[dict[str, Any]] = []
+        for model_id in model_ids:
+            result = await self._execute_one(model_id, task)
+            attempts.append(result)
+            if result["ok"]:
+                return {
+                    "ok": True,
+                    "selected_model_id": model_id,
+                    "attempted_model_ids": [item["model_id"] for item in attempts],
+                    "fallback_used": len(attempts) > 1,
+                    "results": attempts,
+                }
+
+        return {
+            "ok": False,
+            "error": "all_candidates_failed",
+            "selected_model_id": None,
+            "attempted_model_ids": [item["model_id"] for item in attempts],
+            "fallback_used": len(attempts) > 1,
+            "results": attempts,
+        }
+
     async def execute_parallel(self, model_ids: list[str], task: str) -> list[dict[str, Any]]:
         if not task.strip():
             raise ValueError("task must be non-empty")

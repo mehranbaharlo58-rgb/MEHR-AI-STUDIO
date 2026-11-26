@@ -255,6 +255,33 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
 .live-title{font-size:19px;margin:0 0 8px;color:var(--text)}
 .live-subtitle{font-size:11px;color:var(--muted);line-height:1.8;margin:0 0 20px}
 @media(max-width:800px){.live-room{grid-template-columns:1fr}.live-stage,.live-side{padding:14px}.live-title{font-size:17px}}
+
+/* Agent catalogue workspace */
+.agent-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.agent-toolbar input,.agent-toolbar select{min-width:180px;flex:1;height:40px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);padding:0 12px;font:inherit;font-size:11px}.agent-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}.agent-stat{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:13px}.agent-stat b{display:block;font-size:21px;color:var(--text)}.agent-stat span{font-size:10px;color:var(--muted)}.agent-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.agent-card{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:14px;min-width:0}.agent-card-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.agent-card h3{font-size:12px;margin:0;color:var(--text)}.agent-provider{font-size:9px;color:var(--muted);margin:6px 0 10px}.agent-chip{display:inline-block;border-radius:5px;background:var(--soft);color:#5268d4;font-size:9px;padding:4px 7px;margin:0 4px 4px 0}.agent-state{font-size:9px;border-radius:5px;padding:4px 7px;background:#fff4df;color:#a9772a;white-space:nowrap}.agent-state.tested{background:#e8f8f1;color:#319b75}.agent-note{font-size:10px;color:var(--muted);line-height:1.7;margin:15px 0}.agent-empty{padding:35px;text-align:center;color:var(--muted);font-size:12px;grid-column:1/-1}@media(max-width:900px){.agent-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.agent-grid{grid-template-columns:1fr}.agent-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Authenticated MCP agent control plane */
+.mcp-connect-panel{display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr) auto auto;gap:10px;align-items:end;margin:18px 0;padding:17px;border:1px solid var(--line);border-radius:15px;background:var(--surface)}
+.mcp-connect-panel label{display:flex;flex-direction:column;gap:7px;font-size:10px;color:var(--muted)}
+.mcp-connect-panel input,.mcp-taskbar input{height:40px;min-width:0;border:1px solid var(--line);border-radius:9px;padding:0 11px;background:var(--surface2);color:var(--text);font:inherit;font-size:11px}
+.mcp-connect-panel button,.mcp-taskbar button{min-height:39px;border:1px solid var(--line);border-radius:9px;padding:0 12px;background:var(--surface2);color:var(--text);font:inherit;font-size:10px;cursor:pointer}
+.mcp-connect-panel button.primary,.mcp-taskbar button.primary{background:#5968df;color:white;border-color:#5968df}
+.mcp-state{grid-column:1/-1;margin:0;color:var(--muted);font-size:10px;line-height:1.7}
+.mcp-fanout{display:flex;align-items:center;gap:8px;white-space:nowrap}.mcp-fanout select{min-width:76px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text)}.mcp-taskbar{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:10px;margin:12px 0 18px}
+.mcp-output{display:none;margin:10px 0 18px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font:11px/1.8 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto}
+.mcp-output.show{display:block}
+@media(max-width:760px){.mcp-connect-panel{grid-template-columns:1fr 1fr}.mcp-taskbar{grid-template-columns:1fr}}
+@media(max-width:420px){.mcp-connect-panel{grid-template-columns:1fr}}
+
+.agent-config-panel{margin:16px 0;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+.agent-config-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.agent-config-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.agent-config-fields label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.agent-config-fields input:not([type=checkbox]),.agent-config-fields select{width:100%;min-width:0;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--text)}
+.agent-auth-toggle{flex-direction:row!important;align-items:center;align-self:end;padding:10px}
+.agent-config-help{font-size:12px;line-height:1.6;color:var(--muted);margin:12px 0}
+.agent-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.agent-card-actions button{font-size:12px;padding:7px 10px}
+
 </style></head>
 <body><div class="shell">
 <aside class="sidebar" id="sidebar"><a class="brand" href="#"><span class="mark">M</span><span class="brandcopy"><b>MEHR</b><small>AI STUDIO</small></span></a>
@@ -281,10 +308,48 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
 <div class="section recent"><div><h2 data-k="recentProjects">Recent projects</h2><p data-k="recentSub">Pick up where you left off.</p></div><button class="linkbtn" data-goto="projects" data-k="allProjects">All projects ↗</button></div>
 <div class="list"><div class="row"><span class="projecticon">▤</span><div class="projectinfo"><b data-k="sampleProject">Construction reporting pilot</b><small data-k="updatedToday">Updated just now</small></div><span class="state" data-k="draft">Draft</span></div><div class="row"><span class="projecticon" style="background:#e9f3ff;color:#4385d0">▧</span><div class="projectinfo"><b data-k="sampleProject2">Project document review</b><small data-k="updatedYesterday">Updated yesterday</small></div><span class="state ready" data-k="ready">Ready</span></div></div>
 <div class="footer"><span>MEHR AI STUDIO · <span data-k="previewLabel">Early access preview</span></span><span data-k="humanReview">AI outputs should be reviewed before use.</span></div></section>
+
+<section class="content" id="agentsPanel" hidden>
+ <div class="welcome"><div><div class="eyebrow">MEHR · AGENT CONTROL PLANE</div><h1 data-k="agentHeading">Your AI <em>workforce.</em></h1><p class="sub" data-k="agentIntro">One workspace to discover, compare and manage AI models and agents.</p></div><button class="primary" id="refreshAgents" type="button">↻ <span data-k="refreshCatalog">Refresh catalogue</span></button></div>
+ <div class="agent-stats"><div class="agent-stat"><b id="agentTotal">—</b><span data-k="catalogued">Catalogued entries</span></div><div class="agent-stat"><b id="agentReady">0</b><span data-k="operational">Operational</span></div><div class="agent-stat"><b id="agentTested">0</b><span data-k="verified">Integration tested</span></div><div class="agent-stat"><b id="agentPending">—</b><span data-k="notConnected">Not connected yet</span></div></div>
+ <p class="agent-note" id="agentNotice" role="status">Catalogue entries are discovery records, not active integrations. An agent becomes operational only after credentials are configured and a live test succeeds.</p>
+
+ <div class="mcp-connect-panel" aria-label="Authenticated agent control plane">
+  <label>Authenticated MCP endpoint
+   <input id="mcpEndpoint" type="url" inputmode="url" placeholder="https://your-api.example.com/mcp" autocomplete="url">
+  </label>
+  <label>OIDC access token · memory only
+   <input id="mcpToken" type="password" autocomplete="off" placeholder="Paste short-lived access token">
+  </label>
+  <button type="button" class="primary" id="mcpConnect">Connect control plane</button>
+  <button type="button" id="mcpDisconnect" disabled>Disconnect</button>
+  <p class="mcp-state" id="mcpStatus" role="status" aria-live="polite">Not connected to the authenticated registry. Static catalogue remains available.</p>
+ </div>
+ <div class="mcp-taskbar">
+  <input id="mcpTask" type="text" maxlength="4000" placeholder="Describe a task to match and execute with configured agents…">
+  <label class="mcp-fanout"><span data-k="maxAgentsLabel">Agents to run</span><select id="mcpAgentLimit"><option>1</option><option selected>3</option><option>5</option><option>10</option><option>25</option><option>50</option><option>100</option></select></label>
+  <button type="button" class="primary" id="mcpRunTask" disabled>Match &amp; run task</button>
+ </div>
+ <div class="mcp-output" id="mcpOutput" role="status" aria-live="polite"></div>
+ <div class="agent-config-panel" id="agentConfigPanel" hidden>
+  <div class="agent-config-heading"><strong id="agentConfigTitle" data-k="configureModel">Configure model</strong><button type="button" id="agentConfigClose" data-k="close">Close</button></div>
+  <div class="agent-config-fields">
+   <label><span data-k="modelApiId">Model API identifier</span><input id="agentModelId" maxlength="200" autocomplete="off" placeholder="provider-model-name"></label>
+   <label><span data-k="apiEndpoint">API endpoint</span><input id="agentEndpoint" maxlength="1000" type="url" placeholder="https://api.provider.com/v1"></label>
+   <label><span data-k="connectorType">Connector type</span><select id="agentAccessMode"><option value="openai_compatible" data-k="openaiCompatible">OpenAI-compatible API</option><option value="local_runtime" data-k="localRuntime">Local runtime</option></select></label>
+   <label class="agent-auth-toggle"><input id="agentAuthRequired" type="checkbox" checked> <span data-k="apiKeyRequired">API key required</span></label>
+  </div>
+  <p class="agent-config-help" id="agentCredentialHelp" data-k="credentialHint">Provider credentials are never entered here. Add the server-side environment variable shown after selecting a model, then restart the MCP service.</p>
+  <button type="button" class="primary" id="agentConfigSave" data-k="saveConfig">Save model configuration</button>
+  <p class="mcp-state" id="agentConfigStatus" role="status" aria-live="polite"></p>
+ </div>
+ <div class="agent-toolbar"><input id="agentSearch" type="search" data-placeholder="searchAgents" placeholder="Search agents, providers or capabilities"><select id="agentCategory" aria-label="Filter by category"><option value="">All categories</option></select><select id="agentStatus" aria-label="Filter by status"><option value="">All states</option><option value="catalog_only">Catalog only</option><option value="configured">Configured</option><option value="tested">Tested</option><option value="degraded">Degraded</option><option value="disabled">Disabled</option></select></div>
+ <div class="agent-grid" id="agentGrid"><div class="agent-empty">Loading catalogue…</div></div>
+</section>
 <section class="content" id="livePanel" hidden>
   <div class="eyebrow">MEHR LIVE · VOICE & VISION</div>
   <h1 class="live-title">اتاق ارتباط زنده</h1>
-  <p class="live-subtitle">آزمایش میکروفون و دوربین روی همین دستگاه. در این مرحله رسانه فقط در مرورگر محلی است و هنوز به ایجنت یا سرور ارسال نمی‌شود.</p>
+  <p class="live-subtitle">گفت‌وگوی صوتی بلادرنگ از طریق WebRTC. با فعال‌کردن دوربین، فریم‌های ثابتِ نمونه‌برداری‌شده برای تحلیل تصویری ارسال می‌شوند؛ ویدئوی پیوسته به مدل ارسال نمی‌شود.</p>
   <div class="live-room">
     <div class="live-stage">
       <div class="live-status"><i></i><span id="liveStatus">آماده آزمایش تجهیزات · ارتباط هوش مصنوعی متصل نیست</span></div>
@@ -299,16 +364,27 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
         <button type="button" id="liveCameraStop" disabled>توقف دوربین</button>
         <button type="button" id="liveStopAll">پایان آزمایش</button>
       </div>
-      <p class="live-note">هیچ صدا یا تصویری ضبط یا ارسال نمی‌شود. برای خروج، «پایان آزمایش» را بزنید.</p>
+      <p class="live-note">صدا فقط هنگام اتصال به مدل ارسال می‌شود؛ در صورت فعال‌بودن دوربین، فریم‌های ثابت هر ۳ ثانیه ارسال می‌شوند. برای توقف، «پایان آزمایش» را بزنید.</p>
     </div>
     <aside class="live-side">
+      <h2 class="live-title" style="font-size:15px">اتصال واقعی به سرور</h2>
+      <button type="button" id="liveOidcLogin">ورود امن با حساب کاربری (OIDC)</button>
+      <p class="live-note" id="liveAuthStatus" role="status">برای ورود، تنظیمات OIDC باید روی Worker پیکربندی شده باشد.</p>
+      <details><summary>توکن موقت توسعه (اختیاری)</summary>
+        <label for="liveOidcToken">توکن دسترسی OIDC</label>
+        <input id="liveOidcToken" type="password" autocomplete="off" placeholder="OIDC access token">
+      </details>
+      <button type="button" id="liveConnect">شروع ارتباط زنده</button>
+      <button type="button" id="liveDisconnect" disabled>قطع ارتباط زنده</button>
+      <audio id="liveRemoteAudio" autoplay playsinline></audio>
+      <p class="live-note">ابتدا میکروفون را فعال کنید. در صورت فعال‌کردن دوربین، تصویر هر ۳ ثانیه به‌صورت فریم ثابت برای مدل ارسال می‌شود. کلید اصلی API فقط روی Worker باقی می‌ماند.</p>
       <h2 class="live-title" style="font-size:15px">وضعیت دستگاه‌ها</h2>
       <div class="live-device"><span>میکروفون</span><span id="liveMicState">خاموش</span></div>
       <div class="live-device"><span>دوربین</span><span id="liveCameraState">خاموش</span></div>
-      <div class="live-device"><span>اتصال به ایجنت</span><span>هنوز پیاده‌سازی نشده</span></div>
+      <div class="live-device"><span>اتصال به ایجنت</span><span id="liveAgentState">قطع</span></div>
       <h2 class="live-title" style="font-size:15px;margin-top:20px">رونوشت مکالمه</h2>
       <div class="live-transcript" id="liveTranscript">پس از اتصال موتور گفت‌وگوی بلادرنگ، متن مکالمه و رویدادهای ایجنت در این بخش نمایش داده می‌شود.</div>
-      <p class="live-note">مرحله بعد: اتصال امن OIDC، ساخت نشست کوتاه‌عمر، WebRTC صوت و ارسال فریم‌های تصویری با رضایت کاربر.</p>
+      <p class="live-note">ورود یکپارچه با Authorization Code + PKCE آماده است؛ برای فعال‌سازی، تنظیمات ارائه‌دهنده هویت و نشانی‌های مجاز Worker باید پیکربندی شوند.</p>
     </aside>
   </div>
 </section>
@@ -331,13 +407,13 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
 </main></div><div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 const words={
-en:{workspace:"Personal workspace",workspacePreview:"Workspace preview",workspaceNav:"WORKSPACE",home:"Overview",projects:"Projects",automations:"Automations",agents:"AI assistants",live:"Live voice & vision",files:"Files",manage:"MANAGE",activity:"Activity",settings:"Settings",needHelp:"Need a hand?",helpText:"A calm place to start. You can explore at your own pace.",openGuide:"Open quick guide ↗",owner:"Workspace owner",allSystems:"Preview mode · backend not connected",goodDay:"YOUR WORKSPACE",welcome:"Make room for <em>great work.</em>",welcomeSub:"Take a breath. Tell us what you need, and we’ll help you shape the next step.",newProject:"New project",askMehr:"Ask MEHR",askSub:"Start with a rough idea. You do not need the perfect prompt — we’ll help you organize it.",promptPlaceholder:"Tell MEHR what you need...",addFile:"Add file",useTemplate:"Use a template",startTask:"Start task",quickStart:"A good place to start",quickSub:"Simple starting points. Choose one, or describe your own task above.",viewAll:"View all ↗",dailyReport:"Daily site report",dailyReportSub:"Turn site notes into a clear report.",documentReview:"Document review",documentReviewSub:"Summarize and organize project files.",actionTracker:"Action tracker",actionTrackerSub:"Extract decisions, owners and next steps.",customWorkflow:"Custom workflow",customWorkflowSub:"Build a process around your needs.",recentProjects:"Recent projects",recentSub:"Pick up where you left off.",allProjects:"All projects ↗",sampleProject:"Example · Construction reporting",updatedToday:"Sample data · not connected",draft:"Draft",sampleProject2:"Example · Project document review",updatedYesterday:"Sample data · not connected",ready:"Ready",previewLabel:"Early access preview",humanReview:"AI outputs should be reviewed before use.",backHome:"Back to overview",pageText:"This section is included in the navigation prototype. Its real data view will be connected in a later step.",empty:"Describe the task first.",captured:"Demo only: task text captured. The workflow engine is not connected yet.",filesAdded:"file(s) attached",templateAdded:"Template inserted into the prompt.",newProjectToast:"Project creation will be connected in the next integration step.",guideToast:"Quick guide will be added during onboarding."},
-fa:{workspace:"فضای کاری شخصی",workspacePreview:"پیش‌نمایش فضای کاری",workspaceNav:"فضای کاری",home:"نمای کلی",projects:"پروژه‌ها",automations:"اتوماسیون‌ها",agents:"دستیارهای هوشمند",live:"ارتباط صوتی و تصویری",files:"فایل‌ها",manage:"مدیریت",activity:"فعالیت‌ها",settings:"تنظیمات",needHelp:"راهنما می‌خواهید؟",helpText:"اینجا می‌توانید بدون عجله و به‌سادگی شروع کنید.",openGuide:"مشاهده راهنمای سریع ↗",owner:"مدیر فضای کاری",allSystems:"حالت پیش‌نمایش · موتور هنوز متصل نیست",goodDay:"فضای کاری شما",welcome:"برای <em>کارهای بزرگ</em> آماده‌اید؟",welcomeSub:"با خیال راحت شروع کنید؛ درخواستتان را بنویسید تا قدم بعدی را با هم مشخص کنیم.",newProject:"پروژه جدید",askMehr:"از مهر بپرسید",askSub:"لازم نیست درخواستتان از ابتدا کامل باشد؛ ایده خام را بنویسید تا آن را مرتب و روشن کنیم.",promptPlaceholder:"درخواست خود را برای مهر بنویسید...",addFile:"افزودن فایل",useTemplate:"استفاده از الگو",startTask:"شروع کار",quickStart:"از اینجا شروع کنید",quickSub:"برای شروع یکی را انتخاب کنید یا درخواست دلخواهتان را در کادر بالا بنویسید.",viewAll:"مشاهده همه ↗",dailyReport:"گزارش روزانه کارگاه",dailyReportSub:"یادداشت‌های کارگاه را به گزارش تبدیل کنید.",documentReview:"بررسی اسناد",documentReviewSub:"اسناد پروژه را خلاصه و دسته‌بندی کنید.",actionTracker:"پیگیری اقدامات",actionTrackerSub:"تصمیم‌ها، مسئولان و گام‌های بعدی را استخراج کنید.",customWorkflow:"گردش‌کار اختصاصی",customWorkflowSub:"فرایندی متناسب با نیاز خود بسازید.",recentProjects:"پروژه‌های اخیر",recentSub:"کارهای قبلی خود را ادامه دهید.",allProjects:"همه پروژه‌ها ↗",sampleProject:"نمونه · گزارش کارگاه",updatedToday:"داده نمونه · متصل نیست",draft:"پیش‌نویس",sampleProject2:"نمونه · بررسی اسناد پروژه",updatedYesterday:"داده نمونه · متصل نیست",ready:"آماده",previewLabel:"پیش‌نمایش دسترسی زودهنگام",humanReview:"خروجی هوش مصنوعی پیش از استفاده باید بررسی شود.",backHome:"بازگشت به نمای کلی",pageText:"این بخش در نمونه رابط قرار دارد و در مرحله بعد به داده‌های واقعی متصل می‌شود.",empty:"ابتدا درخواست خود را بنویسید.",captured:"فقط نمونه رابط: درخواست ثبت شد؛ موتور گردش‌کار هنوز متصل نیست.",filesAdded:"فایل پیوست شد",templateAdded:"الگو به متن درخواست اضافه شد.",newProjectToast:"ایجاد پروژه در مرحله اتصال بعدی فعال می‌شود.",guideToast:"راهنمای سریع در مرحله راه‌اندازی اضافه خواهد شد."}
+en:{agentConfigure:"Configure",maxAgentsLabel:"Agents to run",configureModel:"Configure model",modelApiId:"Model API identifier",apiEndpoint:"API endpoint",connectorType:"Connector type",openaiCompatible:"OpenAI-compatible API",localRuntime:"Local runtime",apiKeyRequired:"API key required",credentialHint:"Provider credentials are never entered here. Add the server-side environment variable shown after selecting a model, then restart the MCP service.",saveConfig:"Save model configuration",close:"Close",agentHeading:"Your AI <em>workforce.</em>",agentIntro:"One workspace to discover, compare and manage AI models and agents.",refreshCatalog:"Refresh catalogue",catalogued:"Catalogued entries",operational:"Operational",verified:"Integration tested",notConnected:"Not connected yet",searchAgents:"Search agents, providers or capabilities",workspace:"Personal workspace",workspacePreview:"Workspace preview",workspaceNav:"WORKSPACE",home:"Overview",projects:"Projects",automations:"Automations",agents:"AI assistants",live:"Live voice & vision",files:"Files",manage:"MANAGE",activity:"Activity",settings:"Settings",needHelp:"Need a hand?",helpText:"A calm place to start. You can explore at your own pace.",openGuide:"Open quick guide ↗",owner:"Workspace owner",allSystems:"Preview mode · backend not connected",goodDay:"YOUR WORKSPACE",welcome:"Make room for <em>great work.</em>",welcomeSub:"Take a breath. Tell us what you need, and we’ll help you shape the next step.",newProject:"New project",askMehr:"Ask MEHR",askSub:"Start with a rough idea. You do not need the perfect prompt — we’ll help you organize it.",promptPlaceholder:"Tell MEHR what you need...",addFile:"Add file",useTemplate:"Use a template",startTask:"Start task",quickStart:"A good place to start",quickSub:"Simple starting points. Choose one, or describe your own task above.",viewAll:"View all ↗",dailyReport:"Daily site report",dailyReportSub:"Turn site notes into a clear report.",documentReview:"Document review",documentReviewSub:"Summarize and organize project files.",actionTracker:"Action tracker",actionTrackerSub:"Extract decisions, owners and next steps.",customWorkflow:"Custom workflow",customWorkflowSub:"Build a process around your needs.",recentProjects:"Recent projects",recentSub:"Pick up where you left off.",allProjects:"All projects ↗",sampleProject:"Example · Construction reporting",updatedToday:"Sample data · not connected",draft:"Draft",sampleProject2:"Example · Project document review",updatedYesterday:"Sample data · not connected",ready:"Ready",previewLabel:"Early access preview",humanReview:"AI outputs should be reviewed before use.",backHome:"Back to overview",pageText:"This section is included in the navigation prototype. Its real data view will be connected in a later step.",empty:"Describe the task first.",captured:"Demo only: task text captured. The workflow engine is not connected yet.",filesAdded:"file(s) attached",templateAdded:"Template inserted into the prompt.",newProjectToast:"Project creation will be connected in the next integration step.",guideToast:"Quick guide will be added during onboarding."},
+fa:{agentConfigure:"پیکربندی",maxAgentsLabel:"تعداد ایجنت برای اجرا",configureModel:"پیکربندی مدل",modelApiId:"شناسه مدل در API",apiEndpoint:"نشانی API",connectorType:"نوع اتصال‌دهنده",openaiCompatible:"سازگار با OpenAI",localRuntime:"اجرای محلی",apiKeyRequired:"کلید API لازم است",credentialHint:"کلید ارائه‌دهنده در این بخش وارد نمی‌شود. متغیر محیطی نمایش‌داده‌شده را در فایل محرمانه سمت سرور تنظیم و سرویس MCP را راه‌اندازی مجدد کنید.",saveConfig:"ذخیره پیکربندی مدل",close:"بستن",agentHeading:"نیروی هوشمند <em>مهر</em>",agentIntro:"یک محیط یکپارچه برای شناسایی، مقایسه و مدیریت مدل‌ها و ایجنت‌ها.",refreshCatalog:"به‌روزرسانی فهرست",catalogued:"مدخل‌های فهرست‌شده",operational:"قابل استفاده",verified:"آزمایش‌شده",notConnected:"هنوز متصل نشده",searchAgents:"جست‌وجوی ایجنت، ارائه‌دهنده یا توانایی",workspace:"فضای کاری شخصی",workspacePreview:"پیش‌نمایش فضای کاری",workspaceNav:"فضای کاری",home:"نمای کلی",projects:"پروژه‌ها",automations:"اتوماسیون‌ها",agents:"دستیارهای هوشمند",live:"ارتباط صوتی و تصویری",files:"فایل‌ها",manage:"مدیریت",activity:"فعالیت‌ها",settings:"تنظیمات",needHelp:"راهنما می‌خواهید؟",helpText:"اینجا می‌توانید بدون عجله و به‌سادگی شروع کنید.",openGuide:"مشاهده راهنمای سریع ↗",owner:"مدیر فضای کاری",allSystems:"حالت پیش‌نمایش · موتور هنوز متصل نیست",goodDay:"فضای کاری شما",welcome:"برای <em>کارهای بزرگ</em> آماده‌اید؟",welcomeSub:"با خیال راحت شروع کنید؛ درخواستتان را بنویسید تا قدم بعدی را با هم مشخص کنیم.",newProject:"پروژه جدید",askMehr:"از مهر بپرسید",askSub:"لازم نیست درخواستتان از ابتدا کامل باشد؛ ایده خام را بنویسید تا آن را مرتب و روشن کنیم.",promptPlaceholder:"درخواست خود را برای مهر بنویسید...",addFile:"افزودن فایل",useTemplate:"استفاده از الگو",startTask:"شروع کار",quickStart:"از اینجا شروع کنید",quickSub:"برای شروع یکی را انتخاب کنید یا درخواست دلخواهتان را در کادر بالا بنویسید.",viewAll:"مشاهده همه ↗",dailyReport:"گزارش روزانه کارگاه",dailyReportSub:"یادداشت‌های کارگاه را به گزارش تبدیل کنید.",documentReview:"بررسی اسناد",documentReviewSub:"اسناد پروژه را خلاصه و دسته‌بندی کنید.",actionTracker:"پیگیری اقدامات",actionTrackerSub:"تصمیم‌ها، مسئولان و گام‌های بعدی را استخراج کنید.",customWorkflow:"گردش‌کار اختصاصی",customWorkflowSub:"فرایندی متناسب با نیاز خود بسازید.",recentProjects:"پروژه‌های اخیر",recentSub:"کارهای قبلی خود را ادامه دهید.",allProjects:"همه پروژه‌ها ↗",sampleProject:"نمونه · گزارش کارگاه",updatedToday:"داده نمونه · متصل نیست",draft:"پیش‌نویس",sampleProject2:"نمونه · بررسی اسناد پروژه",updatedYesterday:"داده نمونه · متصل نیست",ready:"آماده",previewLabel:"پیش‌نمایش دسترسی زودهنگام",humanReview:"خروجی هوش مصنوعی پیش از استفاده باید بررسی شود.",backHome:"بازگشت به نمای کلی",pageText:"این بخش در نمونه رابط قرار دارد و در مرحله بعد به داده‌های واقعی متصل می‌شود.",empty:"ابتدا درخواست خود را بنویسید.",captured:"فقط نمونه رابط: درخواست ثبت شد؛ موتور گردش‌کار هنوز متصل نیست.",filesAdded:"فایل پیوست شد",templateAdded:"الگو به متن درخواست اضافه شد.",newProjectToast:"ایجاد پروژه در مرحله اتصال بعدی فعال می‌شود.",guideToast:"راهنمای سریع در مرحله راه‌اندازی اضافه خواهد شد."}
 };
 let lang="en",timer;const $=s=>document.querySelector(s);function tr(k){return words[lang][k]||k}
 function say(msg){$("#toast").textContent=msg;$("#toast").classList.add("show");clearTimeout(timer);timer=setTimeout(()=>$("#toast").classList.remove("show"),2700)}
 function language(next){lang=next;document.documentElement.lang=lang;document.documentElement.dir=lang==="fa"?"rtl":"ltr";document.querySelectorAll("[data-k]").forEach(el=>{const v=tr(el.dataset.k);el.innerHTML=v});document.querySelectorAll("[data-placeholder]").forEach(el=>el.placeholder=tr(el.dataset.placeholder));$("#lang").textContent=lang==="en"?"فا":"EN";$("#crumb").textContent=tr($("#crumb").dataset.key||"home")}
-function page(p){if(p!=="live"&&typeof stopLiveDevices==="function")stopLiveDevices();$("#home").hidden=p!=="home";$("#livePanel").hidden=p!=="live";$("#settingsPanel").hidden=p!=="settings";$("#other").hidden=p==="home"||p==="settings"||p==="live";document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===p));$("#crumb").textContent=tr(p);$("#crumb").dataset.key=p;if(p!=="home"&&p!=="settings"&&p!=="live")$("#otherTitle").textContent=tr(p);if(p==="settings"){const c=getConnection();$("#apiUrl").value=c.url;$("#apiToken").value=c.token;}}
+function page(p){if(p!=="live"&&typeof stopLiveDevices==="function"){if(typeof disconnectLiveSession==="function")void disconnectLiveSession();stopLiveDevices();}$("#home").hidden=p!=="home";$("#livePanel").hidden=p!=="live";$("#agentsPanel").hidden=p!=="agents";$("#settingsPanel").hidden=p!=="settings";$("#other").hidden=p==="home"||p==="settings"||p==="live"||p==="agents";document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===p));$("#crumb").textContent=tr(p);$("#crumb").dataset.key=p;if(p!=="home"&&p!=="settings"&&p!=="live"&&p!=="agents")$("#otherTitle").textContent=tr(p);if(p==="settings"){const c=getConnection();$("#apiUrl").value=c.url;$("#apiToken").value=c.token;}if(p==="agents")void (mcpConnected?loadAgentRegistry():loadAgentCatalogue());}
 document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>{page(b.dataset.page);$("#sidebar").classList.remove("open")}));
 document.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>page(b.dataset.goto)));$("#back").onclick=()=>page("home");$("#settingsBack").onclick=()=>page("home");$("#menu").onclick=()=>$("#sidebar").classList.toggle("open");
 $("#lang").onclick=()=>language(lang==="en"?"fa":"en");$("#theme").onclick=()=>{document.body.classList.toggle("dark");localStorage.setItem("mehr-theme",document.body.classList.contains("dark")?"dark":"light")};if(localStorage.getItem("mehr-theme")==="dark")document.body.classList.add("dark");
@@ -346,6 +422,220 @@ const templates={report:{en:"Create a structured daily construction site report.
 function insertTemplate(k){$("#prompt").value=templates[k][lang];$("#prompt").focus();say(tr("templateAdded"))}
 document.querySelectorAll("[data-template]").forEach(b=>b.addEventListener("click",()=>insertTemplate(b.dataset.template)));$("#template").onclick=()=>insertTemplate("report");
 $("#upload").addEventListener("change",e=>{$("#files").innerHTML=[...e.target.files].map(f=>'<span class="filechip">'+f.name.replace(/[&<>"\']/g,"")+"</span>").join("");if(e.target.files.length)say("File names shown only; upload/content processing is not implemented yet.");});
+
+
+let agentCatalogue=[];
+let mcpAccessToken=null,mcpSessionId=null,mcpRequestId=0,mcpConnected=false;
+const mcpActiveControllers=new Set();
+function mcpEndpoint(){
+ const value=$("#mcpEndpoint").value.trim();
+ if(!value)throw new Error("Enter the authenticated MCP endpoint.");
+ let parsed;
+ try{parsed=new URL(value);}catch{throw new Error("Enter a valid absolute MCP endpoint URL.");}
+ if(parsed.protocol!=="https:"||parsed.username||parsed.password||parsed.search||parsed.hash)
+  throw new Error("MCP endpoint must use HTTPS without credentials, query parameters or fragments.");
+ const path=parsed.pathname.replace(/\/+$/,"");
+ parsed.pathname=path?(path.endsWith("/mcp")?path:path+"/mcp"):"/mcp";
+ return parsed.toString();
+}
+function showMcpOutput(value){
+ const panel=$("#mcpOutput");
+ panel.textContent=typeof value==="string"?value:JSON.stringify(value,null,2);
+ panel.classList.add("show");
+}
+let mcpProtocolVersion="2025-03-26";
+async function readMcpResponse(response){
+ const type=response.headers.get("content-type")||"";
+ if(type.includes("text/event-stream")){
+  const body=await response.text();
+  const data=body.split(/\r?\n/).filter(line=>line.startsWith("data:")).map(line=>line.slice(5).trim()).filter(Boolean);
+  if(!data.length)return null;
+  return JSON.parse(data[data.length-1]);
+ }
+ const body=await response.text();
+ if(!body)return null;
+ try{return JSON.parse(body);}catch{throw new Error("MCP server returned an invalid JSON response.");}
+}
+async function mcpRpc(method,params={},notification=false){
+ if(!mcpAccessToken)throw new Error("Connect with a short-lived OIDC access token first.");
+ const id=notification?undefined:++mcpRequestId;
+ const headers={"Authorization":"Bearer "+mcpAccessToken,"Content-Type":"application/json","Accept":"application/json, text/event-stream"};
+ if(mcpSessionId){headers["Mcp-Session-Id"]=mcpSessionId;headers["Mcp-Protocol-Version"]=mcpProtocolVersion;}
+ const controller=new AbortController();
+ mcpActiveControllers.add(controller);
+ let timedOut=false;
+ const timeout=setTimeout(()=>{timedOut=true;controller.abort();},20000);
+ try{
+  const response=await fetch(mcpEndpoint(),{method:"POST",headers,signal:controller.signal,body:JSON.stringify({jsonrpc:"2.0",...(notification?{}:{id}),method,params})});
+  if(!response.ok)throw new Error("MCP "+method+" failed (HTTP "+response.status+"). Check token, CORS and server logs.");
+  const session=response.headers.get("Mcp-Session-Id");
+  if(session)mcpSessionId=session;
+  if(notification)return null;
+  const payload=await readMcpResponse(response);
+  if(!payload)throw new Error("MCP "+method+" returned an empty response.");
+  if(payload.jsonrpc!=="2.0"||payload.id!==id)throw new Error("MCP "+method+" returned a mismatched JSON-RPC response.");
+  if(payload.error)throw new Error(payload.error.message||"MCP request failed.");
+  return payload.result??null;
+ }catch(error){
+  if(error.name==="AbortError")throw new Error(timedOut?"MCP "+method+" timed out after 20 seconds.":"MCP "+method+" was cancelled because the control plane disconnected.");
+  throw error;
+ }finally{mcpActiveControllers.delete(controller);clearTimeout(timeout);}
+}
+async function closeMcpSession(endpoint,token,sessionId,protocolVersion=mcpProtocolVersion){
+ if(!endpoint||!token||!sessionId)return false;
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),5000);
+ try{
+  const response=await fetch(endpoint,{method:"DELETE",headers:{
+   "Authorization":"Bearer "+token,
+   "Mcp-Session-Id":sessionId,
+   "Mcp-Protocol-Version":protocolVersion
+  },signal:controller.signal});
+  return response.ok||response.status===404;
+ }catch{return false;}
+ finally{clearTimeout(timeout);}
+}
+async function mcpTool(name,args={}){
+ const result=await mcpRpc("tools/call",{name,arguments:args});
+ if(result&&result.isError)throw new Error((result.content||[]).map(item=>item.text||"").join("\n")||"MCP tool failed.");
+ if(result&&result.structuredContent)return result.structuredContent;
+ const content=(result&&result.content||[]).filter(item=>item.type==="text").map(item=>item.text).join("\n");
+ if(!content)return result;
+ try{return JSON.parse(content);}catch{return {text:content};}
+}
+function setMcpStatus(message){$("#mcpStatus").textContent=message;}
+function updateAgentCounts(counts){
+ $("#agentTotal").textContent=counts.total??agentCatalogue.length;
+ $("#agentReady").textContent=(counts.configured||0)+(counts.tested||0);
+ $("#agentTested").textContent=counts.tested||0;
+ $("#agentPending").textContent=counts.catalog_only||0;
+}
+async function loadAgentRegistry(){
+ const result=await mcpTool("list_ai_models");
+ agentCatalogue=Array.isArray(result.models)?result.models:[];
+ updateAgentCounts(result.counts||{total:agentCatalogue.length});
+ const categories=[...new Set(agentCatalogue.map(item=>item.category).filter(Boolean))].sort();
+ const current=$("#agentCategory").value;
+ $("#agentCategory").innerHTML='<option value="">All categories</option>'+categories.map(value=>'<option value="'+safeText(value)+'">'+safeText(value)+'</option>').join("");
+ if(categories.includes(current))$("#agentCategory").value=current;
+ $("#agentNotice").textContent=lang==="fa"?"داده‌ها از رجیستری احراز هویت‌شده دریافت شدند. وضعیت عملیاتی فقط از سرور خوانده می‌شود.":"Live tenant registry loaded from the authenticated MCP server. Operational state is server-reported.";
+ renderAgentCatalogue();
+}
+async function connectMcpControlPlane(){
+ const endpoint=mcpEndpoint(),token=$("#mcpToken").value.trim();
+ if(!token)throw new Error("Enter an OIDC access token. It will not be stored.");
+ $("#mcpToken").value="";
+ mcpAccessToken=token;mcpSessionId=null;mcpConnected=false;mcpProtocolVersion="2025-03-26";
+ try{
+  const initialized=await mcpRpc("initialize",{protocolVersion:"2025-03-26",capabilities:{},clientInfo:{name:"MEHR AI STUDIO Web",version:"0.4.1"}});
+  if(!initialized||!initialized.serverInfo||!initialized.protocolVersion)throw new Error("MCP initialize response is invalid.");
+  mcpProtocolVersion=initialized.protocolVersion;
+  await mcpRpc("notifications/initialized",{},true);
+  const tools=await mcpRpc("tools/list",{});
+  const names=new Set((tools&&tools.tools||[]).map(item=>item.name));
+  for(const required of ["list_ai_models","seed_ai_catalog","execute_ai_task"])if(!names.has(required))throw new Error("MCP server is missing required tool: "+required);
+  mcpConnected=true;$("#mcpConnect").disabled=true;$("#mcpDisconnect").disabled=false;$("#mcpRunTask").disabled=false;
+  setMcpStatus("Connected · "+initialized.serverInfo.name+" · "+((tools.tools||[]).length)+" tools available. Token remains in page memory only.");
+  await loadAgentRegistry();
+  if(!agentCatalogue.length){
+   await mcpTool("seed_ai_catalog");
+   await loadAgentRegistry();
+   setMcpStatus("Connected · catalogue seeded for this tenant. Entries remain catalogue-only until individually configured and tested.");
+  }
+ }catch(error){
+  const failedToken=mcpAccessToken,failedSession=mcpSessionId;
+  mcpAccessToken=null;mcpSessionId=null;mcpConnected=false;
+  await closeMcpSession(endpoint,failedToken,failedSession,mcpProtocolVersion);
+  throw error;
+ }
+}
+async function disconnectMcpControlPlane(){
+ const endpoint=(()=>{try{return mcpEndpoint();}catch{return "";}})();
+ const token=mcpAccessToken,session=mcpSessionId,protocol=mcpProtocolVersion;
+ for(const controller of mcpActiveControllers)controller.abort();
+ mcpActiveControllers.clear();
+ mcpAccessToken=null;mcpSessionId=null;mcpConnected=false;
+ $("#mcpToken").value="";$("#mcpConnect").disabled=false;$("#mcpDisconnect").disabled=true;$("#mcpRunTask").disabled=true;
+ setMcpStatus("Disconnected. Access token cleared; closing server session…");
+ agentCatalogue=[];void loadAgentCatalogue();
+ const closed=await closeMcpSession(endpoint,token,session,protocol);
+ setMcpStatus(closed?"Disconnected. Access token cleared and MCP session closed.":"Disconnected locally. The server session could not be explicitly closed and will expire according to server policy.");
+}
+$("#mcpConnect").addEventListener("click",async()=>{
+ const button=$("#mcpConnect");button.disabled=true;setMcpStatus("Authenticating and initializing MCP session…");
+ try{await connectMcpControlPlane();say("Authenticated agent control plane connected.");}
+ catch(error){mcpAccessToken=null;mcpSessionId=null;mcpConnected=false;button.disabled=false;$("#mcpToken").value="";$("#mcpDisconnect").disabled=true;$("#mcpRunTask").disabled=true;setMcpStatus("Connection failed: "+error.message);}
+});
+$("#mcpDisconnect").addEventListener("click",disconnectMcpControlPlane);
+$("#mcpRunTask").addEventListener("click",async()=>{
+ const task=$("#mcpTask").value.trim();if(task.length<2){say("Describe the task first.");return;}
+ const button=$("#mcpRunTask");button.disabled=true;showMcpOutput("Matching configured agents and dispatching the task…");
+ try{const result=await mcpTool("execute_ai_task",{task,limit:Number($("#mcpAgentLimit").value)});showMcpOutput(result);await loadAgentRegistry();}
+ catch(error){showMcpOutput("Execution error: "+error.message);}
+ finally{button.disabled=!mcpConnected;}
+});
+
+const safeText=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
+function renderAgentCatalogue(){
+ const query=$("#agentSearch").value.trim().toLowerCase(),category=$("#agentCategory").value,status=$("#agentStatus").value;
+ const filtered=agentCatalogue.filter(item=>{const hay=[item.name,item.provider,item.category,...(item.capabilities||[]),...(item.task_tags||[])].join(" ").toLowerCase();return (!query||hay.includes(query))&&(!category||item.category===category)&&(!status||item.status===status);});
+ $("#agentGrid").innerHTML=filtered.length?filtered.map(item=>{
+  const state=item.status||"catalog_only";
+  const tags=(item.capabilities||[]).slice(0,3).map(tag=>'<span class="agent-chip">'+safeText(tag)+'</span>').join("");
+  const actions=mcpConnected?'<div class="agent-card-actions"><button type="button" data-configure-model="'+safeText(item.id)+'">'+tr("agentConfigure")+'</button>'+(["configured","tested","degraded"].includes(state)?'<button type="button" data-test-model="'+safeText(item.id)+'">Test connector</button>':"")+'</div>':"";
+  return '<article class="agent-card"><div class="agent-card-top"><h3>'+safeText(item.name)+'</h3><span class="agent-state '+(state==="tested"?"tested":"")+'">'+safeText(state.replaceAll("_"," "))+'</span></div><div class="agent-provider">'+safeText(item.provider)+' · '+safeText(item.category)+' · '+safeText(item.access_mode)+'</div><div>'+tags+'</div>'+actions+'</article>';
+ }).join(""):'<div class="agent-empty">No matching catalogue entries.</div>';
+}
+async function loadAgentCatalogue(){
+ const grid=$("#agentGrid");if(!agentCatalogue.length)grid.innerHTML='<div class="agent-empty">Loading catalogue…</div>';
+ try{const response=await fetch("./ai-catalog.json",{cache:"no-store"});if(!response.ok)throw new Error("catalogue_http_"+response.status);const data=await response.json();if(!Array.isArray(data))throw new Error("catalogue_format_invalid");agentCatalogue=data;const counts={catalog_only:0,configured:0,tested:0,degraded:0,disabled:0};data.forEach(item=>{if(Object.hasOwn(counts,item.status))counts[item.status]++;});$("#agentTotal").textContent=data.length;$("#agentReady").textContent=counts.configured+counts.tested;$("#agentTested").textContent=counts.tested;$("#agentPending").textContent=counts.catalog_only;const categories=[...new Set(data.map(item=>item.category).filter(Boolean))].sort();$("#agentCategory").innerHTML='<option value="">All categories</option>'+categories.map(value=>'<option value="'+safeText(value)+'">'+safeText(value)+'</option>').join("");$("#agentNotice").textContent=lang==="fa"?"این فهرست شامل "+data.length+" مدخل است؛ تعداد متصل و آزمایش‌شده جداگانه نمایش داده می‌شود. ثبت در فهرست به معنی اتصال فعال نیست.":"Catalogue loaded: "+data.length+" entries. Configured and tested integrations are counted separately; catalogue presence does not mean a live connection.";renderAgentCatalogue();}
+ catch(error){grid.innerHTML='<div class="agent-empty">Catalogue could not be loaded: '+safeText(error.message)+'</div>';$("#agentNotice").textContent="Static catalogue unavailable. Check that ui/ai-catalog.json is deployed beside index.html.";}
+}
+let editingAgentId=null;
+function providerSecretName(provider){
+ const slug=String(provider||"").toUpperCase().replace(/[^A-Z0-9]+/g,"_").replace(/^_+|_+$/g,"");
+ return "MEHR_AI_API_KEY_"+slug;
+}
+function openAgentConfig(modelId){
+ const item=agentCatalogue.find(entry=>entry.id===modelId);if(!item)return;
+ editingAgentId=modelId;
+ $("#agentConfigTitle").textContent="Configure · "+item.name;
+ $("#agentModelId").value=item.model_id||"";
+ $("#agentEndpoint").value=item.endpoint||"";
+ $("#agentAccessMode").value=["openai_compatible","local_runtime"].includes(item.access_mode)?item.access_mode:"openai_compatible";
+ $("#agentAuthRequired").checked=item.auth_required!==false;
+ $("#agentCredentialHelp").textContent=item.auth_required===false
+  ?(lang==="fa"?"برای این مدل کلید ارائه‌دهنده لازم نیست. دسترسی سرور MCP به endpoint را بررسی کنید.":"No provider key is requested by this model. Confirm the endpoint is reachable from the MCP server.")
+  :(lang==="fa"?"کلید در داشبورد وارد نمی‌شود. ابتدا متغیر "+providerSecretName(item.provider)+" را در فایل محرمانه سمت سرور تنظیم و سرویس MCP را راه‌اندازی مجدد کنید؛ سپس پیکربندی را ذخیره کنید.":"No API key is entered in this dashboard. First provision "+providerSecretName(item.provider)+" in the server-side .env.mcp file and restart the MCP service; then save this configuration.");
+ $("#agentConfigStatus").textContent="";
+ $("#agentConfigPanel").hidden=false;
+ $("#agentConfigPanel").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+$("#agentConfigClose").addEventListener("click",()=>{$("#agentConfigPanel").hidden=true;editingAgentId=null;});
+$("#agentConfigSave").addEventListener("click",async()=>{
+ if(!mcpConnected||!editingAgentId)return;
+ const current=agentCatalogue.find(entry=>entry.id===editingAgentId);if(!current)return;
+ const modelId=$("#agentModelId").value.trim(),endpoint=$("#agentEndpoint").value.trim();
+ if(!modelId||!endpoint){$("#agentConfigStatus").textContent="Model identifier and endpoint are required.";return;}
+ let parsed;try{parsed=new URL(endpoint);}catch{$("#agentConfigStatus").textContent="Enter a valid absolute endpoint URL.";return;}
+ const mode=$("#agentAccessMode").value;
+ if(parsed.protocol!=="https:"&&!(mode==="local_runtime"&&parsed.protocol==="http:"&&["localhost","127.0.0.1","::1"].includes(parsed.hostname))){$("#agentConfigStatus").textContent="Use HTTPS; HTTP is allowed only for a local runtime loopback endpoint.";return;}
+ const payload={...current,model_id:modelId,endpoint,access_mode:mode,auth_required:$("#agentAuthRequired").checked,status:"configured",verification_status:"unverified",last_verified_at:null,latency_ms:null};
+ const button=$("#agentConfigSave");button.disabled=true;$("#agentConfigStatus").textContent="Saving configuration to the authenticated tenant registry…";
+ try{const result=await mcpTool("register_ai_model",{model:payload});if(!result.saved){if(result.error==="provider_credentials_missing")throw new Error("Provision "+providerSecretName(current.provider)+" in the server-side .env.mcp file and restart MCP before saving.");throw new Error(result.error||"Model configuration was rejected.");}await loadAgentRegistry();$("#agentConfigStatus").textContent="Configuration saved. Ensure the server-side provider key is provisioned, then run Test connector.";say("Model configuration saved.");}
+ catch(error){$("#agentConfigStatus").textContent="Save failed: "+error.message;}
+ finally{button.disabled=false;}
+});
+$("#agentGrid").addEventListener("click",async event=>{
+ const configure=event.target.closest("[data-configure-model]");
+ if(configure&&mcpConnected){openAgentConfig(configure.dataset.configureModel);return;}
+ const button=event.target.closest("[data-test-model]");
+ if(!button||!mcpConnected)return;
+ button.disabled=true;
+ try{const result=await mcpTool("test_ai_connector",{model_id:button.dataset.testModel});showMcpOutput(result);await loadAgentRegistry();}
+ catch(error){showMcpOutput("Connector test failed: "+error.message);}
+ finally{button.disabled=false;}
+});
+$("#agentSearch").addEventListener("input",renderAgentCatalogue);$("#agentCategory").addEventListener("change",renderAgentCatalogue);$("#agentStatus").addEventListener("change",renderAgentCatalogue);$("#refreshAgents").addEventListener("click",()=>{agentCatalogue=[];void (mcpConnected?loadAgentRegistry():loadAgentCatalogue());});
 function getConnection(){return {url:sessionStorage.getItem("mehr-api-url")||"",token:sessionStorage.getItem("mehr-api-token")||""}}
 function showResult(message,isError=false){const panel=$("#resultPanel");panel.textContent=message;panel.classList.add("show");panel.style.borderColor=isError?"#d9a7a0":"#d9e7dc";}
 async function callHealth(){const c=getConnection();if(!c.url||!c.token)throw new Error("Configure the Worker URL and private token in Settings first.");const base=c.url.replace(/\/+$/,"");const r=await fetch(base+"/api/health",{headers:{Authorization:"Bearer "+c.token}});if(!r.ok)throw new Error("Health check failed (HTTP "+r.status+").");return await r.json();}
@@ -362,7 +652,7 @@ function updateLiveState(){
  $("#liveCameraState").textContent=camOn?"فعال":"خاموش";
  $("#liveMicToggle").disabled=!micOn;
  $("#liveCameraStop").disabled=!camOn;
- $("#liveStatus").textContent=micOn||camOn?"تجهیزات محلی فعال · هیچ داده‌ای ارسال نمی‌شود":"آماده آزمایش تجهیزات · ارتباط هوش مصنوعی متصل نیست";
+ if(!liveConnection)$("#liveStatus").textContent=micOn||camOn?"تجهیزات محلی فعال · هنوز ارتباط شبکه‌ای شروع نشده":"آماده آزمایش تجهیزات · ارتباط هوش مصنوعی متصل نیست";
 }
 $("#liveMicStart").addEventListener("click",async()=>{
  try{if(!navigator.mediaDevices?.getUserMedia)throw new Error("مرورگر یا اتصال امن از دسترسی رسانه پشتیبانی نمی‌کند.");if(liveState.mic)liveState.mic.getTracks().forEach(t=>t.stop());liveState.mic=await navigator.mediaDevices.getUserMedia({audio:true,video:false});liveState.muted=false;updateLiveState();say("میکروفون محلی فعال شد؛ ارسال شبکه‌ای انجام نمی‌شود.");}
@@ -372,16 +662,338 @@ $("#liveMicToggle").addEventListener("click",()=>{
  if(!liveState.mic)return;liveState.muted=!liveState.muted;liveState.mic.getAudioTracks().forEach(t=>t.enabled=!liveState.muted);updateLiveState();
 });
 $("#liveCameraStart").addEventListener("click",async()=>{
- try{if(!navigator.mediaDevices?.getUserMedia)throw new Error("مرورگر یا اتصال امن از دسترسی رسانه پشتیبانی نمی‌کند.");if(liveState.camera)liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}}});$("#liveCameraPreview").srcObject=liveState.camera;$("#liveCameraPreview").hidden=false;$("#liveVideoPlaceholder").hidden=true;await $("#liveCameraPreview").play();updateLiveState();say("پیش‌نمایش دوربین فعال شد؛ تصویر ارسال یا ضبط نمی‌شود.");}
+ try{if(!navigator.mediaDevices?.getUserMedia)throw new Error("مرورگر یا اتصال امن از دسترسی رسانه پشتیبانی نمی‌کند.");if(liveState.camera)liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}}});$("#liveCameraPreview").srcObject=liveState.camera;$("#liveCameraPreview").hidden=false;$("#liveVideoPlaceholder").hidden=true;await $("#liveCameraPreview").play();updateLiveState();if(liveConnection){startSfuVideoBridge(liveConnection).catch(error=>{if(liveConnection)startLiveCameraSampling();$("#liveStatus").textContent="پل ویدئوی SFU آماده نشد؛ ارسال فریم‌های نمونه‌برداری‌شده فعال شد: "+error.message;});}say(liveConnection?"دوربین فعال شد؛ در حال اتصال مسیر ویدئوی SFU هستم.":"پیش‌نمایش دوربین فعال شد؛ هنوز ارسال شبکه‌ای انجام نمی‌شود.");}
  catch(err){say("دسترسی دوربین ناموفق: "+err.message);}
 });
-function stopLiveDevices(){
- for(const key of ["mic","camera"]){if(liveState[key]){liveState[key].getTracks().forEach(t=>t.stop());liveState[key]=null;}}
- $("#liveCameraPreview").srcObject=null;$("#liveCameraPreview").hidden=true;$("#liveVideoPlaceholder").hidden=false;liveState.muted=false;updateLiveState();
+function stopLiveCamera(){
+ const active=liveConnection;
+ if(active?.frameTimer){clearInterval(active.frameTimer);active.frameTimer=null;}
+ if(active?.sfuStarting)active.sfuCancel=true;
+ if(active?.sfu)stopSfuVideoBridge(active).catch(()=>null);
+ if(liveState.camera){liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=null;}
+ $("#liveCameraPreview").srcObject=null;$("#liveCameraPreview").hidden=true;$("#liveVideoPlaceholder").hidden=false;
+ if(active)$("#liveStatus").textContent="گفت‌وگوی صوتی همچنان متصل است؛ ارسال تصویر متوقف شد.";
+ updateLiveState();
 }
-$("#liveCameraStop").addEventListener("click",()=>{if(liveState.camera){liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=null;}$("#liveCameraPreview").srcObject=null;$("#liveCameraPreview").hidden=true;$("#liveVideoPlaceholder").hidden=false;updateLiveState();});
-$("#liveStopAll").addEventListener("click",()=>{stopLiveDevices();say("تمام دسترسی‌های رسانه متوقف شد.");});
-window.addEventListener("pagehide",stopLiveDevices);
+function stopLiveDevices(){
+ stopLiveCamera();
+ if(liveState.mic){liveState.mic.getTracks().forEach(t=>t.stop());liveState.mic=null;}
+ liveState.muted=false;updateLiveState();
+}
+$("#liveCameraStop").addEventListener("click",stopLiveCamera);
+$("#liveStopAll").addEventListener("click",async()=>{await disconnectLiveSession();stopLiveDevices();say("تمام دسترسی‌های رسانه و ارتباط شبکه‌ای متوقف شد.");});
+window.addEventListener("pagehide",()=>{disconnectLiveSession();stopLiveDevices();});
 
+let liveConnection=null;
+let liveAccessToken=null;
+async function liveApi(path, options={}){
+ const token=liveAccessToken||$("#liveOidcToken").value.trim();
+ const base=getConnection().url.replace(/\/+$/,"");
+ if(!base)throw new Error("ابتدا نشانی Worker را در تنظیمات ثبت کنید.");
+ if(!token)throw new Error("توکن OIDC معتبر را وارد کنید.");
+ const response=await fetch(base+path,{...options,headers:{Authorization:"Bearer "+token,"Content-Type":"application/json",...(options.headers||{})}});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok||data.ok===false)throw new Error(data.error||("HTTP "+response.status));
+ return data;
+}
+function base64Url(bytes){
+ let binary="";for(const byte of bytes)binary+=String.fromCharCode(byte);
+ return btoa(binary).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"");
+}
+async function getOidcPkceConfig(){
+ const base=getConnection().url.replace(/\/+$/,"");
+ if(!base)throw new Error("ابتدا نشانی Worker را در تنظیمات ثبت کنید.");
+ const response=await fetch(base+"/api/live/oidc/config");
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok||!data.ok)throw new Error(data.error||"تنظیمات ورود امن در سرور موجود نیست.");
+ return data;
+}
+async function beginOidcLogin(){
+ const config=await getOidcPkceConfig();
+ const random=new Uint8Array(32);crypto.getRandomValues(random);
+ const verifier=base64Url(random);
+ const stateBytes=new Uint8Array(24);crypto.getRandomValues(stateBytes);
+ const state=base64Url(stateBytes);
+ const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(verifier));
+ const challenge=base64Url(new Uint8Array(digest));
+ sessionStorage.setItem("mehr-oidc-verifier",verifier);
+ sessionStorage.setItem("mehr-oidc-state",state);
+ const authorize=new URL(config.authorization_url);
+ authorize.searchParams.set("response_type","code");
+ authorize.searchParams.set("client_id",config.client_id);
+ authorize.searchParams.set("redirect_uri",config.redirect_uri);
+ authorize.searchParams.set("scope",config.scopes);
+ authorize.searchParams.set("state",state);
+ authorize.searchParams.set("code_challenge",challenge);
+ authorize.searchParams.set("code_challenge_method","S256");
+ location.assign(authorize.toString());
+}
+async function completeOidcCallback(){
+ const params=new URLSearchParams(location.search);
+ const code=params.get("code");
+ if(!code)return;
+ const status=$("#liveAuthStatus");
+ try{
+  const expectedState=sessionStorage.getItem("mehr-oidc-state");
+  const verifier=sessionStorage.getItem("mehr-oidc-verifier");
+  if(!expectedState||!verifier||params.get("state")!==expectedState)throw new Error("اعتبارسنجی state ناموفق بود.");
+  const config=await getOidcPkceConfig();
+  const form=new URLSearchParams({
+   grant_type:"authorization_code",code,redirect_uri:config.redirect_uri,
+   client_id:config.client_id,code_verifier:verifier
+  });
+  const tokenResponse=await fetch(config.token_url,{
+   method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:form.toString()
+  });
+  const tokens=await tokenResponse.json().catch(()=>({}));
+  if(!tokenResponse.ok||typeof tokens.access_token!=="string"||!tokens.access_token)throw new Error(tokens.error_description||tokens.error||"تبادل کد ورود ناموفق بود.");
+  liveAccessToken=tokens.access_token;
+  status.textContent="ورود موفق؛ توکن فقط در حافظه همین صفحه نگهداری می‌شود.";
+  sessionStorage.removeItem("mehr-oidc-verifier");
+  sessionStorage.removeItem("mehr-oidc-state");
+ }catch(error){
+  status.textContent="ورود ناموفق: "+error.message;
+ }finally{
+  history.replaceState(null,"",location.pathname+location.hash);
+ }
+}
+$("#liveOidcLogin").addEventListener("click",async()=>{
+ const button=$("#liveOidcLogin");button.disabled=true;
+ try{await beginOidcLogin();}catch(error){$("#liveAuthStatus").textContent="ورود امن فعال نیست: "+error.message;button.disabled=false;}
+});
+void completeOidcCallback();
+function waitForPeerConnected(pc,timeoutMs){
+ if(pc.connectionState==="connected")return Promise.resolve();
+ return new Promise((resolve,reject)=>{
+  const timeout=setTimeout(()=>{pc.removeEventListener("connectionstatechange",check);reject(new Error("WebRTC connection timeout: "+pc.connectionState));},timeoutMs);
+  function check(){
+   if(pc.connectionState==="connected"){clearTimeout(timeout);pc.removeEventListener("connectionstatechange",check);resolve();}
+   else if(pc.connectionState==="failed"||pc.connectionState==="closed"){clearTimeout(timeout);pc.removeEventListener("connectionstatechange",check);reject(new Error("WebRTC connection "+pc.connectionState));}
+  }
+  pc.addEventListener("connectionstatechange",check);
+ });
+}
+function waitForIceGathering(pc){
+ if(pc.iceGatheringState==="complete")return Promise.resolve();
+ return new Promise((resolve,reject)=>{
+  const timeout=setTimeout(()=>{pc.removeEventListener("icegatheringstatechange",check);reject(new Error("ICE gathering timeout"));},12000);
+  function check(){if(pc.iceGatheringState==="complete"){clearTimeout(timeout);pc.removeEventListener("icegatheringstatechange",check);resolve();}}
+  pc.addEventListener("icegatheringstatechange",check);
+ });
+}
+async function disconnectLiveSession(){
+ const active=liveConnection;liveConnection=null;
+ if(active?.frameTimer)clearInterval(active.frameTimer);
+ if(active?.sfuStarting)active.sfuCancel=true;
+ if(active?.sfu)await stopSfuVideoBridge(active).catch(()=>null);
+ if(active?.pc){active.pc.ontrack=null;active.pc.close();}
+ $("#liveRemoteAudio").srcObject=null;
+ $("#liveConnect").disabled=false;$("#liveDisconnect").disabled=true;
+ $("#liveAgentState").textContent="قطع";
+ updateLiveState();
+}
+async function createRealtimeCall(sdp,cameraConsent){
+ const token=liveAccessToken||$("#liveOidcToken").value.trim();
+ const base=getConnection().url.replace(/\/+$/,"");
+ if(!base)throw new Error("ابتدا نشانی Worker را در تنظیمات ثبت کنید.");
+ if(!token)throw new Error("توکن OIDC معتبر را وارد کنید.");
+ const response=await fetch(base+"/api/live/realtime/calls",{
+  method:"POST",
+  headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},
+  body:JSON.stringify({sessionDescription:sdp,consent:{microphone:true,camera:cameraConsent}})
+ });
+ if(!response.ok){
+  const data=await response.json().catch(()=>({}));
+  throw new Error(data.error||("HTTP "+response.status));
+ }
+ const answer=await response.text();
+ if(!answer.startsWith("v=0")||answer.length<20)throw new Error("پاسخ SDP سرویس معتبر نیست.");
+ return answer;
+}
+function appendLiveTranscript(text){
+ if(!text)return;
+ const panel=$("#liveTranscript");
+ if(panel.textContent.startsWith("پس از اتصال"))panel.textContent="";
+ panel.textContent=(panel.textContent+" "+text).trim();
+ panel.scrollTop=panel.scrollHeight;
+}
+function bindRealtimeEvents(channel){
+ const streamedItems=new Set();
+ channel.addEventListener("message",event=>{
+  let data;try{data=JSON.parse(event.data);}catch{return;}
+  const itemKey=data.item_id||data.response_id||"";
+  if(data.type==="response.output_audio_transcript.delta"||data.type==="response.output_text.delta"||data.type==="conversation.item.input_audio_transcription.delta"){
+   if(itemKey)streamedItems.add(itemKey);
+   appendLiveTranscript(data.delta);
+  }else if(data.type==="conversation.item.input_audio_transcription.completed"||data.type==="response.output_audio_transcript.done"){
+   if(itemKey&&streamedItems.has(itemKey)){appendLiveTranscript("\n");streamedItems.delete(itemKey);}
+   else appendLiveTranscript("\n"+(data.transcript||""));
+  }else if(data.type==="error"){
+   console.warn("Realtime event error:",data.error?.message||"unknown");
+  }
+ });
+}
+async function stopSfuVideoBridge(active){
+ const sfu=active?.sfu;
+ if(!sfu)return;
+ active.sfu=null;
+ if(sfu.socket&&sfu.socket.readyState<2)try{sfu.socket.close(1000,"camera stopped");}catch{}
+ if(sfu.pc)try{sfu.pc.close();}catch{}
+ if(sfu.sessionId)await liveApi("/api/live/sessions/"+encodeURIComponent(sfu.sessionId),{method:"DELETE"});
+}
+async function startSfuVideoBridge(active){
+ if(!active||active.sfu||active.sfuStarting||!liveState.camera||!liveState.mic)return;
+ active.sfuCancel=false;
+ active.sfuStarting=(async()=>{
+  let sessionId=null,pc=null,socket=null;
+  try{
+   const micTrack=liveState.mic.getAudioTracks().find(track=>track.readyState==="live");
+   const cameraTrack=liveState.camera.getVideoTracks().find(track=>track.readyState==="live");
+   if(!micTrack||!cameraTrack)throw new Error("میکروفون و دوربین باید فعال باشند.");
+   const created=await liveApi("/api/live/sessions",{method:"POST",body:JSON.stringify({mode:"voice_vision",consent:{microphone:true,camera:true}})});
+   sessionId=created.session?.id;
+   if(!sessionId)throw new Error("شناسه نشست SFU دریافت نشد.");
+   pc=new RTCPeerConnection();
+   const micSender=pc.addTrack(micTrack,liveState.mic);
+   const cameraSender=pc.addTrack(cameraTrack,liveState.camera);
+   const offer=await pc.createOffer();
+   await pc.setLocalDescription(offer);
+   await waitForIceGathering(pc);
+   const transceivers=pc.getTransceivers();
+   const micMid=transceivers.find(item=>item.sender===micSender)?.mid;
+   const cameraMid=transceivers.find(item=>item.sender===cameraSender)?.mid;
+   if(micMid===null||micMid===undefined||cameraMid===null||cameraMid===undefined)throw new Error("شناسه ترک‌های WebRTC آماده نشد.");
+   const published=await liveApi("/api/live/sessions/"+encodeURIComponent(sessionId)+"/publish",{
+    method:"POST",body:JSON.stringify({sessionDescription:{type:"offer",sdp:pc.localDescription.sdp},tracks:[
+     {location:"local",mid:String(micMid),trackName:"microphone"},
+     {location:"local",mid:String(cameraMid),trackName:"camera"}
+    ]})
+   });
+   if(published.partial)throw new Error("انتشار همه ترک‌های صوت/تصویر کامل نشد.");
+   await pc.setRemoteDescription(published.sessionDescription);
+   if(published.sessionDescription.type==="offer"){
+    const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await waitForIceGathering(pc);
+    await liveApi("/api/live/sessions/"+encodeURIComponent(sessionId)+"/renegotiate",{
+     method:"PUT",body:JSON.stringify({sessionDescription:{type:"answer",sdp:pc.localDescription.sdp}})
+    });
+   }
+   await waitForPeerConnected(pc,20000);
+   if(active.sfuCancel||liveConnection!==active||!liveState.camera)throw new Error("ارسال دوربین پیش از تکمیل لغو شد.");
+   const adapter=await liveApi("/api/live/sessions/"+encodeURIComponent(sessionId)+"/video-adapter",{method:"POST",body:"{}"});
+   if(typeof adapter.viewer_url!=="string"||!adapter.viewer_url.startsWith("wss://"))throw new Error("نشانی امن دریافت فریم معتبر نیست.");
+   if(typeof adapter.viewer_ticket!=="string"||! /^[a-f0-9]{64}$/.test(adapter.viewer_ticket))throw new Error("مجوز یک‌بارمصرف دریافت تصویر معتبر نیست.");
+   socket=new WebSocket(adapter.viewer_url,["mehr.viewer","mehr-ticket."+adapter.viewer_ticket]);socket.binaryType="arraybuffer";
+   await new Promise((resolve,reject)=>{
+    const timeout=setTimeout(()=>reject(new Error("مهلت اتصال دریافت تصویر تمام شد.")),10000);
+    socket.addEventListener("open",()=>{clearTimeout(timeout);resolve();},{once:true});
+    socket.addEventListener("error",()=>{clearTimeout(timeout);reject(new Error("اتصال دریافت تصویر برقرار نشد."));},{once:true});
+   });
+   if(active.sfuCancel||liveConnection!==active)throw new Error("نشست ویدئو لغو شد.");
+   socket.addEventListener("message",async event=>{
+    if(document.hidden||!active.channel||active.channel.readyState!=="open"||active.channel.bufferedAmount>512*1024)return;
+    if(!(event.data instanceof ArrayBuffer)||event.data.byteLength>1024*1024)return;
+    const blob=new Blob([event.data],{type:"image/jpeg"});
+    const imageUrl=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>resolve(null);reader.readAsDataURL(blob);});
+    if(typeof imageUrl!=="string"||active.channel.readyState!=="open"||active.channel.bufferedAmount>512*1024)return;
+    active.channel.send(JSON.stringify({type:"conversation.item.create",item:{type:"message",role:"user",content:[{type:"input_image",detail:"low",image_url:imageUrl}]}}));
+   });
+   socket.addEventListener("close",()=>{
+    if(active.sfu?.socket!==socket)return;
+    $("#liveStatus").textContent="مسیر تصویر SFU قطع شد؛ در حال فعال‌سازی مسیر جایگزین تصویر هستم.";
+    void stopSfuVideoBridge(active).finally(()=>{
+     if(liveConnection===active&&liveState.camera){
+      startLiveCameraSampling();
+      $("#liveStatus").textContent="صوت زنده برقرار است؛ تصویر از مسیر جایگزین فریم‌های نمونه‌ای ارسال می‌شود.";
+     }
+    });
+   });
+   active.sfu={sessionId,pc,socket};
+   if(active.frameTimer){clearInterval(active.frameTimer);active.frameTimer=null;}
+   $("#liveStatus").textContent="صوت زنده متصل است؛ تصویر دوربین از مسیر SFU با فریم‌های JPEG دریافت می‌شود.";
+  }catch(error){
+   if(socket&&socket.readyState<2)try{socket.close();}catch{}
+   if(pc)try{pc.close();}catch{}
+   if(sessionId)await liveApi("/api/live/sessions/"+encodeURIComponent(sessionId),{method:"DELETE"}).catch(()=>null);
+   throw error;
+  }finally{active.sfuStarting=null;}
+ })();
+ return active.sfuStarting;
+}
+function startLiveCameraSampling(){
+ const active=liveConnection;
+ if(!active||active.frameTimer||!active.channel||!liveState.camera)return;
+ active.frameTimer=setInterval(()=>sendSampledCameraFrame(active.channel),3000);
+ sendSampledCameraFrame(active.channel);
+}
+function sendSampledCameraFrame(channel){
+ if(document.hidden||channel.readyState!=="open"||channel.bufferedAmount>512*1024||!liveState.camera||!$("#liveCameraPreview").videoWidth)return;
+ const video=$("#liveCameraPreview");
+ const scale=Math.min(1,640/video.videoWidth);
+ const canvas=document.createElement("canvas");
+ canvas.width=Math.max(1,Math.round(video.videoWidth*scale));
+ canvas.height=Math.max(1,Math.round(video.videoHeight*scale));
+ const context=canvas.getContext("2d");
+ context.drawImage(video,0,0,canvas.width,canvas.height);
+ const imageUrl=canvas.toDataURL("image/jpeg",0.62);
+ channel.send(JSON.stringify({type:"conversation.item.create",item:{type:"message",role:"user",content:[{type:"input_image",detail:"low",image_url:imageUrl}]}}));
+}
+$("#liveConnect").addEventListener("click",async()=>{
+ const connect=$("#liveConnect");
+ if(liveConnection){say("ارتباط صوتی از قبل برقرار است.");return;}
+ connect.disabled=true;
+ let pc=null,channel=null;
+ try{
+  const audioTrack=liveState.mic?.getAudioTracks().find(t=>t.readyState==="live");
+  if(!audioTrack)throw new Error("ابتدا میکروفون را فعال کنید.");
+  const cameraTrack=liveState.camera?.getVideoTracks().find(t=>t.readyState==="live");
+  pc=new RTCPeerConnection();
+  const remoteStream=new MediaStream();
+  pc.ontrack=event=>{
+   remoteStream.addTrack(event.track);
+   const playback=$("#liveRemoteAudio");
+   playback.srcObject=event.streams?.[0]||remoteStream;
+   const playResult=playback.play();
+   if(playResult?.catch)playResult.catch(()=>{$("#liveStatus").textContent="صدا دریافت شده؛ برای فعال‌شدن پخش، صدای مرورگر را مجاز کنید.";});
+  };
+  pc.addEventListener("connectionstatechange",()=>{
+   if(liveConnection?.pc!==pc)return;
+   if(pc.connectionState==="disconnected")$("#liveStatus").textContent="اختلال شبکه؛ WebRTC در حال تلاش برای بازیابی است.";
+   if(pc.connectionState==="failed"||pc.connectionState==="closed"){
+    $("#liveStatus").textContent="ارتباط صوتی به‌دلیل خطای شبکه قطع شد؛ منابع نشست در حال پاک‌سازی هستند.";
+    void disconnectLiveSession().finally(()=>{
+     $("#liveAgentState").textContent="قطع";
+     $("#liveStatus").textContent="ارتباط صوتی قطع شد و منابع نشست پاک‌سازی شدند؛ دوباره متصل شوید.";
+     updateLiveState();
+    });
+   }
+  });
+  pc.addTrack(audioTrack,liveState.mic);
+  channel=pc.createDataChannel("oai-events");
+  bindRealtimeEvents(channel);
+  channel.addEventListener("close",()=>{
+   if(liveConnection?.channel===channel)$("#liveStatus").textContent="کانال رویداد بسته شد؛ وضعیت صوت را جداگانه بررسی کنید.";
+  });
+  const offer=await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await waitForIceGathering(pc);
+  const answer=await createRealtimeCall(pc.localDescription.sdp,!!cameraTrack);
+  await pc.setRemoteDescription({type:"answer",sdp:answer});
+  await waitForPeerConnected(pc,20000);
+  liveConnection={pc,channel,frameTimer:null};
+  $("#liveDisconnect").disabled=false;
+  $("#liveAgentState").textContent="متصل";
+  if(cameraTrack){
+   try{await startSfuVideoBridge(liveConnection);}
+   catch(error){startLiveCameraSampling();$("#liveStatus").textContent="پل ویدئوی SFU آماده نشد؛ حالت فریم ثابت فعال شد: "+error.message;}
+  }else $("#liveStatus").textContent="گفت‌وگوی صوتی بلادرنگ متصل است.";
+  say("ارتباط صوتی با موتور بلادرنگ برقرار شد.");
+ }catch(err){
+  if(pc)pc.close();
+  $("#liveAgentState").textContent="خطا";
+  $("#liveStatus").textContent="اتصال زنده ناموفق: "+err.message;
+  say("ارتباط زنده برقرار نشد.");
+ }finally{connect.disabled=!!liveConnection;}
+});
+$("#liveDisconnect").addEventListener("click",async()=>{await disconnectLiveSession();$("#liveStatus").textContent="ارتباط با مدل قطع شد؛ پیش‌نمایش‌های محلی مستقل هستند.";});
 language("fa");
 </script></body></html>

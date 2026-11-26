@@ -21,30 +21,56 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Validate deployment credentials
+      - name: Validate deployment and live-provider secrets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          OIDC_ISSUER_URL: ${{ secrets.OIDC_ISSUER_URL }}
+          OIDC_JWKS_URL: ${{ secrets.OIDC_JWKS_URL }}
+          OIDC_AUDIENCE: ${{ secrets.OIDC_AUDIENCE }}
+          OIDC_CLIENT_ID: ${{ secrets.OIDC_CLIENT_ID }}
+          OIDC_AUTHORIZATION_URL: ${{ secrets.OIDC_AUTHORIZATION_URL }}
+          OIDC_TOKEN_URL: ${{ secrets.OIDC_TOKEN_URL }}
+          OIDC_REDIRECT_URI: ${{ secrets.OIDC_REDIRECT_URI }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CLOUDFLARE_SFU_APP_ID: ${{ secrets.CLOUDFLARE_SFU_APP_ID }}
+          CLOUDFLARE_SFU_APP_SECRET: ${{ secrets.CLOUDFLARE_SFU_APP_SECRET }}
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::error::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID as repository Actions secrets before deployment."
+          set -euo pipefail
+          required=(CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID OIDC_ISSUER_URL OIDC_JWKS_URL OIDC_AUDIENCE OIDC_CLIENT_ID OIDC_AUTHORIZATION_URL OIDC_TOKEN_URL OIDC_REDIRECT_URI OPENAI_API_KEY)
+          missing=()
+          for name in "${required[@]}"; do
+            if [ -z "${!name:-}" ]; then missing+=("$name"); fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf '::error::Missing required Actions secrets: %s\n' "${missing[*]}"
+            echo "Configure these under Settings > Secrets and variables > Actions. The Worker will not be deployed in a partially configured state."
+            exit 1
+          fi
+          if [ -z "$CLOUDFLARE_SFU_APP_ID" ] && [ -n "$CLOUDFLARE_SFU_APP_SECRET" ] || [ -n "$CLOUDFLARE_SFU_APP_ID" ] && [ -z "$CLOUDFLARE_SFU_APP_SECRET" ]; then
+            echo "::error::CLOUDFLARE_SFU_APP_ID and CLOUDFLARE_SFU_APP_SECRET must be supplied together, or both omitted."
             exit 1
           fi
           if ! printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | grep -Eq '^[a-fA-F0-9]{32}$'; then
-            echo "::error::CLOUDFLARE_ACCOUNT_ID must be the 32-character hexadecimal Account ID shown in Cloudflare Account Details."
+            echo "::error::CLOUDFLARE_ACCOUNT_ID must be the 32-character hexadecimal Account ID."
             exit 1
           fi
+          for name in OIDC_ISSUER_URL OIDC_JWKS_URL OIDC_AUTHORIZATION_URL OIDC_TOKEN_URL OIDC_REDIRECT_URI; do
+            case "${!name}" in https://*) ;; *) echo "::error::$name must use HTTPS."; exit 1 ;; esac
+          done
+          echo "Required configuration is present; secret values are not printed."
 
       - name: Verify Cloudflare API token status
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          response="$(curl --silent --show-error \
+          set -euo pipefail
+          response="$(curl --silent --show-error --fail-with-body \
             --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             "https://api.cloudflare.com/client/v4/user/tokens/verify")"
           if [ "$(printf '%s' "$response" | jq -r '.success // false')" != "true" ] || [ "$(printf '%s' "$response" | jq -r '.result.status // empty')" != "active" ]; then
             errors="$(printf '%s' "$response" | jq -c '.errors // []')"
-            echo "::error::Cloudflare API token verification failed or token is not active. Ensure CLOUDFLARE_API_TOKEN contains only the raw token value. Cloudflare errors: $errors"
+            echo "::error::Cloudflare API token verification failed or token is not active. Cloudflare errors: $errors"
             exit 1
           fi
           echo "Cloudflare API token is active."
@@ -54,22 +80,57 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          response="$(curl --silent --show-error \
+          set -euo pipefail
+          response="$(curl --silent --show-error --fail-with-body \
             --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             --header "Content-Type: application/json" \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts?per_page=1")"
           if [ "$(printf '%s' "$response" | jq -r '.success // false')" != "true" ]; then
             errors="$(printf '%s' "$response" | jq -c '.errors // []')"
-            echo "::error::Cloudflare rejected the account ID or token access. Confirm the Account ID and Workers Scripts:Edit permission. Cloudflare errors: $errors"
+            echo "::error::Cloudflare rejected the account ID or token access. Confirm Workers Scripts:Edit permission. Cloudflare errors: $errors"
             exit 1
           fi
           echo "Cloudflare account access verified."
 
       - uses: actions/checkout@v4
 
-      - name: Deploy Worker
+      - name: Deploy Worker and Durable Object migration
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.168.0"
           command: deploy --config wrangler.jsonc
+
+      - name: Synchronize Worker runtime secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          OIDC_ISSUER_URL: ${{ secrets.OIDC_ISSUER_URL }}
+          OIDC_JWKS_URL: ${{ secrets.OIDC_JWKS_URL }}
+          OIDC_AUDIENCE: ${{ secrets.OIDC_AUDIENCE }}
+          OIDC_CLIENT_ID: ${{ secrets.OIDC_CLIENT_ID }}
+          OIDC_AUTHORIZATION_URL: ${{ secrets.OIDC_AUTHORIZATION_URL }}
+          OIDC_TOKEN_URL: ${{ secrets.OIDC_TOKEN_URL }}
+          OIDC_REDIRECT_URI: ${{ secrets.OIDC_REDIRECT_URI }}
+          OIDC_PUBLIC_SCOPES: ${{ secrets.OIDC_PUBLIC_SCOPES }}
+          OIDC_REQUIRED_SCOPES: ${{ secrets.OIDC_REQUIRED_SCOPES }}
+          OIDC_TENANT_CLAIM: ${{ secrets.OIDC_TENANT_CLAIM }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_REALTIME_MODEL: ${{ secrets.OPENAI_REALTIME_MODEL }}
+          OPENAI_REALTIME_VOICE: ${{ secrets.OPENAI_REALTIME_VOICE }}
+          CLOUDFLARE_SFU_APP_ID: ${{ secrets.CLOUDFLARE_SFU_APP_ID }}
+          CLOUDFLARE_SFU_APP_SECRET: ${{ secrets.CLOUDFLARE_SFU_APP_SECRET }}
+        run: |
+          set -euo pipefail
+          put_secret() {
+            local name="$1"
+            local value="${!name:-}"
+            if [ -n "$value" ]; then
+              printf '%s' "$value" | npx --yes wrangler@4.168.0 secret put "$name" --config wrangler.jsonc >/dev/null
+              echo "Configured Worker binding: $name"
+            fi
+          }
+          for name in OIDC_ISSUER_URL OIDC_JWKS_URL OIDC_AUDIENCE OIDC_CLIENT_ID OIDC_AUTHORIZATION_URL OIDC_TOKEN_URL OIDC_REDIRECT_URI OPENAI_API_KEY OIDC_PUBLIC_SCOPES OIDC_REQUIRED_SCOPES OIDC_TENANT_CLAIM OPENAI_REALTIME_MODEL OPENAI_REALTIME_VOICE CLOUDFLARE_SFU_APP_ID CLOUDFLARE_SFU_APP_SECRET; do
+            put_secret "$name"
+          done

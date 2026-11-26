@@ -8,6 +8,7 @@ public listener accidentally.
 from __future__ import annotations
 
 import os
+from urllib.parse import urlparse
 
 from starlette.middleware.cors import CORSMiddleware
 
@@ -24,6 +25,21 @@ def create_app():
     origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
     if not origins or "*" in origins:
         raise ValueError("MEHR_ALLOWED_ORIGINS must contain explicit origins; wildcards are forbidden")
+    normalized_origins = []
+    for origin in origins:
+        parsed = urlparse(origin)
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.path not in {"", "/"}
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError("MEHR_ALLOWED_ORIGINS entries must be HTTPS origins without credentials, paths, query, or fragments")
+        normalized_origins.append(f"https://{parsed.netloc}")
+    origins = list(dict.fromkeys(normalized_origins))
     return CORSMiddleware(
         app,
         allow_origins=origins,

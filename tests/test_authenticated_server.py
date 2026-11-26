@@ -287,6 +287,49 @@ def test_authenticated_ai_registry_tools_are_tenant_scoped(monkeypatch, tmp_path
         "auth_required": False,
     }
     assert app.tools["register_ai_model"](model)["saved"] is True
+    invalid_endpoint = {
+        **model,
+        "id": "local.bad-endpoint",
+        "endpoint": "http://example.com/v1",
+    }
+    assert app.tools["register_ai_model"](invalid_endpoint) == {
+        "saved": False,
+        "error": "invalid_connector_configuration",
+    }
+    missing_adapter_fields = {
+        **model,
+        "id": "local.missing-fields",
+        "model_id": None,
+    }
+    assert app.tools["register_ai_model"](missing_adapter_fields) == {
+        "saved": False,
+        "error": "invalid_connector_configuration",
+    }
+    unsupported_configured_mode = {
+        **model,
+        "id": "native.unimplemented",
+        "access_mode": "native_api",
+    }
+    assert app.tools["register_ai_model"](unsupported_configured_mode) == {
+        "saved": False,
+        "error": "unsupported_connector_mode",
+    }
+    hosted_model = {
+        **model,
+        "id": "hosted.test",
+        "provider": "Test Cloud",
+        "access_mode": "openai_compatible",
+        "availability": "paid",
+        "endpoint": "https://api.example.test/v1",
+        "auth_required": True,
+    }
+    monkeypatch.delenv("MEHR_AI_API_KEY_TEST_CLOUD", raising=False)
+    assert app.tools["register_ai_model"](hosted_model) == {
+        "saved": False,
+        "error": "provider_credentials_missing",
+    }
+    monkeypatch.setenv("MEHR_AI_API_KEY_TEST_CLOUD", "test-only-secret")
+    assert app.tools["register_ai_model"](hosted_model)["saved"] is True
     forged_health = {
         **model,
         "status": "tested",
@@ -299,7 +342,7 @@ def test_authenticated_ai_registry_tools_are_tenant_scoped(monkeypatch, tmp_path
         "error": "health_state_must_be_set_by_connector_test",
     }
     alpha = app.tools["list_ai_models"]()
-    assert alpha["counts"]["configured"] == 1
+    assert alpha["counts"]["configured"] == 2
     assert alpha["models"][0]["id"] == "local.test"
     assert app.tools["match_ai_models"]("analysis")["matches"][0]["model_id"] == "local.test"
 
@@ -310,7 +353,51 @@ def test_authenticated_ai_registry_tools_are_tenant_scoped(monkeypatch, tmp_path
     assert app.tools["match_ai_models"]("analysis")["matches"] == []
 
     active_tenant["id"] = "tenant-alpha"
-    assert app.tools["list_ai_models"]()["counts"]["total"] == 1
+    assert app.tools["list_ai_models"]()["counts"]["total"] == 2
+
+    import asyncio
+
+    async def fake_adapter(selected_model, task):
+        return {"text": "mock execution passed", "model": selected_model.model_id}
+
+    monkeypatch.setattr(
+        authenticated_server,
+        "build_adapters",
+        lambda models, **kwargs: {
+            item.id: fake_adapter for item in models
+            if item.status in {"configured", "tested"}
+        },
+    )
+    execution = asyncio.run(
+        app.tools["execute_ai_task"]("analysis", limit=2)
+    )
+    assert execution["ok"] is True
+    assert execution["results"]
+    assert all(item["ok"] for item in execution["results"])
+
+    # A request for the full 100-entry capacity is accepted; actual matches remain bounded by registry contents.
+    full_capacity = asyncio.run(app.tools["execute_ai_task"]("analysis", limit=100))
+    assert full_capacity["ok"] is True
+    assert len(full_capacity["results"]) <= 100
+
+    # The API accepts up to the full 100-entry catalogue and rejects larger fan-out.
+    assert asyncio.run(app.tools["execute_ai_task"]("analysis", limit=101)) == {
+        "ok": False,
+        "error": "limit_must_be_between_1_and_100",
+    }
+
+    async def fake_smoke(adapter, selected_model, timeout_s):
+        return {"latency_ms": 12.3, "response": "mock connector check passed"}
+
+    monkeypatch.setattr(
+        authenticated_server, "smoke_test_adapter", fake_smoke
+    )
+    health = asyncio.run(app.tools["test_ai_connector"]("local.test"))
+    assert health["ok"] is True
+    assert health["status"] == "tested"
+    counts = app.tools["list_ai_models"]()["counts"]
+    assert counts["tested"] == 1
+    assert counts["configured"] == 1
 
     for name in (
         "register_ai_model",
@@ -326,3 +413,53 @@ def test_authenticated_ai_registry_tools_are_tenant_scoped(monkeypatch, tmp_path
     assert AIRegistryStore(
         tmp_path / "tenant-ai-registry.sqlite3", "tenant-beta"
     ).list() == []
+
+
+def test_oidc_verifier_must_match_resource_server_auth_settings():
+    from mehr_ai_studio.oidc import OIDCJWTTokenVerifier
+
+    verifier = OIDCJWTTokenVerifier(
+        issuer_url="https://identity.example.test/",
+        jwks_url="https://identity.example.test/.well-known/jwks.json",
+        audience="mehr-api",
+        resource_server_url="https://studio.example.test/mcp",
+        required_scopes=["studio:access"],
+    )
+    matching = valid_auth_settings()
+    authenticated_server._validate_auth_configuration(verifier, matching)
+
+    mismatches = [
+        SimpleNamespace(
+            issuer_url="https://other-identity.example.test/",
+            resource_server_url="https://studio.example.test/mcp",
+            required_scopes=["studio:access"],
+        ),
+        SimpleNamespace(
+            issuer_url="https://identity.example.test/",
+            resource_server_url="https://other-studio.example.test/mcp",
+            required_scopes=["studio:access"],
+        ),
+        SimpleNamespace(
+            issuer_url="https://identity.example.test/",
+            resource_server_url="https://studio.example.test/mcp",
+            required_scopes=["studio:admin"],
+        ),
+    ]
+    for settings in mismatches:
+        with pytest.raises(ValueError, match="OIDC verifier"):
+            authenticated_server._validate_auth_configuration(verifier, settings)
+
+
+def test_authenticated_factory_rejects_query_and_password_in_oauth_urls():
+    unsafe = [
+        "https://identity.example.test/path?tenant=wrong",
+        "https://user:secret@identity.example.test/",
+    ]
+    for issuer in unsafe:
+        settings = SimpleNamespace(
+            issuer_url=issuer,
+            resource_server_url="https://studio.example.test/mcp",
+            required_scopes=["studio:access"],
+        )
+        with pytest.raises(ValueError, match="issuer_url"):
+            authenticated_server._validate_auth_configuration(FakeVerifier(), settings)

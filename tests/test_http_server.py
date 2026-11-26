@@ -92,3 +92,45 @@ def test_create_app_rejects_wildcard_cors_origin(monkeypatch):
 
     with pytest.raises(ValueError, match="wildcards are forbidden"):
         http_server.create_app()
+
+
+def test_create_app_rejects_insecure_or_non_origin_cors_entries(monkeypatch):
+    class FakeServer:
+        def streamable_http_app(self):
+            return "asgi-app"
+
+    monkeypatch.setattr(
+        http_server,
+        "build_oidc_authenticated_server_from_env",
+        lambda: FakeServer(),
+    )
+    for value in (
+        "http://studio.example.test",
+        "https://user:pass@studio.example.test",
+        "https://studio.example.test/dashboard",
+        "https://studio.example.test?debug=1",
+    ):
+        monkeypatch.setenv("MEHR_ALLOWED_ORIGINS", value)
+        with pytest.raises(ValueError, match="HTTPS origins"):
+            http_server.create_app()
+
+
+def test_create_app_normalizes_trailing_slash_and_deduplicates_origins(monkeypatch):
+    from starlette.middleware.cors import CORSMiddleware
+
+    class FakeServer:
+        def streamable_http_app(self):
+            return "asgi-app"
+
+    monkeypatch.setattr(
+        http_server,
+        "build_oidc_authenticated_server_from_env",
+        lambda: FakeServer(),
+    )
+    monkeypatch.setenv(
+        "MEHR_ALLOWED_ORIGINS",
+        "https://studio.example.test/,https://studio.example.test",
+    )
+    app = http_server.create_app()
+    assert isinstance(app, CORSMiddleware)
+    assert app.allow_origins == ["https://studio.example.test"]

@@ -2,6 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { readFileSync as readJson } from "node:fs";
+
+const catalogue = JSON.parse(readJson(new URL("../ui/ai-catalog.json", import.meta.url), "utf8"));
 
 const html = readFileSync(new URL("../ui/index.html", import.meta.url), "utf8");
 const scriptStart = html.indexOf("<script>");
@@ -31,18 +34,331 @@ test("dashboard warns that file selection is not a real upload", () => {
 });
 
 
-test("MEHR Live exposes local microphone and camera controls without claiming AI connectivity", () => {
+test("MEHR Live exposes separate media controls and clearly discloses sampled camera transmission", () => {
   assert.ok(html.includes('id="livePanel"'));
   assert.ok(html.includes('id="liveMicStart"'));
   assert.ok(html.includes('id="liveCameraStart"'));
-  assert.ok(html.includes("ارتباط هوش مصنوعی متصل نیست"));
-  assert.ok(html.includes("هیچ داده‌ای ارسال نمی‌شود"));
+  assert.ok(html.includes("فریم‌های ثابت هر ۳ ثانیه ارسال می‌شوند"));
+  assert.ok(html.includes("صدا فقط هنگام اتصال به مدل ارسال می‌شود"));
 });
 
 test("MEHR Live uses separate local media permissions and stops tracks", () => {
   assert.ok(appScript.includes('getUserMedia({audio:true,video:false})'));
   assert.ok(appScript.includes('getUserMedia({audio:false,video:'));
   assert.ok(appScript.includes('getTracks().forEach(t=>t.stop())'));
-  assert.ok(appScript.includes('window.addEventListener("pagehide",stopLiveDevices)'));
-  assert.ok(appScript.includes('if(p!=="live"&&typeof stopLiveDevices==="function")stopLiveDevices()'));
+  assert.ok(appScript.includes('window.addEventListener("pagehide",()=>{disconnectLiveSession();stopLiveDevices();})'));
+  assert.ok(appScript.includes('if(p!=="live"&&typeof stopLiveDevices==="function"){if(typeof disconnectLiveSession==="function")void disconnectLiveSession();stopLiveDevices();}'));
+});
+
+
+test("MEHR Live uses authenticated direct Realtime WebRTC with server-held credentials", () => {
+  assert.ok(html.includes('id="liveOidcLogin"'));
+  assert.ok(appScript.includes('"/api/live/realtime/calls"'));
+  assert.ok(appScript.includes('pc.createDataChannel("oai-events")'));
+  assert.ok(appScript.includes('await pc.setRemoteDescription({type:"answer",sdp:answer})'));
+  assert.ok(appScript.includes('liveAccessToken||$("#liveOidcToken").value.trim()'));
+});
+
+test("browser OIDC login uses Authorization Code with PKCE S256 and state validation", () => {
+  assert.ok(appScript.includes('code_challenge_method","S256"'));
+  assert.ok(appScript.includes('code_verifier:verifier'));
+  assert.ok(appScript.includes('params.get("state")!==expectedState'));
+  assert.ok(appScript.includes('liveAccessToken=tokens.access_token'));
+  assert.ok(!appScript.includes('sessionStorage.setItem("mehr-oidc-access-token"'));
+});
+
+test("camera vision sends bounded sampled still images and pauses while the page is hidden", () => {
+  assert.ok(appScript.includes('setInterval(()=>sendSampledCameraFrame(active.channel),3000)'));
+  assert.ok(appScript.includes("document.hidden"));
+  assert.ok(appScript.includes('640/video.videoWidth'));
+  assert.ok(appScript.includes('channel.bufferedAmount>512*1024'));
+  assert.ok(appScript.includes('type:"input_image",detail:"low"'));
+  assert.ok(appScript.includes('clearInterval(active.frameTimer)'));
+});
+
+test("stopping the camera preserves an active voice connection", () => {
+  const start = appScript.indexOf("function stopLiveCamera()");
+  const end = appScript.indexOf("function stopLiveDevices()", start);
+  assert.ok(start >= 0 && end > start);
+  const stopCamera = appScript.slice(start, end);
+  assert.ok(stopCamera.includes("clearInterval(active.frameTimer)"));
+  assert.ok(!stopCamera.includes("disconnectLiveSession"));
+  assert.ok(stopCamera.includes("stopSfuVideoBridge(active)"));
+});
+
+test("Realtime connect button prevents duplicate concurrent sessions", () => {
+  assert.ok(appScript.includes("if(liveConnection){say("));
+  assert.ok(appScript.includes("connect.disabled=!!liveConnection"));
+});
+
+test("Realtime remote audio playback handles browser autoplay restrictions", () => {
+  assert.ok(appScript.includes("const playResult=playback.play()"));
+  assert.ok(appScript.includes("playResult.catch"));
+});
+
+test("MEHR Live publishes the camera to SFU and forwards JPEG frames into the Realtime vision channel", () => {
+  assert.ok(appScript.includes('"/api/live/sessions"'));
+  assert.ok(appScript.includes('"/publish"'));
+  assert.ok(appScript.includes('"/video-adapter"'));
+  assert.ok(appScript.includes('new WebSocket(adapter.viewer_url,["mehr.viewer","mehr-ticket."+adapter.viewer_ticket])'));
+  assert.ok(appScript.includes('adapter.viewer_ticket'));
+  assert.ok(appScript.includes('mehr-ticket.'));
+  assert.ok(appScript.includes('type:"input_image",detail:"low",image_url:imageUrl'));
+  assert.ok(appScript.includes('active.sfu={sessionId,pc,socket}'));
+});
+
+test("MEHR Live tears down the SFU video session independently from the voice call", () => {
+  assert.ok(appScript.includes("async function stopSfuVideoBridge(active)"));
+  assert.ok(appScript.includes('method:"DELETE"'));
+  assert.ok(appScript.includes('if(active?.sfu)stopSfuVideoBridge(active).catch(()=>null)'));
+});
+
+test("Realtime network failure clears the session and restores controls", () => {
+  assert.ok(appScript.includes('pc.connectionState==="disconnected"'));
+  assert.ok(appScript.includes('pc.connectionState==="failed"||pc.connectionState==="closed"'));
+  assert.ok(appScript.includes('$("#liveConnect").disabled=false;$("#liveDisconnect").disabled=true;'));
+});
+
+
+test("Realtime transcript completion does not duplicate streamed transcript deltas", () => {
+  assert.ok(appScript.includes("const streamedItems=new Set()"));
+  assert.ok(appScript.includes("streamedItems.has(itemKey)"));
+  assert.ok(appScript.includes('appendLiveTranscript("\\n")'));
+});
+
+test("dashboard copy reflects the implemented PKCE flow and required provider setup", () => {
+  assert.ok(html.includes("ورود یکپارچه با Authorization Code + PKCE آماده است"));
+  assert.ok(!html.includes("ورود یکپارچه Authorization Code + PKCE هنوز در حال تکمیل است"));
+});
+
+
+test("Agent workspace loads the curated 100-entry catalogue and separates catalogue from live status", () => {
+  assert.equal(catalogue.length, 100);
+  assert.equal(new Set(catalogue.map(item => item.id)).size, 100);
+  assert.ok(catalogue.every(item => item.status === "catalog_only"));
+  assert.ok(html.includes('id="agentsPanel"'));
+  assert.ok(html.includes('id="agentSearch"'));
+  assert.ok(html.includes('id="agentCategory"'));
+  assert.ok(html.includes('id="agentStatus"'));
+  assert.ok(appScript.includes('fetch("./ai-catalog.json"'));
+  assert.ok(appScript.includes('$("#agentTested").textContent=counts.tested'));
+  assert.ok(appScript.includes("catalogue presence does not mean a live connection"));
+});
+
+test("Agent workspace escapes catalogue data before inserting it into the UI", () => {
+  assert.ok(appScript.includes("const safeText=value=>String(value??"));
+  assert.ok(appScript.includes("safeText(item.name)"));
+  assert.ok(appScript.includes("safeText(item.provider)"));
+});
+
+test("MCP endpoint validation rejects unsafe URL components and normalizes the endpoint path", () => {
+  const start = appScript.indexOf("function mcpEndpoint()");
+  const end = appScript.indexOf("function showMcpOutput", start);
+  assert.ok(start >= 0 && end > start);
+  const source = appScript.slice(start, end);
+  const evaluate = value => vm.runInNewContext(source + "\nmcpEndpoint();", {
+    URL,
+    $: () => ({ value }),
+  });
+  assert.equal(evaluate("https://studio.example.test"), "https://studio.example.test/mcp");
+  assert.equal(evaluate("https://studio.example.test/"), "https://studio.example.test/mcp");
+  assert.equal(evaluate("https://studio.example.test/api/mcp/"), "https://studio.example.test/api/mcp");
+  for (const unsafe of [
+    "http://studio.example.test/mcp",
+    "https://user:secret@studio.example.test/mcp",
+    "https://studio.example.test/mcp?token=secret",
+    "https://studio.example.test/mcp#fragment",
+    "not-a-url",
+  ]) assert.throws(() => evaluate(unsafe));
+});
+
+test("Agent workspace connects to the authenticated tenant-scoped MCP registry", () => {
+  assert.ok(html.includes('id="mcpEndpoint"'));
+  assert.ok(html.includes('id="mcpToken"'));
+  assert.ok(html.includes('id="mcpConnect"'));
+  assert.ok(html.includes('id="mcpDisconnect"'));
+  assert.ok(html.includes('id="mcpRunTask"'));
+  assert.ok(appScript.includes('mcpRpc("initialize"'));
+  assert.ok(appScript.includes('mcpRpc("notifications/initialized"'));
+  assert.ok(appScript.includes('mcpRpc("tools/list"'));
+  assert.ok(appScript.includes('headers["Mcp-Protocol-Version"]=mcpProtocolVersion'));
+  assert.ok(appScript.includes('data-test-model'));
+  assert.ok(appScript.includes('mcpTool("test_ai_connector"'));
+  assert.ok(appScript.includes('if(mcpSessionId){headers["Mcp-Session-Id"]'));
+  assert.ok(appScript.includes('mcpTool("list_ai_models"'));
+  assert.ok(appScript.includes('mcpTool("seed_ai_catalog"'));
+  assert.ok(appScript.includes('mcpTool("execute_ai_task"'));
+  assert.ok(html.includes('id="mcpAgentLimit"'));
+  assert.ok(html.includes('<option>100</option>'));
+  assert.ok(appScript.includes('limit:Number($("#mcpAgentLimit").value)'));
+  assert.ok(appScript.includes('mcpTool("register_ai_model",{model:payload})'));
+  assert.ok(appScript.includes('mcpTool("test_ai_connector"'));
+  assert.ok(appScript.includes('data-configure-model'));
+  assert.ok(appScript.includes('status:"configured"'));
+  assert.ok(appScript.includes('verification_status:"unverified"'));
+  assert.ok(appScript.includes('function providerSecretName(provider)'));
+  assert.ok(appScript.includes('MEHR_AI_API_KEY_'));
+  assert.ok(appScript.includes('No API key is entered in this dashboard'));
+  assert.ok(html.includes('id="agentConfigPanel"'));
+  assert.ok(html.includes('id="agentEndpoint"'));
+  assert.ok(html.includes('id="agentModelId"'));
+  assert.ok(html.includes('id="agentAuthRequired"'));
+  assert.ok(!html.includes('id="agentApiKey"'));
+  assert.ok(appScript.includes('mcpAccessToken=null'));
+  assert.ok(!appScript.includes('localStorage.setItem("mehr-mcp-token"'));
+  assert.ok(!appScript.includes('sessionStorage.setItem("mehr-mcp-token"'));
+});
+
+
+test("SFU viewer loss falls back to sampled camera frames without dropping voice", () => {
+  const start = appScript.indexOf('socket.addEventListener("close",()=>{');
+  const end = appScript.indexOf('active.sfu={sessionId,pc,socket};', start);
+  assert.ok(start >= 0 && end > start);
+  const closeHandler = appScript.slice(start, end);
+  assert.ok(closeHandler.includes("active.sfu?.socket!==socket"));
+  assert.ok(closeHandler.includes("stopSfuVideoBridge(active)"));
+  assert.ok(closeHandler.includes("liveConnection===active&&liveState.camera"));
+  assert.ok(closeHandler.includes("startLiveCameraSampling()"));
+});
+
+test("Realtime peer failure performs full session teardown instead of dropping the session reference", () => {
+  const marker = 'if(pc.connectionState==="failed"||pc.connectionState==="closed"){\n    $("#liveStatus")';
+  const start = appScript.indexOf(marker);
+  const end = appScript.indexOf('\n   }\n  });', start);
+  assert.ok(start >= 0 && end > start);
+  const failureHandler = appScript.slice(start, end);
+  assert.ok(failureHandler.includes("disconnectLiveSession()"));
+  assert.ok(failureHandler.includes("updateLiveState()"));
+  assert.ok(!failureHandler.includes("liveConnection=null"));
+});
+
+
+test("MCP transport enforces response identity, request timeout and negotiated session headers", async () => {
+  const start = appScript.indexOf("async function mcpRpc(");
+  const end = appScript.indexOf("\nasync function closeMcpSession", start);
+  assert.ok(start >= 0 && end > start);
+  const source = appScript.slice(start, end);
+  const calls = [];
+  const context = {
+    mcpAccessToken: "short-lived-test-token",
+    mcpSessionId: "session-123",
+    mcpRequestId: 4,
+    mcpProtocolVersion: "2025-03-26",
+    mcpActiveControllers: new Set(),
+    AbortController,
+    setTimeout,
+    clearTimeout,
+    JSON,
+    Error,
+    URL,
+    $: () => ({ value: "https://studio.example.test/mcp" }),
+    mcpEndpoint: () => "https://studio.example.test/mcp",
+    readMcpResponse: async response => response.payload,
+    fetch: async (url, options) => {
+      calls.push({ url, options });
+      return {
+        ok: true,
+        headers: { get: name => name === "Mcp-Session-Id" ? "session-123" : null },
+        payload: { jsonrpc: "2.0", id: 5, result: { tools: [] } },
+      };
+    },
+  };
+  const result = await vm.runInNewContext(source + '\n mcpRpc("tools/list",{});', context);
+  assert.deepEqual(JSON.parse(JSON.stringify(result)), { tools: [] });
+  assert.equal(calls[0].options.headers["Mcp-Session-Id"], "session-123");
+  assert.equal(calls[0].options.headers["Mcp-Protocol-Version"], "2025-03-26");
+  assert.equal(calls[0].options.headers.Authorization, "Bearer short-lived-test-token");
+
+  const timeoutContext = {
+    ...context,
+    mcpRequestId: 0,
+    setTimeout: callback => { callback(); return 1; },
+    clearTimeout: () => {},
+    fetch: async () => {
+      const error = new Error("aborted");
+      error.name = "AbortError";
+      throw error;
+    },
+  };
+  await assert.rejects(
+    vm.runInNewContext(source + '\n mcpRpc("tools/list",{});', timeoutContext),
+    /timed out after 20 seconds/,
+  );
+
+  const mismatchContext = {
+    ...context,
+    mcpRequestId: 0,
+    fetch: async () => ({
+      ok: true,
+      headers: { get: () => null },
+      payload: { jsonrpc: "2.0", id: 999, result: {} },
+    }),
+  };
+  await assert.rejects(
+    vm.runInNewContext(source + '\n mcpRpc("tools/list",{});', mismatchContext),
+    /mismatched JSON-RPC response/,
+  );
+});
+
+test("MCP disconnect cancellation aborts in-flight requests and releases controller references", async () => {
+  const start = appScript.indexOf("async function mcpRpc(");
+  const end = appScript.indexOf("async function closeMcpSession", start);
+  assert.ok(start >= 0 && end > start);
+  const source = appScript.slice(start, end);
+  const controllers = new Set();
+  const context = {
+    mcpAccessToken: "short-lived-test-token",
+    mcpSessionId: "session-123",
+    mcpRequestId: 0,
+    mcpProtocolVersion: "2025-03-26",
+    mcpActiveControllers: controllers,
+    AbortController,
+    setTimeout,
+    clearTimeout,
+    JSON,
+    Error,
+    URL,
+    $: () => ({ value: "https://studio.example.test/mcp" }),
+    mcpEndpoint: () => "https://studio.example.test/mcp",
+    readMcpResponse: async response => response.payload,
+    fetch: async (_url, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener("abort", () => {
+        const error = new Error("aborted");
+        error.name = "AbortError";
+        reject(error);
+      }, { once: true });
+    }),
+  };
+  const pending = vm.runInNewContext(source + '\n mcpRpc("tools/call",{});', context);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(controllers.size, 1);
+  for (const controller of controllers) controller.abort();
+  await assert.rejects(pending, /cancelled because the control plane disconnected/);
+  assert.equal(controllers.size, 0);
+});
+
+test("MCP disconnect attempts authenticated Streamable HTTP session termination", async () => {
+  const start = appScript.indexOf("async function closeMcpSession(");
+  const end = appScript.indexOf("\nasync function mcpTool", start);
+  assert.ok(start >= 0 && end > start);
+  const source = appScript.slice(start, end);
+  let request;
+  const context = {
+    AbortController,
+    setTimeout,
+    clearTimeout,
+    fetch: async (url, options) => {
+      request = { url, options };
+      return { ok: true, status: 200 };
+    },
+  };
+  const closed = await vm.runInNewContext(
+    source + '\n closeMcpSession("https://studio.example.test/mcp","token","session","2025-03-26");',
+    context,
+  );
+  assert.equal(closed, true);
+  assert.equal(request.options.method, "DELETE");
+  assert.equal(request.options.headers.Authorization, "Bearer token");
+  assert.equal(request.options.headers["Mcp-Session-Id"], "session");
+  assert.equal(request.options.headers["Mcp-Protocol-Version"], "2025-03-26");
 });

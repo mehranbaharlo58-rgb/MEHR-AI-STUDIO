@@ -20,6 +20,12 @@ jobs:
       - run: ruff check src tests
       - run: pytest -q
       - run: python -m build
+      - name: Build authenticated MCP container image
+        run: docker build --tag mehr-ai-studio-mcp:test .
+      - name: Validate isolated MCP compose configuration
+        run: cp .env.mcp.example .env.mcp && docker compose config --quiet
+      - name: Verify environment secrets are git-ignored
+        run: git check-ignore -q .env.mcp && ! git check-ignore -q .env.mcp.example
       - name: Install built wheel in a clean virtual environment
         run: |
           python -m venv .venv-smoke
