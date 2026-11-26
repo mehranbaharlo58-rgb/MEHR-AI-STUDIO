@@ -1,122 +1,77 @@
 # MEHR Live API — Development Operations
 
-Status: API implementation in development; not deployed
-Branch: `feat/mehr-live-session-contracts`
+Status: implemented in branch; not deployed
+Branch: feat/mehr-live-session-contracts
 
 ## Current implementation
 
-The Cloudflare Worker now includes:
-- RS256 OIDC access-token verification against a configured HTTPS JWKS endpoint.
-- Validation of issuer, audience, expiry, issued-at/not-before, subject, client identity, required scopes, and a constrained tenant claim.
-- A Durable Object session registry that binds each opaque application session ID to the verified subject and tenant.
-- A maximum live session lifetime of 10 minutes.
-- Authenticated SFU session creation, media publication, SDP renegotiation, and media-track closure endpoints.
-- Strict media request size, SDP length, track-name, MID, mode, and consent checks.
-- CORS preflight support for the DELETE close operation.
+The Cloudflare Worker includes:
+- RS256 OIDC access-token verification against a configured HTTPS JWKS endpoint, including issuer, audience, expiry, iat/nbf, subject, client identity, scopes, and tenant validation.
+- Public-client OIDC Authorization Code + PKCE flow in the browser UI, including state and nonce handling.
+- Durable Object application-session registry binding opaque session IDs to verified subject and tenant, with a maximum ten-minute lifetime.
+- Cloudflare Realtime SFU session creation, track publication, inspection, renegotiation, and close operations.
+- Direct Realtime WebRTC call initialization through the Worker; the standard API key remains server-side.
+- Browser WebRTC media handling, remote audio playback, data-channel event handling, transcript UI, and consent-gated sampled still-image input.
+- Per-user action quotas and atomic Durable Object counters.
+- Owner/tenant-scoped, expiring Durable Object mutation locks around SFU publish, renegotiation, and close.
+- Request-size, SDP, track-name, MID, mode, and consent validation.
 
-This is an incremental live-media implementation, not a complete live AI product. The dashboard now requests explicit local media permissions, creates a PeerConnection, publishes microphone/camera tracks through the authenticated Worker routes, handles an SFU renegotiation offer, and waits for the transport to connect. It still requires a manually supplied OIDC access token; browser Authorization Code + PKCE, remote agent audio subscription/playback, and a realtime speech/LLM provider are not implemented.
+This is not a production-verified live AI product. Automated tests verify application logic and request construction, not successful upstream connectivity, media quality, image understanding, or Android/desktop compatibility. The Cloudflare SFU transport is a separate multi-track option; the direct Realtime connection is the intended voice-agent path.
 
 ## Required runtime configuration
 
-Set the following values in the Cloudflare Worker environment. Use the Cloudflare dashboard or Wrangler secret store; do not add credentials to Git, browser JavaScript, or issue comments.
+Set runtime configuration in the Cloudflare Worker environment or secret store. Never commit credentials or place standard API keys in browser JavaScript.
 
 | Variable | Purpose |
 |---|---|
-| `OIDC_ISSUER_URL` | Exact HTTPS issuer configured at the identity provider |
-| `OIDC_JWKS_URL` | HTTPS JWKS URL for that issuer |
-| `OIDC_AUDIENCE` | Audience expected in access tokens |
-| `OIDC_REQUIRED_SCOPES` | Required scopes; default `studio:access` |
-| `OIDC_TENANT_CLAIM` | Trusted tenant claim; default `tenant_id` |
-| `CLOUDFLARE_SFU_APP_ID` | SFU application ID |
-| `CLOUDFLARE_SFU_APP_SECRET` | SFU App Secret; secret storage only |
+| OIDC_ISSUER_URL | Exact HTTPS issuer |
+| OIDC_JWKS_URL | HTTPS JWKS endpoint |
+| OIDC_AUDIENCE | Expected access-token audience |
+| OIDC_REQUIRED_SCOPES | Required scopes; default studio:access |
+| OIDC_TENANT_CLAIM | Trusted tenant claim; default tenant_id |
+| OIDC_CLIENT_ID | Expected public client identifier, when configured |
+| OPENAI_API_KEY | Server-only Realtime API key |
+| OPENAI_REALTIME_MODEL | Server-selected Realtime model |
+| CLOUDFLARE_SFU_APP_ID | SFU application ID |
+| CLOUDFLARE_SFU_APP_SECRET | SFU App Secret; secret storage only |
 
-The `LIVE_SESSIONS` Durable Object binding and `v1-live-session-registry` SQLite-class migration are declared in `wrangler.jsonc`. The migration takes effect only when a deployment is performed.
+The LIVE_SESSIONS Durable Object binding and v1-live-session-registry SQLite-class migration are declared in wrangler.jsonc. The migration takes effect only after deployment.
 
 ## API contract
 
-All endpoints require:
-- Exact configured `Origin`
-- `Authorization: Bearer <OIDC access token>`
-- A valid signature and all required claims/scopes
-- A verified tenant claim; user/tenant identity is never accepted from the request body
+All protected endpoints require the configured Origin and a valid OIDC access token. Identity and tenant are derived from the verified token, never trusted from request JSON.
 
-### Inspect capability readiness
+- GET /api/live/capabilities — authenticated capability readiness.
+- POST /api/live/sessions — create an opaque application session with explicit microphone/camera consent.
+- POST /api/live/sessions/{applicationSessionId}/publish — publish local SFU tracks using a bounded SDP offer.
+- GET /api/live/sessions/{applicationSessionId} — return sanitized provider track state; active does not prove media packets are arriving.
+- PUT /api/live/sessions/{applicationSessionId}/renegotiate — submit a bounded SDP answer for the owned SFU session.
+- DELETE /api/live/sessions/{applicationSessionId} — close recorded tracks and delete the application session record only after closure checks.
+- POST /api/live/realtime/calls — establish direct Realtime WebRTC from a browser SDP offer. The Worker forwards the offer and server-selected session configuration using the server-side API key.
 
-`GET /api/live/capabilities`
+The browser OIDC client uses Authorization Code + PKCE. Realtime audio travels over WebRTC; session events and transcripts use the data channel. Camera input is sampled still images with explicit consent, not continuous video understanding.
 
-Returns authenticated capability state. It returns HTTP 503 until SFU credentials and the Durable Object binding are present.
+## Quotas and mutation serialization
 
-### Create an application session
+Fixed-window quotas are scoped by verified tenant and subject:
+- Session creation: 3 per 10 minutes.
+- Direct Realtime initialization: 5 per 10 minutes.
+- SFU track publication: 12 per minute.
+- SFU renegotiation: 20 per minute.
+- Session inspection: 60 per minute.
+- Session close: 5 per 10 minutes.
 
-`POST /api/live/sessions`
+The Durable Object uses atomic storage transactions for quota counters. SFU publish, renegotiation, and close operations acquire an owner-scoped 30-second mutation lock. Provider HTTP requests have a 15-second timeout. Competing mutations receive HTTP 409; lock release is attempted in a finally path, and expired locks can be replaced.
 
-Voice:
-```json
-{
-  "mode": "voice",
-  "consent": { "microphone": true, "camera": false }
-}
-```
+## Remaining production gates
 
-Voice + vision:
-```json
-{
-  "mode": "voice_vision",
-  "consent": { "microphone": true, "camera": true }
-}
-```
+1. Configure a test OIDC issuer and Worker secrets in a non-production environment.
+2. Apply the Durable Object migration in that environment.
+3. Test actual Realtime WebRTC audio, remote playback, transcripts, image input, graceful close, and usage accounting.
+4. Test the Cloudflare SFU multi-track path, partial publication, renegotiation, close, lock expiry, and concurrent mutation rejection.
+5. Test on Android and desktop browsers, including denied permissions, reconnect, network interruption, and media packet verification.
+6. Add provider-side orphan-session reconciliation, metrics, and cost controls.
+7. Implement the paired desktop bridge with visible status, explicit opt-in, allowlisted operations, and per-action approval.
+8. Deploy only after the above gates pass and the owner explicitly approves deployment.
 
-The response contains an opaque application session ID and expiry. The provider's internal session ID is not returned.
-
-### Publish local tracks
-
-`POST /api/live/sessions/{applicationSessionId}/publish`
-
-Body contains the browser's gathered local SDP offer and one or two local tracks named `microphone` and optionally `camera`. The browser must request media permission only after explicit user action. Camera publication must match the session's recorded camera consent.
-
-### Inspect an application session
-
-`GET /api/live/sessions/{applicationSessionId}`
-
-Returns only sanitized track identifiers, names, locations, and provider lifecycle states for the verified owner. It never returns the provider session ID or credentials. An `active` track status is not proof that media packets are arriving or being played.
-
-### Complete SFU renegotiation
-
-`PUT /api/live/sessions/{applicationSessionId}/renegotiate`
-
-Accepts only a bounded SDP answer and forwards it to the provider's `/sessions/{providerSessionId}/renegotiate` endpoint after verifying the session owner and tenant. CORS explicitly permits PUT. The browser must complete this exchange before mutating the same SFU session again.
-
-### Close a session
-
-`DELETE /api/live/sessions/{applicationSessionId}`
-
-Only the verified owner in the same tenant can close the session. The Worker asks the SFU to force-close the recorded media tracks and then deletes the application session record.
-
-## Security and operational limitations
-
-- The OIDC verifier uses a five-minute in-memory JWKS cache and forces one refresh when a key is unknown or signature verification fails. Validate this behavior against the selected identity provider's key-rotation policy.
-- The current session registry enforces ownership and expiry, but does not yet provide per-user concurrency quotas or distributed rate limiting.
-- Session setup and SFU negotiation must be serialized per PeerConnection. The browser now performs an authenticated, owner-scoped SFU session inspection after connecting and handles an SFU offer marked `requiresImmediateRenegotiation` and submits its gathered answer through the authenticated renegotiation route. Concurrent mutations are not yet protected by a distributed per-session lock.
-- The close route closes media tracks; it does not claim to terminate a provider-side session with a dedicated DELETE operation.
-- If an SFU create succeeds but registry persistence fails, an orphaned provider session may remain until SFU resource cleanup. Add compensating cleanup and reconciliation before production.
-- The publish route records only successful track MIDs returned by the SFU and exposes a `partial` flag. Validate the exact per-track response shape against live SFU responses before production.
-- The browser dashboard still uses a legacy owner-token flow for the separate text-generation endpoint. Do not expose that token to untrusted users.
-- No public deployment, production OIDC issuer, SFU credentials, or end-to-end browser-to-SFU test has been verified. The browser waits for WebRTC connection state but media packet delivery and remote playback still need independent verification.
-
-## Validation required next
-
-1. Add broader negative tests for malformed, expired, wrong-audience, wrong-issuer, and missing-scope tokens.
-2. Add deterministic SFU publish/partial-failure/close tests and verify the live response schema.
-3. Add provider cleanup reconciliation and per-user concurrency/rate limits.
-4. Implement browser OIDC PKCE and media publishing/remote playback.
-5. Run the Durable Object migration in a non-production environment.
-6. Test real browser-to-SFU audio/video on Android and desktop, including denied permissions and leave/reconnect.
-7. Connect a separate realtime speech model and measure end-to-end latency.
-8. Deploy only after all gates pass and the owner approves deployment.
-
-## References
-
-- https://developers.cloudflare.com/realtime/sfu/api/
-- https://developers.cloudflare.com/realtime/sfu/get-started/connection-patterns/
-- https://developers.cloudflare.com/realtime/sfu/concepts/negotiation/
-- https://developers.cloudflare.com/durable-objects/
+No production deployment, real provider credential, or live end-to-end device test is claimed by this document.
