@@ -381,6 +381,9 @@ export default {
           !tracks.some((track) => track.trackName === "microphone")) {
         return response({ ok: false, error: "invalid_publish_request" }, 422, cors);
       }
+      const rateStatus = await consumeLiveRateLimit(env, principal, "publish").catch(() => 503);
+      if (rateStatus === 429) return response({ ok: false, error: "rate_limit_exceeded" }, 429, cors);
+      if (rateStatus !== 200) return response({ ok: false, error: "rate_limiter_unavailable" }, 503, cors);
       let providerSessionId = null;
       let publishedMids = [];
       try {
@@ -433,6 +436,9 @@ export default {
     if (liveInspectMatch && request.method === "GET") {
       const principal = await verifyOidcAccessToken(request, env);
       if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
+      const rateStatus = await consumeLiveRateLimit(env, principal, "inspect").catch(() => 503);
+      if (rateStatus === 429) return response({ ok: false, error: "rate_limit_exceeded" }, 429, cors);
+      if (rateStatus !== 200) return response({ ok: false, error: "rate_limiter_unavailable" }, 503, cors);
       try {
         const auth = await sessionRegistry(env, liveInspectMatch[1], "authorize", {
           subject: principal.subject, tenantId: principal.tenantId,
@@ -471,6 +477,9 @@ export default {
           description.sdp.length > 100000) {
         return response({ ok: false, error: "invalid_renegotiation_answer" }, 422, cors);
       }
+      const rateStatus = await consumeLiveRateLimit(env, principal, "renegotiate").catch(() => 503);
+      if (rateStatus === 429) return response({ ok: false, error: "rate_limit_exceeded" }, 429, cors);
+      if (rateStatus !== 200) return response({ ok: false, error: "rate_limiter_unavailable" }, 503, cors);
       try {
         const auth = await sessionRegistry(env, appSessionId, "authorize", {
           subject: principal.subject, tenantId: principal.tenantId,
