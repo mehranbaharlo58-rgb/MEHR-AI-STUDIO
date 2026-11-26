@@ -653,3 +653,60 @@ test("rejects signed OIDC tokens with invalid issuer, audience, expiry, or requi
     }
   }
 });
+
+
+test("inspects SFU track state for the verified owner without exposing provider session IDs", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const originalFetch = globalThis.fetch;
+  let inspectedUrl = null;
+  globalThis.fetch = async (url, init = {}) => {
+    const target = String(url);
+    if (target.endsWith("/jwks-live-inspect.json")) {
+      return new Response(JSON.stringify({ keys: [jwk] }), {
+        status: 200, headers: { "Content-Type": "application/json" },
+      });
+    }
+    inspectedUrl = target;
+    assert.equal(init.method, "GET");
+    return Response.json({
+      sessionId: "provider-session-secret",
+      tracks: [
+        { mid: "0", trackName: "microphone", location: "local", status: "active" },
+        { mid: "1", trackName: "camera", location: "local", status: "inactive" },
+      ],
+    });
+  };
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/sessions/123e4567-e89b-12d3-a456-426614174000", {
+      method: "GET",
+      headers: { ...origin, Authorization: "Bearer " + token },
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks-live-inspect.json",
+      OIDC_AUDIENCE: "mehr-api",
+      CLOUDFLARE_SFU_APP_ID: "test-app",
+      CLOUDFLARE_SFU_APP_SECRET: "test-secret",
+      LIVE_SESSIONS: {
+        idFromName: (id) => id,
+        get: () => ({
+          fetch: async (url) => {
+            assert.equal(new URL(url).pathname, "/authorize");
+            return Response.json({ providerSessionId: "provider-session-secret", expiresAt: 1234567890 });
+          },
+        }),
+      },
+    });
+    const body = await response.json();
+    assert.equal(response.status, 200);
+    assert.match(inspectedUrl, /provider-session-secret$/);
+    assert.deepEqual(body.tracks, [
+      { mid: "0", trackName: "microphone", location: "local", status: "active" },
+      { mid: "1", trackName: "camera", location: "local", status: "inactive" },
+    ]);
+    assert.equal(JSON.stringify(body).includes("provider-session-secret"), false);
+    assert.equal(JSON.stringify(body).includes("sessionId"), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
