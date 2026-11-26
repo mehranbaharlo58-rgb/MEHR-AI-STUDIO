@@ -231,3 +231,66 @@ test("Realtime peer failure performs full session teardown instead of dropping t
   assert.ok(failureHandler.includes("updateLiveState()"));
   assert.ok(!failureHandler.includes("liveConnection=null"));
 });
+
+
+test("MCP transport enforces response identity, request timeout and negotiated session headers", async () => {
+  const start = appScript.indexOf("async function mcpRpc(");
+  const end = appScript.indexOf("\nasync function closeMcpSession", start);
+  assert.ok(start >= 0 && end > start);
+  const source = appScript.slice(start, end);
+  const calls = [];
+  const context = {
+    mcpAccessToken: "short-lived-test-token",
+    mcpSessionId: "session-123",
+    mcpRequestId: 4,
+    mcpProtocolVersion: "2025-03-26",
+    AbortController,
+    setTimeout,
+    clearTimeout,
+    JSON,
+    Error,
+    URL,
+    $: () => ({ value: "https://studio.example.test/mcp" }),
+    mcpEndpoint: () => "https://studio.example.test/mcp",
+    readMcpResponse: async response => response.payload,
+    fetch: async (url, options) => {
+      calls.push({ url, options });
+      return {
+        ok: true,
+        headers: { get: name => name === "Mcp-Session-Id" ? "session-123" : null },
+        payload: { jsonrpc: "2.0", id: 5, result: { tools: [] } },
+      };
+    },
+  };
+  const result = await vm.runInNewContext(source + '\\n mcpRpc("tools/list",{});', context);
+  assert.deepEqual(JSON.parse(JSON.stringify(result)), { tools: [] });
+  assert.equal(calls[0].options.headers["Mcp-Session-Id"], "session-123");
+  assert.equal(calls[0].options.headers["Mcp-Protocol-Version"], "2025-03-26");
+  assert.equal(calls[0].options.headers.Authorization, "Bearer short-lived-test-token");
+});
+
+test("MCP disconnect attempts authenticated Streamable HTTP session termination", async () => {
+  const start = appScript.indexOf("async function closeMcpSession(");
+  const end = appScript.indexOf("\nasync function mcpTool", start);
+  assert.ok(start >= 0 && end > start);
+  const source = appScript.slice(start, end);
+  let request;
+  const context = {
+    AbortController,
+    setTimeout,
+    clearTimeout,
+    fetch: async (url, options) => {
+      request = { url, options };
+      return { ok: true, status: 200 };
+    },
+  };
+  const closed = await vm.runInNewContext(
+    source + '\\n closeMcpSession("https://studio.example.test/mcp","token","session","2025-03-26");',
+    context,
+  );
+  assert.equal(closed, true);
+  assert.equal(request.options.method, "DELETE");
+  assert.equal(request.options.headers.Authorization, "Bearer token");
+  assert.equal(request.options.headers["Mcp-Session-Id"], "session");
+  assert.equal(request.options.headers["Mcp-Protocol-Version"], "2025-03-26");
+});
