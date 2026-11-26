@@ -828,10 +828,28 @@ export class LiveSessionRegistry {
   constructor(state) { this.state = state; }
 
   async fetch(request) {
+    const url = new URL(request.url);
+    if (request.method === "GET" && (request.headers.get("Upgrade") || "").toLowerCase() === "websocket") {
+      const existing = await this.state.storage.get("session");
+      const role = url.searchParams.get("role");
+      const token = url.searchParams.get("token");
+      const relay = existing?.videoRelay;
+      const valid = existing && existing.expiresAt > Math.floor(Date.now() / 1000) &&
+        relay && relay.expiresAt > Math.floor(Date.now() / 1000) &&
+        ((role === "ingest" && constantTimeEqual(token, relay.ingestToken)) ||
+         (role === "viewer" && constantTimeEqual(token, relay.viewerToken)));
+      if (!valid || !["ingest", "viewer"].includes(role)) return new Response("unauthorized", { status: 401 });
+      const pair = new WebSocketPair();
+      const [client, server] = Object.values(pair);
+      server.accept();
+      server.serializeAttachment({ role });
+      this.state.acceptWebSocket(server);
+      return new Response(null, { status: 101, webSocket: client });
+    }
     if (request.method !== "POST") return new Response(null, { status: 405 });
     let body;
     try { body = await request.json(); } catch { return new Response(null, { status: 400 }); }
-    const path = new URL(request.url).pathname;
+    const path = url.pathname;
     if (path === "/consume") {
       const policies = {
         create: { limit: 3, windowSeconds: 600 },
@@ -901,15 +919,49 @@ export class LiveSessionRegistry {
       return new Response(null, { status: lockResult ? 200 : 409 });
     }
     if (path === "/authorize") {
-      const { providerSessionId, expiresAt, consent, mids } = existing;
-      return Response.json({ providerSessionId, expiresAt, consent, mids });
+      const { providerSessionId, expiresAt, consent, mids, tracks, videoRelay } = existing;
+      return Response.json({ providerSessionId, expiresAt, consent, mids, tracks: tracks || [], videoRelay: videoRelay || null });
+    }
+    if (path === "/prepare-video") {
+      if (existing.consent?.camera !== true || typeof body.ingestToken !== "string" ||
+          !/^[a-f0-9]{64}$/.test(body.ingestToken) || typeof body.viewerToken !== "string" ||
+          !/^[a-f0-9]{64}$/.test(body.viewerToken) || !Number.isFinite(body.expiresAt) ||
+          body.expiresAt <= Math.floor(Date.now() / 1000) || body.expiresAt > existing.expiresAt ||
+          !Array.isArray(existing.tracks) || !existing.tracks.some((track) => track.trackName === "camera") ||
+          (existing.videoRelay && existing.videoRelay.expiresAt > Math.floor(Date.now() / 1000))) {
+        return new Response(null, { status: 409 });
+      }
+      await this.state.storage.put("session", { ...existing, videoRelay: {
+        ingestToken: body.ingestToken, viewerToken: body.viewerToken,
+        expiresAt: body.expiresAt, adapterId: null,
+      }});
+      return new Response(null, { status: 201 });
+    }
+    if (path === "/complete-video") {
+      if (!existing.videoRelay || typeof body.adapterId !== "string" ||
+          !body.adapterId.trim() || body.adapterId.length > 256) return new Response(null, { status: 409 });
+      await this.state.storage.put("session", {
+        ...existing, videoRelay: { ...existing.videoRelay, adapterId: body.adapterId },
+      });
+      return new Response(null, { status: 200 });
+    }
+    if (path === "/cancel-video") {
+      await this.state.storage.put("session", { ...existing, videoRelay: null });
+      return new Response(null, { status: 200 });
     }
     if (path === "/update") {
-      if (!Array.isArray(body.mids) || body.mids.some((mid) => !/^[0-9]{1,3}$/.test(String(mid)))) {
+      if (!Array.isArray(body.mids) || body.mids.some((mid) => !/^[0-9]{1,3}$/.test(String(mid))) ||
+          (body.tracks !== undefined && (!Array.isArray(body.tracks) ||
+            body.tracks.some((track) => !track || !/^[0-9]{1,3}$/.test(String(track.mid)) ||
+              !["microphone", "camera"].includes(track.trackName))))) {
         return new Response(null, { status: 400 });
       }
       const merged = [...new Set([...existing.mids, ...body.mids])];
-      await this.state.storage.put("session", { ...existing, mids: merged });
+      const tracks = [...(existing.tracks || [])];
+      for (const track of body.tracks || []) {
+        if (!tracks.some((item) => item.mid === String(track.mid))) tracks.push({ mid: String(track.mid), trackName: track.trackName });
+      }
+      await this.state.storage.put("session", { ...existing, mids: merged, tracks });
       return new Response(null, { status: 200 });
     }
     if (path === "/delete") {
@@ -917,5 +969,31 @@ export class LiveSessionRegistry {
       return new Response(null, { status: 200 });
     }
     return new Response(null, { status: 404 });
+  }
+
+  async webSocketMessage(socket, message) {
+    const attachment = socket.deserializeAttachment?.() || {};
+    if (attachment.role !== "ingest") {
+      try { socket.close(1008, "viewer is receive-only"); } catch { /* already closed */ }
+      return;
+    }
+    let frame = null;
+    if (message instanceof ArrayBuffer || ArrayBuffer.isView(message)) frame = decodeSfuJpegPacket(message);
+    else if (typeof Blob !== "undefined" && message instanceof Blob && message.size <= MAX_VIDEO_FRAME_BYTES + 64) {
+      frame = decodeSfuJpegPacket(await message.arrayBuffer());
+    }
+    if (!frame) return;
+    const now = Date.now();
+    const lastFrameAt = await this.state.storage.get("videoLastFrameAt") || 0;
+    if (now - lastFrameAt < 700) return;
+    await this.state.storage.put("videoLastFrameAt", now);
+    for (const viewer of this.state.getWebSockets()) {
+      if (viewer.deserializeAttachment?.()?.role !== "viewer" || viewer.readyState !== 1) continue;
+      try { viewer.send(frame); } catch { /* stale viewer socket */ }
+    }
+  }
+
+  async webSocketClose(socket) {
+    try { socket.close(); } catch { /* already closed */ }
   }
 }
