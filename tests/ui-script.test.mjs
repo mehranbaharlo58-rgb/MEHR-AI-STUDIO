@@ -88,6 +88,17 @@ test("Realtime connect button prevents duplicate concurrent sessions", () => {
   assert.ok(appScript.includes("connect.disabled=!!liveConnection"));
 });
 
+test("Realtime remote audio playback handles browser autoplay restrictions", () => {
+  assert.ok(appScript.includes("const playResult=playback.play()"));
+  assert.ok(appScript.includes("playResult.catch"));
+});
+
+test("Realtime network failure clears the session and restores controls", () => {
+  assert.ok(appScript.includes('pc.connectionState==="disconnected"'));
+  assert.ok(appScript.includes('pc.connectionState==="failed"||pc.connectionState==="closed"'));
+  assert.ok(appScript.includes('$("#liveConnect").disabled=false;$("#liveDisconnect").disabled=true;'));
+});
+
 
 test("Realtime transcript completion does not duplicate streamed transcript deltas", () => {
   assert.ok(appScript.includes("const streamedItems=new Set()"));
