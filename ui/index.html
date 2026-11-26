@@ -258,6 +258,19 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
 
 /* Agent catalogue workspace */
 .agent-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.agent-toolbar input,.agent-toolbar select{min-width:180px;flex:1;height:40px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);padding:0 12px;font:inherit;font-size:11px}.agent-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}.agent-stat{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:13px}.agent-stat b{display:block;font-size:21px;color:var(--text)}.agent-stat span{font-size:10px;color:var(--muted)}.agent-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.agent-card{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:14px;min-width:0}.agent-card-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.agent-card h3{font-size:12px;margin:0;color:var(--text)}.agent-provider{font-size:9px;color:var(--muted);margin:6px 0 10px}.agent-chip{display:inline-block;border-radius:5px;background:var(--soft);color:#5268d4;font-size:9px;padding:4px 7px;margin:0 4px 4px 0}.agent-state{font-size:9px;border-radius:5px;padding:4px 7px;background:#fff4df;color:#a9772a;white-space:nowrap}.agent-state.tested{background:#e8f8f1;color:#319b75}.agent-note{font-size:10px;color:var(--muted);line-height:1.7;margin:15px 0}.agent-empty{padding:35px;text-align:center;color:var(--muted);font-size:12px;grid-column:1/-1}@media(max-width:900px){.agent-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.agent-grid{grid-template-columns:1fr}.agent-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Authenticated MCP agent control plane */
+.mcp-connect-panel{display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr) auto auto;gap:10px;align-items:end;margin:18px 0;padding:17px;border:1px solid var(--line);border-radius:15px;background:var(--surface)}
+.mcp-connect-panel label{display:flex;flex-direction:column;gap:7px;font-size:10px;color:var(--muted)}
+.mcp-connect-panel input,.mcp-taskbar input{height:40px;min-width:0;border:1px solid var(--line);border-radius:9px;padding:0 11px;background:var(--surface2);color:var(--text);font:inherit;font-size:11px}
+.mcp-connect-panel button,.mcp-taskbar button{min-height:39px;border:1px solid var(--line);border-radius:9px;padding:0 12px;background:var(--surface2);color:var(--text);font:inherit;font-size:10px;cursor:pointer}
+.mcp-connect-panel button.primary,.mcp-taskbar button.primary{background:#5968df;color:white;border-color:#5968df}
+.mcp-state{grid-column:1/-1;margin:0;color:var(--muted);font-size:10px;line-height:1.7}
+.mcp-taskbar{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:10px;margin:12px 0 18px}
+.mcp-output{display:none;margin:10px 0 18px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font:11px/1.8 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto}
+.mcp-output.show{display:block}
+@media(max-width:760px){.mcp-connect-panel{grid-template-columns:1fr 1fr}.mcp-taskbar{grid-template-columns:1fr}}
+@media(max-width:420px){.mcp-connect-panel{grid-template-columns:1fr}}
 </style></head>
 <body><div class="shell">
 <aside class="sidebar" id="sidebar"><a class="brand" href="#"><span class="mark">M</span><span class="brandcopy"><b>MEHR</b><small>AI STUDIO</small></span></a>
@@ -289,6 +302,23 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
  <div class="welcome"><div><div class="eyebrow">MEHR · AGENT CONTROL PLANE</div><h1 data-k="agentHeading">Your AI <em>workforce.</em></h1><p class="sub" data-k="agentIntro">One workspace to discover, compare and manage AI models and agents.</p></div><button class="primary" id="refreshAgents" type="button">↻ <span data-k="refreshCatalog">Refresh catalogue</span></button></div>
  <div class="agent-stats"><div class="agent-stat"><b id="agentTotal">—</b><span data-k="catalogued">Catalogued entries</span></div><div class="agent-stat"><b id="agentReady">0</b><span data-k="operational">Operational</span></div><div class="agent-stat"><b id="agentTested">0</b><span data-k="verified">Integration tested</span></div><div class="agent-stat"><b id="agentPending">—</b><span data-k="notConnected">Not connected yet</span></div></div>
  <p class="agent-note" id="agentNotice" role="status">Catalogue entries are discovery records, not active integrations. An agent becomes operational only after credentials are configured and a live test succeeds.</p>
+
+ <div class="mcp-connect-panel" aria-label="Authenticated agent control plane">
+  <label>Authenticated MCP endpoint
+   <input id="mcpEndpoint" type="url" inputmode="url" placeholder="https://your-api.example.com/mcp" autocomplete="url">
+  </label>
+  <label>OIDC access token · memory only
+   <input id="mcpToken" type="password" autocomplete="off" placeholder="Paste short-lived access token">
+  </label>
+  <button type="button" class="primary" id="mcpConnect">Connect control plane</button>
+  <button type="button" id="mcpDisconnect" disabled>Disconnect</button>
+  <p class="mcp-state" id="mcpStatus" role="status" aria-live="polite">Not connected to the authenticated registry. Static catalogue remains available.</p>
+ </div>
+ <div class="mcp-taskbar">
+  <input id="mcpTask" type="text" maxlength="4000" placeholder="Describe a task to match and execute with configured agents…">
+  <button type="button" class="primary" id="mcpRunTask" disabled>Match &amp; run task</button>
+ </div>
+ <div class="mcp-output" id="mcpOutput" role="status" aria-live="polite"></div>
  <div class="agent-toolbar"><input id="agentSearch" type="search" data-placeholder="searchAgents" placeholder="Search agents, providers or capabilities"><select id="agentCategory" aria-label="Filter by category"><option value="">All categories</option></select><select id="agentStatus" aria-label="Filter by status"><option value="">All states</option><option value="catalog_only">Catalog only</option><option value="configured">Configured</option><option value="tested">Tested</option><option value="degraded">Degraded</option><option value="disabled">Disabled</option></select></div>
  <div class="agent-grid" id="agentGrid"><div class="agent-empty">Loading catalogue…</div></div>
 </section>
@@ -369,7 +399,113 @@ function insertTemplate(k){$("#prompt").value=templates[k][lang];$("#prompt").fo
 document.querySelectorAll("[data-template]").forEach(b=>b.addEventListener("click",()=>insertTemplate(b.dataset.template)));$("#template").onclick=()=>insertTemplate("report");
 $("#upload").addEventListener("change",e=>{$("#files").innerHTML=[...e.target.files].map(f=>'<span class="filechip">'+f.name.replace(/[&<>"\']/g,"")+"</span>").join("");if(e.target.files.length)say("File names shown only; upload/content processing is not implemented yet.");});
 
+
 let agentCatalogue=[];
+let mcpAccessToken=null,mcpSessionId=null,mcpRequestId=0,mcpConnected=false;
+function mcpEndpoint(){
+ let value=$("#mcpEndpoint").value.trim();
+ while(value.endsWith("/"))value=value.slice(0,-1);
+ if(!value)throw new Error("Enter the authenticated MCP endpoint.");
+ const parsed=new URL(value);
+ if(parsed.protocol!=="https:")throw new Error("MCP endpoint must use HTTPS.");
+ if(!parsed.pathname.endsWith("/mcp"))value+="/mcp";
+ return value;
+}
+function showMcpOutput(value){
+ const panel=$("#mcpOutput");
+ panel.textContent=typeof value==="string"?value:JSON.stringify(value,null,2);
+ panel.classList.add("show");
+}
+async function readMcpResponse(response){
+ const type=response.headers.get("content-type")||"";
+ if(type.includes("text/event-stream")){
+  const body=await response.text();
+  const events=body.split(/\r?\n/).filter(line=>line.startsWith("data:")).map(line=>line.slice(5).trim()).filter(Boolean);
+  if(!events.length)return null;
+  return JSON.parse(events[events.length-1]);
+ }
+ const body=await response.text();
+ return body?JSON.parse(body):null;
+}
+async function mcpRpc(method,params={},notification=false){
+ if(!mcpAccessToken)throw new Error("Connect with a short-lived OIDC access token first.");
+ const id=notification?undefined:++mcpRequestId;
+ const headers={"Authorization":"Bearer "+mcpAccessToken,"Content-Type":"application/json","Accept":"application/json, text/event-stream","Mcp-Protocol-Version":"2025-03-26"};
+ if(mcpSessionId)headers["Mcp-Session-Id"]=mcpSessionId;
+ const response=await fetch(mcpEndpoint(),{method:"POST",headers,body:JSON.stringify({jsonrpc:"2.0",...(notification?{}:{id}),method,params})});
+ if(!response.ok&&!(notification&&response.status===202))throw new Error("MCP "+method+" failed (HTTP "+response.status+"). Check token, CORS and server logs.");
+ const session=response.headers.get("Mcp-Session-Id");
+ if(session)mcpSessionId=session;
+ if(notification)return null;
+ const payload=await readMcpResponse(response);
+ if(payload&&payload.error)throw new Error(payload.error.message||"MCP request failed.");
+ return payload?payload.result:null;
+}
+async function mcpTool(name,args={}){
+ const result=await mcpRpc("tools/call",{name,arguments:args});
+ if(result&&result.isError)throw new Error((result.content||[]).map(item=>item.text||"").join("\n")||"MCP tool failed.");
+ if(result&&result.structuredContent)return result.structuredContent;
+ const content=(result&&result.content||[]).filter(item=>item.type==="text").map(item=>item.text).join("\n");
+ if(!content)return result;
+ try{return JSON.parse(content);}catch{return {text:content};}
+}
+function setMcpStatus(message){$("#mcpStatus").textContent=message;}
+function updateAgentCounts(counts){
+ $("#agentTotal").textContent=counts.total??agentCatalogue.length;
+ $("#agentReady").textContent=(counts.configured||0)+(counts.tested||0);
+ $("#agentTested").textContent=counts.tested||0;
+ $("#agentPending").textContent=counts.catalog_only||0;
+}
+async function loadAgentRegistry(){
+ const result=await mcpTool("list_ai_models");
+ agentCatalogue=Array.isArray(result.models)?result.models:[];
+ updateAgentCounts(result.counts||{total:agentCatalogue.length});
+ const categories=[...new Set(agentCatalogue.map(item=>item.category).filter(Boolean))].sort();
+ const current=$("#agentCategory").value;
+ $("#agentCategory").innerHTML='<option value="">All categories</option>'+categories.map(value=>'<option value="'+safeText(value)+'">'+safeText(value)+'</option>').join("");
+ if(categories.includes(current))$("#agentCategory").value=current;
+ $("#agentNotice").textContent=lang==="fa"?"داده‌ها از رجیستری احراز هویت‌شده دریافت شدند. وضعیت عملیاتی فقط از سرور خوانده می‌شود.":"Live tenant registry loaded from the authenticated MCP server. Operational state is server-reported.";
+ renderAgentCatalogue();
+}
+async function connectMcpControlPlane(){
+ const endpoint=mcpEndpoint(),token=$("#mcpToken").value.trim();
+ if(!token)throw new Error("Enter an OIDC access token. It will not be stored.");
+ mcpAccessToken=token;mcpSessionId=null;mcpConnected=false;
+ const initialized=await mcpRpc("initialize",{protocolVersion:"2025-03-26",capabilities:{},clientInfo:{name:"MEHR AI STUDIO Web",version:"0.4.1"}});
+ if(!initialized||!initialized.serverInfo)throw new Error("MCP initialize response is invalid.");
+ await mcpRpc("notifications/initialized",{},true);
+ const tools=await mcpRpc("tools/list",{});
+ const names=new Set((tools&&tools.tools||[]).map(item=>item.name));
+ for(const required of ["list_ai_models","seed_ai_catalog","execute_ai_task"])if(!names.has(required))throw new Error("MCP server is missing required tool: "+required);
+ mcpConnected=true;$("#mcpConnect").disabled=true;$("#mcpDisconnect").disabled=false;$("#mcpRunTask").disabled=false;
+ setMcpStatus("Connected · "+initialized.serverInfo.name+" · "+((tools.tools||[]).length)+" tools available. Token remains in page memory only.");
+ await loadAgentRegistry();
+ if(!agentCatalogue.length){
+  const seeded=await mcpTool("seed_ai_catalog");
+  await loadAgentRegistry();
+  setMcpStatus("Connected · catalogue seeded for this tenant. Entries remain catalogue-only until individually configured and tested.");
+ }
+}
+function disconnectMcpControlPlane(){
+ mcpAccessToken=null;mcpSessionId=null;mcpConnected=false;
+ $("#mcpToken").value="";$("#mcpConnect").disabled=false;$("#mcpDisconnect").disabled=true;$("#mcpRunTask").disabled=true;
+ setMcpStatus("Disconnected. Access token cleared from page memory.");
+ agentCatalogue=[];void loadAgentCatalogue();
+}
+$("#mcpConnect").addEventListener("click",async()=>{
+ const button=$("#mcpConnect");button.disabled=true;setMcpStatus("Authenticating and initializing MCP session…");
+ try{await connectMcpControlPlane();say("Authenticated agent control plane connected.");}
+ catch(error){mcpAccessToken=null;mcpSessionId=null;mcpConnected=false;button.disabled=false;$("#mcpDisconnect").disabled=true;$("#mcpRunTask").disabled=true;setMcpStatus("Connection failed: "+error.message);}
+});
+$("#mcpDisconnect").addEventListener("click",disconnectMcpControlPlane);
+$("#mcpRunTask").addEventListener("click",async()=>{
+ const task=$("#mcpTask").value.trim();if(task.length<2){say("Describe the task first.");return;}
+ const button=$("#mcpRunTask");button.disabled=true;showMcpOutput("Matching configured agents and dispatching the task…");
+ try{const result=await mcpTool("execute_ai_task",{task,limit:3});showMcpOutput(result);await loadAgentRegistry();}
+ catch(error){showMcpOutput("Execution error: "+error.message);}
+ finally{button.disabled=!mcpConnected;}
+});
+
 const safeText=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
 function renderAgentCatalogue(){
  const query=$("#agentSearch").value.trim().toLowerCase(),category=$("#agentCategory").value,status=$("#agentStatus").value;
