@@ -463,7 +463,7 @@ async function mcpRpc(method,params={},notification=false){
  if(mcpSessionId){headers["Mcp-Session-Id"]=mcpSessionId;headers["Mcp-Protocol-Version"]=mcpProtocolVersion;}
  const controller=new AbortController();
  mcpActiveControllers.add(controller);
- const timeout=setTimeout(()=>controller.abort(),20000);
+ let timedOut=false;\n const timeout=setTimeout(()=>{timedOut=true;controller.abort();},20000);
  try{
   const response=await fetch(mcpEndpoint(),{method:"POST",headers,signal:controller.signal,body:JSON.stringify({jsonrpc:"2.0",...(notification?{}:{id}),method,params})});
   if(!response.ok)throw new Error("MCP "+method+" failed (HTTP "+response.status+"). Check token, CORS and server logs.");
@@ -476,7 +476,7 @@ async function mcpRpc(method,params={},notification=false){
   if(payload.error)throw new Error(payload.error.message||"MCP request failed.");
   return payload.result??null;
  }catch(error){
-  if(error.name==="AbortError")throw new Error("MCP "+method+" timed out after 20 seconds.");
+  if(error.name==="AbortError")throw new Error(timedOut?"MCP "+method+" timed out after 20 seconds.":"MCP "+method+" was cancelled because the control plane disconnected.");
   throw error;
  }finally{mcpActiveControllers.delete(controller);clearTimeout(timeout);}
 }
