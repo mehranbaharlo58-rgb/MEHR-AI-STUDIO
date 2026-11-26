@@ -64,12 +64,28 @@ test("browser OIDC login uses Authorization Code with PKCE S256 and state valida
   assert.ok(!appScript.includes('sessionStorage.setItem("mehr-oidc-access-token"'));
 });
 
-test("camera vision sends bounded sampled still images through the Realtime data channel", () => {
-  assert.ok(appScript.includes('setInterval(()=>sendSampledCameraFrame(channel),3000)'));
+test("camera vision sends bounded sampled still images and pauses while the page is hidden", () => {
+  assert.ok(appScript.includes('setInterval(()=>sendSampledCameraFrame(active.channel),3000)'));
+  assert.ok(appScript.includes("document.hidden"));
   assert.ok(appScript.includes('640/video.videoWidth'));
   assert.ok(appScript.includes('channel.bufferedAmount>512*1024'));
-  assert.ok(appScript.includes('type:"input_image"'));
+  assert.ok(appScript.includes('type:"input_image",detail:"low"'));
   assert.ok(appScript.includes('clearInterval(active.frameTimer)'));
+});
+
+test("stopping the camera preserves an active voice connection", () => {
+  const start = appScript.indexOf("function stopLiveCamera()");
+  const end = appScript.indexOf("function stopLiveDevices()", start);
+  assert.ok(start >= 0 && end > start);
+  const stopCamera = appScript.slice(start, end);
+  assert.ok(stopCamera.includes("clearInterval(active.frameTimer)"));
+  assert.ok(!stopCamera.includes("disconnectLiveSession"));
+  assert.ok(appScript.includes("startLiveCameraSampling();updateLiveState()"));
+});
+
+test("Realtime connect button prevents duplicate concurrent sessions", () => {
+  assert.ok(appScript.includes("if(liveConnection){say("));
+  assert.ok(appScript.includes("connect.disabled=!!liveConnection"));
 });
 
 
