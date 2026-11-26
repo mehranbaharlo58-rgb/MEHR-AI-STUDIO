@@ -10,7 +10,7 @@ The Cloudflare Worker now includes:
 - Validation of issuer, audience, expiry, issued-at/not-before, subject, client identity, required scopes, and a constrained tenant claim.
 - A Durable Object session registry that binds each opaque application session ID to the verified subject and tenant.
 - A maximum live session lifetime of 10 minutes.
-- Authenticated SFU session creation, media publication, and media-track closure endpoints.
+- Authenticated SFU session creation, media publication, SDP renegotiation, and media-track closure endpoints.
 - Strict media request size, SDP length, track-name, MID, mode, and consent checks.
 - CORS preflight support for the DELETE close operation.
 
@@ -74,6 +74,12 @@ The response contains an opaque application session ID and expiry. The provider'
 
 Body contains the browser's gathered local SDP offer and one or two local tracks named `microphone` and optionally `camera`. The browser must request media permission only after explicit user action. Camera publication must match the session's recorded camera consent.
 
+### Complete SFU renegotiation
+
+`PUT /api/live/sessions/{applicationSessionId}/renegotiate`
+
+Accepts only a bounded SDP answer and forwards it to the provider's `/sessions/{providerSessionId}/renegotiate` endpoint after verifying the session owner and tenant. CORS explicitly permits PUT. The browser must complete this exchange before mutating the same SFU session again.
+
 ### Close a session
 
 `DELETE /api/live/sessions/{applicationSessionId}`
@@ -84,7 +90,7 @@ Only the verified owner in the same tenant can close the session. The Worker ask
 
 - The OIDC verifier uses a five-minute in-memory JWKS cache and forces one refresh when a key is unknown or signature verification fails. Validate this behavior against the selected identity provider's key-rotation policy.
 - The current session registry enforces ownership and expiry, but does not yet provide per-user concurrency quotas or distributed rate limiting.
-- Session setup and SFU negotiation must be serialized per PeerConnection. The current browser client and renegotiation route are not implemented.
+- Session setup and SFU negotiation must be serialized per PeerConnection. The browser now handles an SFU offer marked `requiresImmediateRenegotiation` and submits its gathered answer through the authenticated renegotiation route. Concurrent mutations are not yet protected by a distributed per-session lock.
 - The close route closes media tracks; it does not claim to terminate a provider-side session with a dedicated DELETE operation.
 - If an SFU create succeeds but registry persistence fails, an orphaned provider session may remain until SFU resource cleanup. Add compensating cleanup and reconciliation before production.
 - The publish route records only successful track MIDs returned by the SFU and exposes a `partial` flag. Validate the exact per-track response shape against live SFU responses before production.
@@ -95,7 +101,7 @@ Only the verified owner in the same tenant can close the session. The Worker ask
 
 1. Add broader negative tests for malformed, expired, wrong-audience, wrong-issuer, and missing-scope tokens.
 2. Add deterministic SFU publish/partial-failure/close tests and verify the live response schema.
-3. Add compensating cleanup and per-user limits.
+3. Add provider cleanup reconciliation and per-user concurrency/rate limits.
 4. Implement browser OIDC PKCE and media publishing/remote playback.
 5. Run the Durable Object migration in a non-production environment.
 6. Test real browser-to-SFU audio/video on Android and desktop, including denied permissions and leave/reconnect.
