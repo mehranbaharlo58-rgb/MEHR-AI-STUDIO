@@ -373,7 +373,7 @@ function updateLiveState(){
  $("#liveCameraState").textContent=camOn?"فعال":"خاموش";
  $("#liveMicToggle").disabled=!micOn;
  $("#liveCameraStop").disabled=!camOn;
- $("#liveStatus").textContent=micOn||camOn?"تجهیزات محلی فعال · هیچ داده‌ای ارسال نمی‌شود":"آماده آزمایش تجهیزات · ارتباط هوش مصنوعی متصل نیست";
+ if(!liveConnection)$("#liveStatus").textContent=micOn||camOn?"تجهیزات محلی فعال · هنوز ارتباط شبکه‌ای شروع نشده":"آماده آزمایش تجهیزات · ارتباط هوش مصنوعی متصل نیست";
 }
 $("#liveMicStart").addEventListener("click",async()=>{
  try{if(!navigator.mediaDevices?.getUserMedia)throw new Error("مرورگر یا اتصال امن از دسترسی رسانه پشتیبانی نمی‌کند.");if(liveState.mic)liveState.mic.getTracks().forEach(t=>t.stop());liveState.mic=await navigator.mediaDevices.getUserMedia({audio:true,video:false});liveState.muted=false;updateLiveState();say("میکروفون محلی فعال شد؛ ارسال شبکه‌ای انجام نمی‌شود.");}
