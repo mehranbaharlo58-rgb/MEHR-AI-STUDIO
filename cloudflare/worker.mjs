@@ -501,6 +501,77 @@ export default {
       }
     }
 
+
+    const liveVideoAdapterMatch = url.pathname.match(/^\/api\/live\/sessions\/([0-9a-f-]{36})\/video-adapter$/i);
+    if (liveVideoAdapterMatch && request.method === "POST") {
+      const principal = await verifyOidcAccessToken(request, env);
+      if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
+      if (!env.CLOUDFLARE_SFU_APP_ID || !env.CLOUDFLARE_SFU_APP_SECRET || !env.LIVE_SESSIONS) {
+        return response({ ok: false, error: "live_transport_not_configured" }, 503, cors);
+      }
+      const appSessionId = liveVideoAdapterMatch[1];
+      try {
+        const auth = await sessionRegistry(env, appSessionId, "authorize", {
+          subject: principal.subject, tenantId: principal.tenantId,
+        });
+        if (!auth.ok) return response({ ok: false, error: "session_not_found" }, 404, cors);
+        const owned = await auth.json();
+        if (owned.consent?.camera !== true) return response({ ok: false, error: "camera_consent_required" }, 403, cors);
+        if (!Array.isArray(owned.tracks) || !owned.tracks.some((track) => track.trackName === "camera")) {
+          return response({ ok: false, error: "camera_track_not_published" }, 409, cors);
+        }
+        if (owned.videoRelay?.adapterId && owned.videoRelay.expiresAt > Math.floor(Date.now() / 1000)) {
+          const viewerUrl = new URL("/api/live/media/" + appSessionId, request.url);
+          viewerUrl.protocol = "wss:";
+          viewerUrl.searchParams.set("role", "viewer");
+          viewerUrl.searchParams.set("token", owned.videoRelay.viewerToken);
+          return response({ ok: true, adapter_active: true, viewer_url: viewerUrl.toString(), frame_format: "jpeg" }, 200, cors);
+        }
+        const ingestToken = randomToken();
+        const viewerToken = randomToken();
+        const expiresAt = Math.min(owned.expiresAt, Math.floor(Date.now() / 1000) + 300);
+        const prepared = await sessionRegistry(env, appSessionId, "prepare-video", {
+          subject: principal.subject, tenantId: principal.tenantId, ingestToken, viewerToken, expiresAt,
+        });
+        if (prepared.status === 409) return response({ ok: false, error: "video_adapter_already_preparing" }, 409, cors);
+        if (!prepared.ok) return response({ ok: false, error: "video_adapter_registry_failed" }, 503, cors);
+        const endpoint = new URL("/api/live/media/" + appSessionId, request.url);
+        endpoint.protocol = "wss:";
+        endpoint.searchParams.set("role", "ingest");
+        endpoint.searchParams.set("token", ingestToken);
+        const created = await sfuRequest(env, "/adapters/websocket/new", {
+          method: "POST",
+          body: JSON.stringify({ tracks: [{
+            location: "remote", sessionId: owned.providerSessionId,
+            trackName: "camera", endpoint: endpoint.toString(), outputCodec: "jpeg",
+          }] }),
+        });
+        const adapter = Array.isArray(created.tracks)
+          ? created.tracks.find((item) => item && !item.errorCode && typeof item.adapterId === "string")
+          : null;
+        if (!adapter) throw new Error("video_adapter_create_failed");
+        const completed = await sessionRegistry(env, appSessionId, "complete-video", {
+          subject: principal.subject, tenantId: principal.tenantId, adapterId: adapter.adapterId,
+        });
+        if (!completed.ok) {
+          await sfuRequest(env, "/adapters/websocket/close", {
+            method: "POST", body: JSON.stringify({ tracks: [{ adapterId: adapter.adapterId }] }),
+          }).catch(() => null);
+          throw new Error("video_adapter_registry_commit_failed");
+        }
+        const viewerUrl = new URL("/api/live/media/" + appSessionId, request.url);
+        viewerUrl.protocol = "wss:";
+        viewerUrl.searchParams.set("role", "viewer");
+        viewerUrl.searchParams.set("token", viewerToken);
+        return response({ ok: true, adapter_active: true, viewer_url: viewerUrl.toString(), frame_format: "jpeg", max_frame_bytes: MAX_VIDEO_FRAME_BYTES }, 201, cors);
+      } catch {
+        await sessionRegistry(env, appSessionId, "cancel-video", {
+          subject: principal.subject, tenantId: principal.tenantId,
+        }).catch(() => null);
+        return response({ ok: false, error: "video_adapter_creation_failed" }, 502, cors);
+      }
+    }
+
     const liveInspectMatch = url.pathname.match(/^\/api\/live\/sessions\/([0-9a-f-]{36})$/i);
     if (liveInspectMatch && request.method === "GET") {
       const principal = await verifyOidcAccessToken(request, env);
