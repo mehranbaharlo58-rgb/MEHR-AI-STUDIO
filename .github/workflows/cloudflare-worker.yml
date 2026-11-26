@@ -30,6 +30,6 @@ jobs:
         with:
           node-version: "22"
       - name: Validate Wrangler configuration and build Worker
-        run: npx --yes wrangler@3.114.17 deploy --dry-run --config wrangler.jsonc
+        run: npx --yes wrangler@4.168.0 deploy --dry-run --config wrangler.jsonc
       - name: Run Worker and UI regression tests
         run: node --test tests/cloudflare-worker.test.mjs tests/ui-script.test.mjs
