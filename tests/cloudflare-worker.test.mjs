@@ -393,6 +393,7 @@ test("creates an opaque app session after OIDC validation and durable ownership 
         idFromName: (name) => name,
         get: () => ({ fetch: async (_url, init) => {
           registryPath = new URL(_url).pathname;
+          if (registryPath === "/consume") return new Response(null, { status: 200 });
           const stored = JSON.parse(init.body);
           assert.equal(stored.subject, "user-123");
           assert.equal(stored.tenantId, "tenant-123");
@@ -461,6 +462,7 @@ test("compensates published SFU tracks when durable MID persistence fails", asyn
         get: () => ({
           fetch: async (url) => {
             const path = new URL(url).pathname;
+            if (path === "/consume") return new Response(null, { status: 200 });
             if (path === "/authorize") {
               return Response.json({
                 providerSessionId: "provider-session",
@@ -517,7 +519,9 @@ test("forwards an authenticated SFU renegotiation answer only for the owned sess
         idFromName: (id) => id,
         get: () => ({
           fetch: async (url) => {
-            assert.equal(new URL(url).pathname, "/authorize");
+            const path = new URL(url).pathname;
+            if (path === "/consume") return new Response(null, { status: 200 });
+            assert.equal(path, "/authorize");
             return Response.json({ providerSessionId: "provider-session", mids: [] });
           },
         }),
@@ -691,7 +695,9 @@ test("inspects SFU track state for the verified owner without exposing provider 
         idFromName: (id) => id,
         get: () => ({
           fetch: async (url) => {
-            assert.equal(new URL(url).pathname, "/authorize");
+            const path = new URL(url).pathname;
+            if (path === "/consume") return new Response(null, { status: 200 });
+            assert.equal(path, "/authorize");
             return Response.json({ providerSessionId: "provider-session-secret", expiresAt: 1234567890 });
           },
         }),
@@ -744,6 +750,10 @@ test("creates an authenticated direct Realtime WebRTC call without exposing the 
       OIDC_AUDIENCE: "mehr-api",
       OPENAI_API_KEY: "server-only-realtime-secret",
       OPENAI_REALTIME_MODEL: "gpt-realtime-2.1",
+      LIVE_SESSIONS: {
+        idFromName: () => "rate-limit",
+        get: () => ({ fetch: async () => new Response(null, { status: 200 }) }),
+      },
     });
     const answer = await response.text();
     assert.equal(response.status, 200);
