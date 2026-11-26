@@ -841,7 +841,6 @@ export class LiveSessionRegistry {
       if (!valid || !["ingest", "viewer"].includes(role)) return new Response("unauthorized", { status: 401 });
       const pair = new WebSocketPair();
       const [client, server] = Object.values(pair);
-      server.accept();
       server.serializeAttachment({ role });
       this.state.acceptWebSocket(server);
       return new Response(null, { status: 101, webSocket: client });
