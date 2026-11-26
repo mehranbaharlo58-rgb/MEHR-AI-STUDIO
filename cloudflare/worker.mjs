@@ -104,10 +104,24 @@ async function verifyOidcAccessToken(request, env) {
     const publicKey = await crypto.subtle.importKey(
       "jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"],
     );
-    const validSignature = await crypto.subtle.verify(
+    let validSignature = await crypto.subtle.verify(
       "RSASSA-PKCS1-v1_5", publicKey, decodeBase64Url(parts[2]),
       new TextEncoder().encode(parts[0] + "." + parts[1]),
     );
+    if (!validSignature) {
+      // A cached JWKS can be stale when an issuer rotates key material.
+      keys = await loadJwks(keysUrl.toString(), true);
+      jwk = keys.find((key) => key && key.kid === header.kid && key.kty === "RSA" &&
+        key.use !== "enc" && (!key.alg || key.alg === "RS256"));
+      if (!jwk) return null;
+      const refreshedKey = await crypto.subtle.importKey(
+        "jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"],
+      );
+      validSignature = await crypto.subtle.verify(
+        "RSASSA-PKCS1-v1_5", refreshedKey, decodeBase64Url(parts[2]),
+        new TextEncoder().encode(parts[0] + "." + parts[1]),
+      );
+    }
     if (!validSignature) return null;
 
     const now = Math.floor(Date.now() / 1000);
@@ -270,11 +284,29 @@ export default {
         const result = await sfuRequest(env, "/sessions/" + encodeURIComponent(owned.providerSessionId) + "/tracks/new", {
           method: "POST", body: JSON.stringify({ sessionDescription: sdp, tracks }),
         });
-        const mids = tracks.map((track) => String(track.mid));
-        await sessionRegistry(env, appSessionId, "update", {
-          subject: principal.subject, tenantId: principal.tenantId, mids,
-        });
-        return response({ ok: true, sessionDescription: result.sessionDescription, tracks: result.tracks || [] }, 200, cors);
+        const trackResults = Array.isArray(result.tracks) ? result.tracks : [];
+        const requestedMids = new Set(tracks.map((track) => String(track.mid)));
+        const successfulMids = trackResults
+          .filter((item) => item && !item.errorCode && !item.errorDescription &&
+            typeof item.mid === "string" && requestedMids.has(item.mid))
+          .map((item) => item.mid);
+        if (successfulMids.length) {
+          const stored = await sessionRegistry(env, appSessionId, "update", {
+            subject: principal.subject, tenantId: principal.tenantId, mids: successfulMids,
+          });
+          if (!stored.ok) throw new Error("session_registry_update_failed");
+        }
+        const description = result.sessionDescription;
+        if (!description || !["answer", "offer"].includes(description.type) ||
+            typeof description.sdp !== "string" || !description.sdp.trim()) {
+          throw new Error("sfu_session_description_invalid");
+        }
+        return response({
+          ok: true,
+          partial: successfulMids.length !== tracks.length,
+          sessionDescription: description,
+          tracks: trackResults,
+        }, 200, cors);
       } catch {
         return response({ ok: false, error: "live_publish_failed" }, 502, cors);
       }
@@ -314,9 +346,9 @@ export default {
         authenticated: true,
         live_transport: configured ? "cloudflare_realtime_sfu" : "not_configured",
         modes: configured ? ["voice", "voice_vision"] : [],
-        session_creation_enabled: false,
-        reason: configured ? "session_registry_required" : "sfu_credentials_missing",
-        consent_required: { microphone: true, camera: true },
+        session_creation_enabled: configured,
+        reason: configured ? null : "sfu_credentials_missing",
+        consent_required: { microphone: true, camera: "voice_vision_only" },
       }, configured ? 200 : 503, cors);
     }
 
