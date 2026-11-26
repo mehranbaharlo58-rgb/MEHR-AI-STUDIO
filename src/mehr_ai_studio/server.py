@@ -203,12 +203,15 @@ async def execute_ai_task(
         max_parallel=min(3, len(selected_ids)),
         timeout_s=settings.request_timeout,
     )
-    results = await manager.execute_parallel(selected_ids, task)
+    execution = await manager.execute_with_fallback(selected_ids, task)
     return {
-        "ok": any(item["ok"] for item in results),
+        "ok": execution["ok"],
         "selected_model_ids": selected_ids,
+        "selected_model_id": execution["selected_model_id"],
+        "attempted_model_ids": execution["attempted_model_ids"],
+        "fallback_used": execution["fallback_used"],
         "skipped": skipped,
-        "results": results,
+        "results": execution["results"],
         "registry_counts": ai_registry.counts(),
     }
 
