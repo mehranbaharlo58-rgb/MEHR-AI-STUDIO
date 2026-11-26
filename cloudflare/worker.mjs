@@ -59,7 +59,7 @@ async function verifyOidcAccessToken(request, env) {
   const issuer = env.OIDC_ISSUER_URL;
   const jwksUrl = env.OIDC_JWKS_URL;
   const audience = env.OIDC_AUDIENCE;
-  const requiredScopes = (env.OIDC_REQUIRED_SCOPES || "studio:access").trim().split(/\\s+/).filter(Boolean);
+  const requiredScopes = (env.OIDC_REQUIRED_SCOPES || "studio:access").trim().split(/\s+/).filter(Boolean);
   const tenantClaim = env.OIDC_TENANT_CLAIM || "tenant_id";
   try {
     const issuerUrl = new URL(issuer);
@@ -100,7 +100,7 @@ async function verifyOidcAccessToken(request, env) {
 
     const now = Math.floor(Date.now() / 1000);
     const audiences = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
-    const scopes = typeof claims.scope === "string" ? claims.scope.split(/\\s+/) :
+    const scopes = typeof claims.scope === "string" ? claims.scope.split(/\s+/) :
       Array.isArray(claims.scp) && claims.scp.every((scope) => typeof scope === "string") ? claims.scp : [];
     const tenant = claims[tenantClaim];
     const clientId = claims.azp || claims.client_id;
@@ -225,7 +225,7 @@ export default {
       }
     }
 
-    const livePublishMatch = url.pathname.match(/^\\/api\\/live\\/sessions\\/([0-9a-f-]{36})\\/publish$/i);
+    const livePublishMatch = url.pathname.match(/^\/api\/live\/sessions\/([0-9a-f-]{36})\/publish$/i);
     if (livePublishMatch && request.method === "POST") {
       const principal = await verifyOidcAccessToken(request, env);
       if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
@@ -267,7 +267,7 @@ export default {
       }
     }
 
-    const liveCloseMatch = url.pathname.match(/^\\/api\\/live\\/sessions\\/([0-9a-f-]{36})$/i);
+    const liveCloseMatch = url.pathname.match(/^\/api\/live\/sessions\/([0-9a-f-]{36})$/i);
     if (liveCloseMatch && request.method === "DELETE") {
       const principal = await verifyOidcAccessToken(request, env);
       if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
