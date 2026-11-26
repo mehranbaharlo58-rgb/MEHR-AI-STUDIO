@@ -538,7 +538,7 @@ function bindRealtimeEvents(channel){
  });
 }
 function sendSampledCameraFrame(channel){
- if(channel.readyState!=="open"||!liveState.camera||!$("#liveCameraPreview").videoWidth)return;
+ if(channel.readyState!=="open"||channel.bufferedAmount>512*1024||!liveState.camera||!$("#liveCameraPreview").videoWidth)return;
  const video=$("#liveCameraPreview");
  const scale=Math.min(1,640/video.videoWidth);
  const canvas=document.createElement("canvas");
