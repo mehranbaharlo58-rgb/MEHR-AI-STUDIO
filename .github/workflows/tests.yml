@@ -20,6 +20,8 @@ jobs:
       - run: ruff check src tests
       - run: pytest -q
       - run: python -m build
+      - name: Build authenticated MCP container image
+        run: docker build --tag mehr-ai-studio-mcp:test .
       - name: Install built wheel in a clean virtual environment
         run: |
           python -m venv .venv-smoke
