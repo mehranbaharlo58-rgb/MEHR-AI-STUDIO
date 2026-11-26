@@ -427,13 +427,15 @@ $("#upload").addEventListener("change",e=>{$("#files").innerHTML=[...e.target.fi
 let agentCatalogue=[];
 let mcpAccessToken=null,mcpSessionId=null,mcpRequestId=0,mcpConnected=false;
 function mcpEndpoint(){
- let value=$("#mcpEndpoint").value.trim();
- while(value.endsWith("/"))value=value.slice(0,-1);
+ const value=$("#mcpEndpoint").value.trim();
  if(!value)throw new Error("Enter the authenticated MCP endpoint.");
- const parsed=new URL(value);
- if(parsed.protocol!=="https:")throw new Error("MCP endpoint must use HTTPS.");
- if(!parsed.pathname.endsWith("/mcp"))value+="/mcp";
- return value;
+ let parsed;
+ try{parsed=new URL(value);}catch{throw new Error("Enter a valid absolute MCP endpoint URL.");}
+ if(parsed.protocol!=="https:"||parsed.username||parsed.password||parsed.search||parsed.hash)
+  throw new Error("MCP endpoint must use HTTPS without credentials, query parameters or fragments.");
+ parsed.pathname=parsed.pathname.replace(/\\/+$/,"");
+ if(!parsed.pathname.endsWith("/mcp"))parsed.pathname+="/mcp";
+ return parsed.toString();
 }
 function showMcpOutput(value){
  const panel=$("#mcpOutput");
