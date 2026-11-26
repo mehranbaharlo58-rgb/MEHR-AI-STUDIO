@@ -277,7 +277,7 @@ export default {
           model: env.OPENAI_REALTIME_MODEL || "gpt-realtime-2.1",
           instructions: "You are MEHR, a precise bilingual voice assistant. Reply in the user's language. When image frames are supplied, describe only what is visible and distinguish observations from assumptions.",
           audio: {
-            input: { turn_detection: { type: "semantic_vad" } },
+            input: { transcription: { model: "gpt-4o-mini-transcribe" }, turn_detection: { type: "semantic_vad" } },
             output: { voice: env.OPENAI_REALTIME_VOICE || "marin" },
           },
         };
