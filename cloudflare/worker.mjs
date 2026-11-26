@@ -147,6 +147,55 @@ async function verifyOidcAccessToken(request, env) {
 
 const MAX_LIVE_BODY_BYTES = 128 * 1024;
 const MAX_LIVE_DURATION_SECONDS = 600;
+const MAX_VIDEO_FRAME_BYTES = 1024 * 1024;
+
+function randomToken() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(32)), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function constantTimeEqual(a, b) {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < Math.max(a.length, b.length); i += 1) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return diff === 0;
+}
+
+export function decodeSfuJpegPacket(packet) {
+  if (!(packet instanceof ArrayBuffer) && !ArrayBuffer.isView(packet)) return null;
+  const bytes = packet instanceof ArrayBuffer ? new Uint8Array(packet) :
+    new Uint8Array(packet.buffer, packet.byteOffset, packet.byteLength);
+  if (!bytes.length || bytes.length > MAX_VIDEO_FRAME_BYTES + 64) return null;
+  let offset = 0, jpeg = null;
+  while (offset < bytes.length) {
+    let tag = 0, shift = 0, count = 0, done = false;
+    while (offset < bytes.length && count++ < 5) {
+      const byte = bytes[offset++]; tag |= (byte & 0x7f) << shift; shift += 7;
+      if (!(byte & 0x80)) { done = true; break; }
+    }
+    if (!done) return null;
+    const field = tag >>> 3, wire = tag & 7;
+    if (wire === 0) {
+      done = false; count = 0;
+      while (offset < bytes.length && count++ < 10) if (!(bytes[offset++] & 0x80)) { done = true; break; }
+      if (!done) return null;
+    } else if (wire === 2) {
+      let length = 0; shift = 0; count = 0; done = false;
+      while (offset < bytes.length && count++ < 5) {
+        const byte = bytes[offset++]; length |= (byte & 0x7f) << shift; shift += 7;
+        if (!(byte & 0x80)) { done = true; break; }
+      }
+      if (!done || length < 0 || length > MAX_VIDEO_FRAME_BYTES || offset + length > bytes.length) return null;
+      if (field === 5) { if (jpeg) return null; jpeg = bytes.slice(offset, offset + length); }
+      offset += length;
+    } else if (wire === 1) { if (offset + 8 > bytes.length) return null; offset += 8; }
+    else if (wire === 5) { if (offset + 4 > bytes.length) return null; offset += 4; }
+    else return null;
+  }
+  if (!jpeg || jpeg.length < 4 || jpeg[0] !== 0xff || jpeg[1] !== 0xd8 ||
+      jpeg[jpeg.length - 2] !== 0xff || jpeg[jpeg.length - 1] !== 0xd9) return null;
+  return jpeg;
+}
+
 
 async function readJsonLimited(request, limit) {
   const raw = await readLimitedText(request, limit);
@@ -223,6 +272,14 @@ async function readLimitedText(response, limit) {
 
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+    const mediaSocketMatch = url.pathname.match(/^\/api\/live\/media\/([0-9a-f-]{36})$/i);
+    if (mediaSocketMatch && request.method === "GET" &&
+        (request.headers.get("Upgrade") || "").toLowerCase() === "websocket") {
+      if (!env.LIVE_SESSIONS) return new Response("not configured", { status: 503 });
+      const id = env.LIVE_SESSIONS.idFromName(mediaSocketMatch[1]);
+      return env.LIVE_SESSIONS.get(id).fetch(request);
+    }
     const cors = corsHeaders(request, env);
     if (!cors) return response({ ok: false, error: "origin_not_allowed" }, 403);
 
