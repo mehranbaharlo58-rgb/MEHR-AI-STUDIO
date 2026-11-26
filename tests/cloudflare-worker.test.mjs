@@ -155,7 +155,7 @@ function base64urlJson(value) {
   return Buffer.from(JSON.stringify(value)).toString("base64url");
 }
 
-async function makeOidcToken() {
+async function makeOidcToken(overrides = {}) {
   const pair = await crypto.subtle.generateKey({
     name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
     publicExponent: Uint8Array.of(1, 0, 1), hash: "SHA-256",
@@ -175,6 +175,7 @@ async function makeOidcToken() {
     scope: "studio:access",
     iat: now,
     exp: now + 300,
+    ...overrides,
   });
   const signingInput = header + "." + payload;
   const signature = await crypto.subtle.sign(
@@ -618,5 +619,37 @@ test("does not delete an application session when SFU track closure has unresolv
     assert.equal(deleted, false);
   } finally {
     globalThis.fetch = originalFetch;
+  }
+});
+
+
+test("rejects signed OIDC tokens with invalid issuer, audience, expiry, or required scope", async () => {
+  const invalidClaims = [
+    { iss: "https://attacker.example.test" },
+    { aud: "another-api" },
+    { exp: Math.floor(Date.now() / 1000) - 10 },
+    { scope: "profile:read" },
+    { tenant_id: "../invalid" },
+  ];
+  for (let index = 0; index < invalidClaims.length; index += 1) {
+    const { token, jwk } = await makeOidcToken(invalidClaims[index]);
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => new Response(JSON.stringify({ keys: [jwk] }), {
+      status: 200, headers: { "Content-Type": "application/json" },
+    });
+    try {
+      const response = await worker.fetch(new Request("https://worker.test/api/live/capabilities", {
+        headers: { ...origin, Authorization: "Bearer " + token },
+      }), {
+        ...env,
+        OIDC_ISSUER_URL: "https://issuer.example.test",
+        OIDC_JWKS_URL: "https://issuer.example.test/jwks-invalid-claims-" + index + ".json",
+        OIDC_AUDIENCE: "mehr-api",
+        OIDC_REQUIRED_SCOPES: "studio:access",
+      });
+      assert.equal(response.status, 401, "invalid claim set " + index + " must be rejected");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   }
 });
