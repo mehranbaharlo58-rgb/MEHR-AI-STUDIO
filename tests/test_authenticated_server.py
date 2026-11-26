@@ -375,6 +375,12 @@ def test_authenticated_ai_registry_tools_are_tenant_scoped(monkeypatch, tmp_path
     assert execution["results"]
     assert all(item["ok"] for item in execution["results"])
 
+    # The API accepts up to the full 100-entry catalogue and rejects larger fan-out.
+    assert asyncio.run(app.tools["execute_ai_task"]("analysis", limit=101)) == {
+        "ok": False,
+        "error": "limit_must_be_between_1_and_100",
+    }
+
     async def fake_smoke(adapter, selected_model, timeout_s):
         return {"latency_ms": 12.3, "response": "mock connector check passed"}
 
