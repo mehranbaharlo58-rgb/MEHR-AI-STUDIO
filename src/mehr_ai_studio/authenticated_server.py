@@ -46,14 +46,31 @@ def _validate_auth_configuration(
         ("resource_server_url", resource_url),
     ):
         parsed = urlparse(value)
-        if parsed.scheme != "https" or not parsed.netloc or parsed.username:
-            raise ValueError(f"OAuth {name} must be an absolute HTTPS URL")
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError(f"OAuth {name} must be an absolute HTTPS URL without credentials, query, or fragment")
     if (
         not isinstance(required_scopes, (list, tuple))
         or not required_scopes
         or any(not isinstance(scope, str) or not scope.strip() for scope in required_scopes)
     ):
         raise ValueError("At least one non-empty required OAuth scope must be configured")
+    if isinstance(token_verifier, OIDCJWTTokenVerifier):
+        verifier_issuer = str(token_verifier.issuer_url).rstrip("/")
+        verifier_resource = str(token_verifier.resource_server_url).rstrip("/")
+        verifier_scopes = set(token_verifier.required_scopes)
+        if verifier_issuer != issuer_url.rstrip("/"):
+            raise ValueError("OIDC verifier issuer does not match OAuth issuer_url")
+        if verifier_resource != resource_url.rstrip("/"):
+            raise ValueError("OIDC verifier resource does not match OAuth resource_server_url")
+        if verifier_scopes != set(required_scopes):
+            raise ValueError("OIDC verifier scopes do not match OAuth required_scopes")
 
 
 def build_authenticated_server(
