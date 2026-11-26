@@ -264,7 +264,7 @@ export default {
       const sdp = parsed.value?.sessionDescription;
       const consent = parsed.value?.consent;
       if (typeof sdp !== "string" || sdp.length < 20 || sdp.length > 100000 ||
-          !/^v=0/m.test(sdp) || !/^m=audio\\s/m.test(sdp) || /^m=video\\s/m.test(sdp) ||
+          !/^v=0/m.test(sdp) || !/^m=audio\s/m.test(sdp) || /^m=video\s/m.test(sdp) ||
           !consent || consent.microphone !== true || typeof consent.camera !== "boolean") {
         return response({ ok: false, error: "invalid_realtime_offer_or_consent" }, 422, cors);
       }
