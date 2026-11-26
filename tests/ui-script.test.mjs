@@ -71,3 +71,15 @@ test("camera vision sends bounded sampled still images through the Realtime data
   assert.ok(appScript.includes('type:"input_image"'));
   assert.ok(appScript.includes('clearInterval(active.frameTimer)'));
 });
+
+
+test("Realtime transcript completion does not duplicate streamed transcript deltas", () => {
+  assert.ok(appScript.includes("const streamedItems=new Set()"));
+  assert.ok(appScript.includes("streamedItems.has(itemKey)"));
+  assert.ok(appScript.includes('appendLiveTranscript("\\n")'));
+});
+
+test("dashboard copy reflects the implemented PKCE flow and required provider setup", () => {
+  assert.ok(html.includes("ورود یکپارچه با Authorization Code + PKCE آماده است"));
+  assert.ok(!html.includes("ورود یکپارچه Authorization Code + PKCE هنوز در حال تکمیل است"));
+});
