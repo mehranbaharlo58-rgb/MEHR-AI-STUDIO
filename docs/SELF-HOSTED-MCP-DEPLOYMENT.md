@@ -6,7 +6,7 @@ Linux host or container platform; adding the files does not deploy the service.
 
 ## Configure
 
-1. Copy `.env.example` to `.env`.
+1. Copy `.env.mcp.example` to `.env.mcp`. This file contains only the Python MCP service's environment and is intentionally separate from the Cloudflare Worker secrets.
 2. Set the four required Python resource-server values:
    - `MEHR_OIDC_ISSUER_URL`
    - `MEHR_OIDC_JWKS_URL`
@@ -20,7 +20,7 @@ Linux host or container platform; adding the files does not deploy the service.
 5. Ensure the identity provider issues short-lived RS256 access tokens with
    the configured audience, required scope, and a trusted tenant claim.
 
-Do not commit `.env`. The Docker build context excludes it.
+Do not commit `.env.mcp`. The Docker build context excludes environment files.
 
 ## Run
 
