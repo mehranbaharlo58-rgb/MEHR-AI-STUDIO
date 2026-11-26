@@ -1,0 +1,27 @@
+services:
+  mehr-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mehr-ai-studio-mcp:local
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MEHR_HTTP_HOST: 0.0.0.0
+      MEHR_HTTP_PORT: 8000
+      MEHR_DB_PATH: /data/mehr_ai_studio.sqlite3
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - mehr-ai-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  mehr-ai-data:
