@@ -2,6 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { readFileSync as readJson } from "node:fs";
+
+const catalogue = JSON.parse(readJson(new URL("../ui/ai-catalog.json", import.meta.url), "utf8"));
 
 const html = readFileSync(new URL("../ui/index.html", import.meta.url), "utf8");
 const scriptStart = html.indexOf("<script>");
@@ -126,4 +129,24 @@ test("Realtime transcript completion does not duplicate streamed transcript delt
 test("dashboard copy reflects the implemented PKCE flow and required provider setup", () => {
   assert.ok(html.includes("ورود یکپارچه با Authorization Code + PKCE آماده است"));
   assert.ok(!html.includes("ورود یکپارچه Authorization Code + PKCE هنوز در حال تکمیل است"));
+});
+
+
+test("Agent workspace loads the curated 100-entry catalogue and separates catalogue from live status", () => {
+  assert.equal(catalogue.length, 100);
+  assert.equal(new Set(catalogue.map(item => item.id)).size, 100);
+  assert.ok(catalogue.every(item => item.status === "catalog_only"));
+  assert.ok(html.includes('id="agentsPanel"'));
+  assert.ok(html.includes('id="agentSearch"'));
+  assert.ok(html.includes('id="agentCategory"'));
+  assert.ok(html.includes('id="agentStatus"'));
+  assert.ok(appScript.includes('fetch("./ai-catalog.json"'));
+  assert.ok(appScript.includes('$("#agentTested").textContent=counts.tested'));
+  assert.ok(appScript.includes("catalogue presence does not mean a live connection"));
+});
+
+test("Agent workspace escapes catalogue data before inserting it into the UI", () => {
+  assert.ok(appScript.includes("const safeText=value=>String(value??"));
+  assert.ok(appScript.includes("safeText(item.name)"));
+  assert.ok(appScript.includes("safeText(item.provider)"));
 });
