@@ -54,19 +54,34 @@ must be on persistent storage and protected by the host's filesystem controls.
 
 ## Browser integration boundary
 
-The HTTP entry point exposes the MCP Streamable HTTP protocol at the MCP SDK's
-default endpoint. A browser application must obtain an access token from the
-same configured identity provider and speak the Streamable HTTP protocol. The
-current static dashboard still calls the separate single-provider Cloudflare
-Worker; it is not connected to this MCP service. Do not put a server-side
-provider key or a long-lived owner token in browser JavaScript.
+The Agent workspace includes a browser-side MCP Streamable HTTP client. It
+connects to the authenticated server's `/mcp` endpoint, initializes a session,
+lists tools, reads the caller's tenant-scoped model registry, seeds the curated
+catalogue on an explicit first connection when the registry is empty, and can
+dispatch a task through `execute_ai_task`.
 
-A browser-facing product release still requires a reviewed OIDC authorization
-code + PKCE client, same-origin/reverse-proxy routing or narrowly scoped CORS,
-rate limits, quota enforcement, secret redaction, monitoring, persistent
-storage, and live end-to-end tests against the selected identity provider.
-No live issuer, provider, or public deployment is configured by this change.
+The user supplies a short-lived OIDC access token issued by the same identity
+provider configured for this MCP resource server. The dashboard keeps that
+token in page memory only; it is not written to localStorage or sessionStorage,
+and is cleared when the user disconnects or reloads the page. The separate
+Cloudflare Worker OIDC login in the Live room is not assumed to issue a token
+valid for this MCP audience. The endpoint must use HTTPS and
+`MEHR_ALLOWED_ORIGINS` must include the exact dashboard origin for
+cross-origin access.
 
+The browser client does not receive provider API keys. Provider credentials
+remain in the server's secret environment and the MCP server's existing
+connector configuration. A model is not considered operational until the
+server reports it as configured or tested after a successful connector test.
+Catalogue seeding does not configure credentials or mark integrations tested.
+
+A production release still requires a reviewed OIDC authorization-code + PKCE
+client for this MCP audience, same-origin/reverse-proxy routing or narrowly
+scoped CORS, rate limits, quota enforcement, secret redaction, monitoring,
+persistent storage, and live end-to-end tests against the selected identity
+provider. Passing local unit tests does not prove live identity-provider or
+production connectivity.
+ 
 ## Validation status
 
 Automated tests verify the HTTP app factory, loopback default, proxy-header
