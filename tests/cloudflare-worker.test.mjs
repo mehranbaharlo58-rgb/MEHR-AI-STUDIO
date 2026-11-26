@@ -323,6 +323,7 @@ test("creates a session-owned Cloudflare JPEG egress adapter only for a publishe
         get: () => ({ fetch: async (url, init) => {
           const path = new URL(url).pathname;
           registryCalls.push(path);
+          if (path === "/lock" || path === "/unlock") return new Response(null, { status: 200 });
           if (path === "/authorize") return Response.json({
             providerSessionId: "provider-session", expiresAt: Math.floor(Date.now() / 1000) + 240,
             consent: { microphone: true, camera: true },
@@ -354,6 +355,9 @@ test("creates a session-owned Cloudflare JPEG egress adapter only for a publishe
     assert.equal(adapterRequest.tracks[0].outputCodec, "jpeg");
     assert.match(adapterRequest.tracks[0].endpoint, /^wss:\/\/worker\.test\/api\/live\/media\//);
     assert.equal(registryCalls.includes("/complete-video"), true);
+    assert.equal(registryCalls.includes("/lock"), true);
+    assert.equal(registryCalls.includes("/unlock"), true);
+    assert.equal(registryCalls.indexOf("/lock") < registryCalls.indexOf("/authorize"), true);
     assert.equal(JSON.stringify(body).includes("sfu-secret"), false);
   } finally {
     globalThis.fetch = originalFetch;
