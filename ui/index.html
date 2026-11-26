@@ -383,14 +383,23 @@ $("#liveMicToggle").addEventListener("click",()=>{
  if(!liveState.mic)return;liveState.muted=!liveState.muted;liveState.mic.getAudioTracks().forEach(t=>t.enabled=!liveState.muted);updateLiveState();
 });
 $("#liveCameraStart").addEventListener("click",async()=>{
- try{if(!navigator.mediaDevices?.getUserMedia)throw new Error("مرورگر یا اتصال امن از دسترسی رسانه پشتیبانی نمی‌کند.");if(liveState.camera)liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}}});$("#liveCameraPreview").srcObject=liveState.camera;$("#liveCameraPreview").hidden=false;$("#liveVideoPlaceholder").hidden=true;await $("#liveCameraPreview").play();updateLiveState();say("پیش‌نمایش دوربین فعال شد؛ تصویر ارسال یا ضبط نمی‌شود.");}
+ try{if(!navigator.mediaDevices?.getUserMedia)throw new Error("مرورگر یا اتصال امن از دسترسی رسانه پشتیبانی نمی‌کند.");if(liveState.camera)liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}}});$("#liveCameraPreview").srcObject=liveState.camera;$("#liveCameraPreview").hidden=false;$("#liveVideoPlaceholder").hidden=true;await $("#liveCameraPreview").play();startLiveCameraSampling();updateLiveState();say(liveConnection?"دوربین فعال شد؛ فریم‌های ثابت به نشست صوتی ارسال می‌شوند.":"پیش‌نمایش دوربین فعال شد؛ هنوز ارسال شبکه‌ای انجام نمی‌شود.");}
  catch(err){say("دسترسی دوربین ناموفق: "+err.message);}
 });
-function stopLiveDevices(){
- for(const key of ["mic","camera"]){if(liveState[key]){liveState[key].getTracks().forEach(t=>t.stop());liveState[key]=null;}}
- $("#liveCameraPreview").srcObject=null;$("#liveCameraPreview").hidden=true;$("#liveVideoPlaceholder").hidden=false;liveState.muted=false;updateLiveState();
+function stopLiveCamera(){
+ const active=liveConnection;
+ if(active?.frameTimer){clearInterval(active.frameTimer);active.frameTimer=null;}
+ if(liveState.camera){liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=null;}
+ $("#liveCameraPreview").srcObject=null;$("#liveCameraPreview").hidden=true;$("#liveVideoPlaceholder").hidden=false;
+ if(active)$("#liveStatus").textContent="گفت‌وگوی صوتی همچنان متصل است؛ ارسال تصویر متوقف شد.";
+ updateLiveState();
 }
-$("#liveCameraStop").addEventListener("click",async()=>{if(liveConnection)await disconnectLiveSession();if(liveState.camera){liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=null;}$("#liveCameraPreview").srcObject=null;$("#liveCameraPreview").hidden=true;$("#liveVideoPlaceholder").hidden=false;updateLiveState();});
+function stopLiveDevices(){
+ stopLiveCamera();
+ if(liveState.mic){liveState.mic.getTracks().forEach(t=>t.stop());liveState.mic=null;}
+ liveState.muted=false;updateLiveState();
+}
+$("#liveCameraStop").addEventListener("click",stopLiveCamera);
 $("#liveStopAll").addEventListener("click",async()=>{await disconnectLiveSession();stopLiveDevices();say("تمام دسترسی‌های رسانه و ارتباط شبکه‌ای متوقف شد.");});
 window.addEventListener("pagehide",()=>{disconnectLiveSession();stopLiveDevices();});
 
@@ -541,8 +550,14 @@ function bindRealtimeEvents(channel){
   }
  });
 }
+function startLiveCameraSampling(){
+ const active=liveConnection;
+ if(!active||active.frameTimer||!active.channel||!liveState.camera)return;
+ active.frameTimer=setInterval(()=>sendSampledCameraFrame(active.channel),3000);
+ sendSampledCameraFrame(active.channel);
+}
 function sendSampledCameraFrame(channel){
- if(channel.readyState!=="open"||channel.bufferedAmount>512*1024||!liveState.camera||!$("#liveCameraPreview").videoWidth)return;
+ if(document.hidden||channel.readyState!=="open"||channel.bufferedAmount>512*1024||!liveState.camera||!$("#liveCameraPreview").videoWidth)return;
  const video=$("#liveCameraPreview");
  const scale=Math.min(1,640/video.videoWidth);
  const canvas=document.createElement("canvas");
@@ -551,7 +566,7 @@ function sendSampledCameraFrame(channel){
  const context=canvas.getContext("2d");
  context.drawImage(video,0,0,canvas.width,canvas.height);
  const imageUrl=canvas.toDataURL("image/jpeg",0.62);
- channel.send(JSON.stringify({type:"conversation.item.create",item:{type:"message",role:"user",content:[{type:"input_image",image_url:imageUrl}]}}));
+ channel.send(JSON.stringify({type:"conversation.item.create",item:{type:"message",role:"user",content:[{type:"input_image",detail:"low",image_url:imageUrl}]}}));
 }
 $("#liveConnect").addEventListener("click",async()=>{
  const connect=$("#liveConnect");connect.disabled=true;
@@ -575,11 +590,7 @@ $("#liveConnect").addEventListener("click",async()=>{
   liveConnection={pc,channel,frameTimer:null};
   $("#liveDisconnect").disabled=false;
   $("#liveAgentState").textContent="متصل";
-  if(cameraTrack){
-   frameTimer=setInterval(()=>sendSampledCameraFrame(channel),3000);
-   liveConnection.frameTimer=frameTimer;
-   sendSampledCameraFrame(channel);
-  }
+  if(cameraTrack)startLiveCameraSampling();
   $("#liveStatus").textContent=cameraTrack
    ?"گفت‌وگوی صوتی متصل است؛ فریم دوربین هر ۳ ثانیه به‌صورت تصویر ثابت نمونه‌برداری می‌شود."
    :"گفت‌وگوی صوتی بلادرنگ متصل است.";
