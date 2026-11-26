@@ -341,14 +341,16 @@ export default {
         const state = await sfuRequest(env, "/sessions/" + encodeURIComponent(owned.providerSessionId), {
           method: "GET",
         });
-        const tracks = Array.isArray(state.tracks) ? state.tracks
-          .filter((track) => track && typeof track.mid === "string")
-          .map((track) => ({
-            mid: track.mid,
-            trackName: typeof track.trackName === "string" ? track.trackName : null,
-            location: track.location === "local" || track.location === "remote" ? track.location : null,
-            status: ["active", "inactive", "initializing"].includes(track.status) ? track.status : "unknown",
-          })) : [];
+        if (!Array.isArray(state.tracks) || state.tracks.length > 64 ||
+            state.tracks.some((track) => !track || typeof track.mid !== "string")) {
+          throw new Error("sfu_session_state_invalid");
+        }
+        const tracks = state.tracks.map((track) => ({
+          mid: track.mid,
+          trackName: typeof track.trackName === "string" ? track.trackName : null,
+          location: track.location === "local" || track.location === "remote" ? track.location : null,
+          status: ["active", "inactive", "initializing"].includes(track.status) ? track.status : "unknown",
+        }));
         return response({ ok: true, expiresAt: owned.expiresAt, tracks }, 200, cors);
       } catch {
         return response({ ok: false, error: "live_session_inspection_failed" }, 502, cors);
@@ -405,9 +407,10 @@ export default {
           });
           if (unresolved.length) throw new Error("sfu_track_close_incomplete");
         }
-        await sessionRegistry(env, appSessionId, "delete", {
+        const removed = await sessionRegistry(env, appSessionId, "delete", {
           subject: principal.subject, tenantId: principal.tenantId,
         });
+        if (!removed.ok) throw new Error("session_registry_delete_failed");
         return response({ ok: true, closed: true }, 200, cors);
       } catch {
         return response({ ok: false, error: "live_session_close_failed" }, 502, cors);
