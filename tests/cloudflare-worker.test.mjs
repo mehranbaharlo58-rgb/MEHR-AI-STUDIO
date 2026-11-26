@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import worker from "../cloudflare/worker.mjs";
+import worker, { LiveSessionRegistry } from "../cloudflare/worker.mjs";
 
 const env = {
   ALLOWED_ORIGIN: "https://mehranbaharlo58-rgb.github.io",
@@ -246,4 +246,55 @@ test("rejects an OIDC token with a modified signature", async () => {
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+
+test("live session registry binds records to subject and tenant", async () => {
+  const values = new Map();
+  const state = { storage: {
+    get: async (key) => values.get(key),
+    put: async (key, value) => values.set(key, value),
+    delete: async (key) => values.delete(key),
+  }};
+  const registry = new LiveSessionRegistry(state);
+  const created = await registry.fetch(new Request("https://session.internal/create", {
+    method: "POST", body: JSON.stringify({
+      subject: "user-1", tenantId: "tenant-1", providerSessionId: "sfu-1",
+      expiresAt: Math.floor(Date.now() / 1000) + 300,
+      consent: { microphone: true, camera: false },
+    }),
+  }));
+  assert.equal(created.status, 201);
+
+  const denied = await registry.fetch(new Request("https://session.internal/authorize", {
+    method: "POST", body: JSON.stringify({ subject: "user-2", tenantId: "tenant-1" }),
+  }));
+  assert.equal(denied.status, 404);
+
+  const wrongTenant = await registry.fetch(new Request("https://session.internal/authorize", {
+    method: "POST", body: JSON.stringify({ subject: "user-1", tenantId: "tenant-2" }),
+  }));
+  assert.equal(wrongTenant.status, 404);
+
+  const allowed = await registry.fetch(new Request("https://session.internal/authorize", {
+    method: "POST", body: JSON.stringify({ subject: "user-1", tenantId: "tenant-1" }),
+  }));
+  assert.equal(allowed.status, 200);
+  assert.equal((await allowed.json()).providerSessionId, "sfu-1");
+});
+
+test("live session registry rejects expired sessions", async () => {
+  const values = new Map([["session", {
+    subject: "user-1", tenantId: "tenant-1", providerSessionId: "sfu-1",
+    expiresAt: Math.floor(Date.now() / 1000) - 1, mids: [],
+  }]]);
+  const registry = new LiveSessionRegistry({ storage: {
+    get: async (key) => values.get(key),
+    put: async (key, value) => values.set(key, value),
+    delete: async (key) => values.delete(key),
+  }});
+  const result = await registry.fetch(new Request("https://session.internal/authorize", {
+    method: "POST", body: JSON.stringify({ subject: "user-1", tenantId: "tenant-1" }),
+  }));
+  assert.equal(result.status, 404);
 });
