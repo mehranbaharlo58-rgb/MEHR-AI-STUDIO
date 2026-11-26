@@ -413,3 +413,53 @@ def test_authenticated_ai_registry_tools_are_tenant_scoped(monkeypatch, tmp_path
     assert AIRegistryStore(
         tmp_path / "tenant-ai-registry.sqlite3", "tenant-beta"
     ).list() == []
+
+
+def test_oidc_verifier_must_match_resource_server_auth_settings():
+    from mehr_ai_studio.oidc import OIDCJWTTokenVerifier
+
+    verifier = OIDCJWTTokenVerifier(
+        issuer_url="https://identity.example.test/",
+        jwks_url="https://identity.example.test/.well-known/jwks.json",
+        audience="mehr-api",
+        resource_server_url="https://studio.example.test/mcp",
+        required_scopes=["studio:access"],
+    )
+    matching = valid_auth_settings()
+    authenticated_server._validate_auth_configuration(verifier, matching)
+
+    mismatches = [
+        SimpleNamespace(
+            issuer_url="https://other-identity.example.test/",
+            resource_server_url="https://studio.example.test/mcp",
+            required_scopes=["studio:access"],
+        ),
+        SimpleNamespace(
+            issuer_url="https://identity.example.test/",
+            resource_server_url="https://other-studio.example.test/mcp",
+            required_scopes=["studio:access"],
+        ),
+        SimpleNamespace(
+            issuer_url="https://identity.example.test/",
+            resource_server_url="https://studio.example.test/mcp",
+            required_scopes=["studio:admin"],
+        ),
+    ]
+    for settings in mismatches:
+        with pytest.raises(ValueError, match="OIDC verifier"):
+            authenticated_server._validate_auth_configuration(verifier, settings)
+
+
+def test_authenticated_factory_rejects_query_and_password_in_oauth_urls():
+    unsafe = [
+        "https://identity.example.test/path?tenant=wrong",
+        "https://user:secret@identity.example.test/",
+    ]
+    for issuer in unsafe:
+        settings = SimpleNamespace(
+            issuer_url=issuer,
+            resource_server_url="https://studio.example.test/mcp",
+            required_scopes=["studio:access"],
+        )
+        with pytest.raises(ValueError, match="issuer_url"):
+            authenticated_server._validate_auth_configuration(FakeVerifier(), settings)
