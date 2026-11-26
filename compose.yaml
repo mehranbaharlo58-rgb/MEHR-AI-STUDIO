@@ -5,12 +5,24 @@ services:
       dockerfile: Dockerfile
     image: mehr-ai-studio-mcp:local
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
       MEHR_HTTP_HOST: 0.0.0.0
       MEHR_HTTP_PORT: 8000
       MEHR_DB_PATH: /data/mehr_ai_studio.sqlite3
+      MEHR_OIDC_ISSUER_URL: ${MEHR_OIDC_ISSUER_URL:?set MEHR_OIDC_ISSUER_URL in .env}
+      MEHR_OIDC_JWKS_URL: ${MEHR_OIDC_JWKS_URL:?set MEHR_OIDC_JWKS_URL in .env}
+      MEHR_OIDC_AUDIENCE: ${MEHR_OIDC_AUDIENCE:?set MEHR_OIDC_AUDIENCE in .env}
+      MEHR_MCP_RESOURCE_URL: ${MEHR_MCP_RESOURCE_URL:?set MEHR_MCP_RESOURCE_URL in .env}
+      MEHR_OIDC_REQUIRED_SCOPES: ${MEHR_OIDC_REQUIRED_SCOPES:-studio:access}
+      MEHR_OIDC_TENANT_CLAIM: ${MEHR_OIDC_TENANT_CLAIM:-tenant_id}
+      MEHR_ALLOWED_ORIGINS: ${MEHR_ALLOWED_ORIGINS:-}
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-45}
+      AI_MAX_ATTEMPTS: ${AI_MAX_ATTEMPTS:-3}
+      AI_RETRY_BACKOFF_SECONDS: ${AI_RETRY_BACKOFF_SECONDS:-0.5}
+      MEHR_AI_API_KEY_PROVIDER_SLUG: ${MEHR_AI_API_KEY_PROVIDER_SLUG:-}
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
