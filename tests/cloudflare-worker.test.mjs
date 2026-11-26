@@ -218,8 +218,40 @@ test("verifies OIDC signature and trusted claims before live capability checks",
     assert.equal(response.status, 503);
     assert.equal(body.authenticated, true);
     assert.equal(body.live_transport, "not_configured");
+    assert.equal(body.voice_enabled, false);
+    assert.equal(body.sfu_transport, "not_configured");
     assert.equal(body.session_creation_enabled, false);
     assert.equal(JSON.stringify(body).includes(token), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("direct Realtime voice and vision remain available without optional SFU credentials", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ keys: [jwk] }), {
+    status: 200, headers: { "Content-Type": "application/json" },
+  });
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/capabilities", {
+      headers: { ...origin, Authorization: "Bearer " + token },
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks-direct-realtime.json",
+      OIDC_AUDIENCE: "mehr-api",
+      OPENAI_API_KEY: "test-openai-secret",
+    });
+    const body = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(body.live_transport, "openai_realtime_webrtc");
+    assert.equal(body.voice_enabled, true);
+    assert.equal(body.voice_vision_enabled, true);
+    assert.equal(body.sfu_transport, "not_configured");
+    assert.equal(body.sfu_video_bridge_enabled, false);
+    assert.equal(body.session_creation_enabled, false);
+    assert.equal(JSON.stringify(body).includes("test-openai-secret"), false);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -269,10 +301,13 @@ test("live capabilities accurately report a configured session transport", async
       LIVE_SESSIONS: { idFromName: () => "session-id", get: () => ({ fetch: async () => new Response(null, { status: 200 }) }) },
     });
     const body = await response.json();
-    assert.equal(response.status, 200);
+    assert.equal(response.status, 503);
     assert.equal(body.session_creation_enabled, true);
-    assert.equal(body.live_transport, "cloudflare_realtime_sfu");
-    assert.equal(body.reason, null);
+    assert.equal(body.sfu_transport, "cloudflare_realtime_sfu");
+    assert.equal(body.sfu_video_bridge_enabled, true);
+    assert.equal(body.voice_enabled, false);
+    assert.equal(body.live_transport, "not_configured");
+    assert.equal(body.reason, "realtime_provider_not_configured");
   } finally {
     globalThis.fetch = originalFetch;
   }
