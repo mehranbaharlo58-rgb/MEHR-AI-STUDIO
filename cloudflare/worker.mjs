@@ -528,17 +528,21 @@ export default {
           return response({ ok: false, error: "camera_track_not_published" }, 409, cors);
         }
         if (owned.videoRelay?.adapterId && owned.videoRelay.expiresAt > Math.floor(Date.now() / 1000)) {
+          const viewerTicket = randomToken();
+          const ticketExpiresAt = Math.min(owned.videoRelay.expiresAt, Math.floor(Date.now() / 1000) + 30);
+          const issued = await sessionRegistry(env, appSessionId, "issue-viewer-ticket", {
+            subject: principal.subject, tenantId: principal.tenantId, ticket: viewerTicket, ticketExpiresAt,
+          });
+          if (!issued.ok) return response({ ok: false, error: "viewer_ticket_issue_failed" }, 503, cors);
           const viewerUrl = new URL("/api/live/media/" + appSessionId, request.url);
           viewerUrl.protocol = "wss:";
-          viewerUrl.searchParams.set("role", "viewer");
-          viewerUrl.searchParams.set("token", owned.videoRelay.viewerToken);
-          return response({ ok: true, adapter_active: true, viewer_url: viewerUrl.toString(), frame_format: "jpeg" }, 200, cors);
+          return response({ ok: true, adapter_active: true, viewer_url: viewerUrl.toString(),
+            viewer_ticket: viewerTicket, frame_format: "jpeg" }, 200, cors);
         }
         const ingestToken = randomToken();
-        const viewerToken = randomToken();
         const expiresAt = Math.min(owned.expiresAt, Math.floor(Date.now() / 1000) + 300);
         const prepared = await sessionRegistry(env, appSessionId, "prepare-video", {
-          subject: principal.subject, tenantId: principal.tenantId, ingestToken, viewerToken, expiresAt,
+          subject: principal.subject, tenantId: principal.tenantId, ingestToken, expiresAt,
         });
         if (prepared.status === 409) return response({ ok: false, error: "video_adapter_already_preparing" }, 409, cors);
         if (!prepared.ok) return response({ ok: false, error: "video_adapter_registry_failed" }, 503, cors);
@@ -566,11 +570,16 @@ export default {
           }).catch(() => null);
           throw new Error("video_adapter_registry_commit_failed");
         }
+        const viewerTicket = randomToken();
+        const ticketExpiresAt = Math.min(expiresAt, Math.floor(Date.now() / 1000) + 30);
+        const issued = await sessionRegistry(env, appSessionId, "issue-viewer-ticket", {
+          subject: principal.subject, tenantId: principal.tenantId, ticket: viewerTicket, ticketExpiresAt,
+        });
+        if (!issued.ok) throw new Error("viewer_ticket_issue_failed");
         const viewerUrl = new URL("/api/live/media/" + appSessionId, request.url);
         viewerUrl.protocol = "wss:";
-        viewerUrl.searchParams.set("role", "viewer");
-        viewerUrl.searchParams.set("token", viewerToken);
-        return response({ ok: true, adapter_active: true, viewer_url: viewerUrl.toString(), frame_format: "jpeg", max_frame_bytes: MAX_VIDEO_FRAME_BYTES }, 201, cors);
+        return response({ ok: true, adapter_active: true, viewer_url: viewerUrl.toString(),
+          viewer_ticket: viewerTicket, frame_format: "jpeg", max_frame_bytes: MAX_VIDEO_FRAME_BYTES }, 201, cors);
       } catch {
         await sessionRegistry(env, appSessionId, "cancel-video", {
           subject: principal.subject, tenantId: principal.tenantId,
@@ -842,19 +851,33 @@ export class LiveSessionRegistry {
     const url = new URL(request.url);
     if (request.method === "GET" && (request.headers.get("Upgrade") || "").toLowerCase() === "websocket") {
       const existing = await this.state.storage.get("session");
-      const role = url.searchParams.get("role");
       const token = url.searchParams.get("token");
+      const protocols = (request.headers.get("Sec-WebSocket-Protocol") || "").split(",").map((item) => item.trim());
+      const ticketProtocol = protocols.find((item) => /^mehr-ticket\.[a-f0-9]{64}$/.test(item));
+      const role = url.searchParams.get("role") || (ticketProtocol ? "viewer" : null);
       const relay = existing?.videoRelay;
-      const valid = existing && existing.expiresAt > Math.floor(Date.now() / 1000) &&
-        relay && relay.expiresAt > Math.floor(Date.now() / 1000) &&
-        ((role === "ingest" && constantTimeEqual(token, relay.ingestToken)) ||
-         (role === "viewer" && constantTimeEqual(token, relay.viewerToken)));
-      if (!valid || !["ingest", "viewer"].includes(role)) return new Response("unauthorized", { status: 401 });
+      const now = Math.floor(Date.now() / 1000);
+      const validBase = existing && existing.expiresAt > now && relay && relay.expiresAt > now;
+      const validIngest = role === "ingest" && validBase && constantTimeEqual(token, relay.ingestToken);
+      let validViewer = false;
+      if (role === "viewer" && validBase && ticketProtocol && typeof this.state.storage.transaction === "function") {
+        validViewer = await this.state.storage.transaction(async (transaction) => {
+          const current = await transaction.get("session");
+          if (!current || current.expiresAt <= now || !current.videoRelay ||
+              current.videoRelay.expiresAt <= now || !current.viewerTicket ||
+              current.viewerTicket.expiresAt <= now ||
+              !constantTimeEqual(ticketProtocol.slice("mehr-ticket.".length), current.viewerTicket.token)) return false;
+          await transaction.put("session", { ...current, viewerTicket: null });
+          return true;
+        });
+      }
+      if (!validIngest && !validViewer) return new Response("unauthorized", { status: 401 });
       const pair = new WebSocketPair();
       const [client, server] = Object.values(pair);
       server.serializeAttachment({ role });
       this.state.acceptWebSocket(server);
-      return new Response(null, { status: 101, webSocket: client });
+      const headers = role === "viewer" ? { "Sec-WebSocket-Protocol": "mehr.viewer" } : {};
+      return new Response(null, { status: 101, webSocket: client, headers });
     }
     if (request.method !== "POST") return new Response(null, { status: 405 });
     let body;
@@ -934,15 +957,14 @@ export class LiveSessionRegistry {
     }
     if (path === "/prepare-video") {
       if (existing.consent?.camera !== true || typeof body.ingestToken !== "string" ||
-          !/^[a-f0-9]{64}$/.test(body.ingestToken) || typeof body.viewerToken !== "string" ||
-          !/^[a-f0-9]{64}$/.test(body.viewerToken) || !Number.isFinite(body.expiresAt) ||
+          !/^[a-f0-9]{64}$/.test(body.ingestToken) || !Number.isFinite(body.expiresAt) ||
           body.expiresAt <= Math.floor(Date.now() / 1000) || body.expiresAt > existing.expiresAt ||
           !Array.isArray(existing.tracks) || !existing.tracks.some((track) => track.trackName === "camera") ||
           (existing.videoRelay && existing.videoRelay.expiresAt > Math.floor(Date.now() / 1000))) {
         return new Response(null, { status: 409 });
       }
       await this.state.storage.put("session", { ...existing, videoRelay: {
-        ingestToken: body.ingestToken, viewerToken: body.viewerToken,
+        ingestToken: body.ingestToken,
         expiresAt: body.expiresAt, adapterId: null,
       }});
       return new Response(null, { status: 201 });
@@ -958,6 +980,16 @@ export class LiveSessionRegistry {
     if (path === "/cancel-video") {
       await this.state.storage.put("session", { ...existing, videoRelay: null });
       return new Response(null, { status: 200 });
+    }
+    if (path === "/issue-viewer-ticket") {
+      if (!existing.videoRelay?.adapterId || typeof body.ticket !== "string" ||
+          !/^[a-f0-9]{64}$/.test(body.ticket) || !Number.isFinite(body.ticketExpiresAt) ||
+          body.ticketExpiresAt <= Math.floor(Date.now() / 1000) ||
+          body.ticketExpiresAt > existing.videoRelay.expiresAt) return new Response(null, { status: 409 });
+      await this.state.storage.put("session", { ...existing, viewerTicket: {
+        token: body.ticket, expiresAt: body.ticketExpiresAt,
+      }});
+      return new Response(null, { status: 201 });
     }
     if (path === "/update") {
       if (!Array.isArray(body.mids) || body.mids.some((mid) => !/^[0-9]{1,3}$/.test(String(mid))) ||
