@@ -203,7 +203,7 @@ def test_sequential_fallback_reports_all_failures_without_hiding_error_categorie
         registry = AIRegistry([entry(id="first", name="First"), entry(id="second", name="Second")])
 
         async def unavailable(model, task):
-            raise TimeoutError("provider timeout")
+            raise RuntimeError("provider unavailable")
 
         manager = AIExecutionManager(
             registry, {"first": unavailable, "second": unavailable}
@@ -214,7 +214,7 @@ def test_sequential_fallback_reports_all_failures_without_hiding_error_categorie
         assert result["selected_model_id"] is None
         assert result["attempted_model_ids"] == ["first", "second"]
         assert result["fallback_used"] is True
-        assert [item["error"] for item in result["results"]] == ["TimeoutError", "TimeoutError"]
+        assert [item["error"] for item in result["results"]] == ["RuntimeError", "RuntimeError"]
 
     asyncio.run(run())
 
