@@ -12,7 +12,7 @@ function corsHeaders(request, env) {
   if (!origin || origin !== env.ALLOWED_ORIGIN) return null;
   return {
     "access-control-allow-origin": origin,
-    "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
+    "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
     "access-control-allow-headers": "Authorization, Content-Type",
     "access-control-max-age": "86400",
     "vary": "Origin",
@@ -325,6 +325,34 @@ export default {
           try { await closeSfuTracks(env, providerSessionId, publishedMids); } catch { /* best-effort compensation */ }
         }
         return response({ ok: false, error: "live_publish_failed" }, 502, cors);
+      }
+    }
+
+    const liveRenegotiateMatch = url.pathname.match(/^\/api\/live\/sessions\/([0-9a-f-]{36})\/renegotiate$/i);
+    if (liveRenegotiateMatch && request.method === "PUT") {
+      const principal = await verifyOidcAccessToken(request, env);
+      if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
+      const appSessionId = liveRenegotiateMatch[1];
+      const parsed = await readJsonLimited(request, MAX_LIVE_BODY_BYTES);
+      if (parsed.error) return response({ ok: false, error: parsed.error }, parsed.error === "request_too_large" ? 413 : 400, cors);
+      const description = parsed.value?.sessionDescription;
+      if (!description || description.type !== "answer" ||
+          typeof description.sdp !== "string" || description.sdp.length < 20 ||
+          description.sdp.length > 100000) {
+        return response({ ok: false, error: "invalid_renegotiation_answer" }, 422, cors);
+      }
+      try {
+        const auth = await sessionRegistry(env, appSessionId, "authorize", {
+          subject: principal.subject, tenantId: principal.tenantId,
+        });
+        if (!auth.ok) return response({ ok: false, error: "session_not_found" }, 404, cors);
+        const owned = await auth.json();
+        const result = await sfuRequest(env, "/sessions/" + encodeURIComponent(owned.providerSessionId) + "/renegotiate", {
+          method: "PUT", body: JSON.stringify({ sessionDescription: description }),
+        });
+        return response({ ok: true, result }, 200, cors);
+      } catch {
+        return response({ ok: false, error: "live_renegotiation_failed" }, 502, cors);
       }
     }
 
