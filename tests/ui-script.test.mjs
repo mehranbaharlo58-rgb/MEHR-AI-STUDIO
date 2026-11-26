@@ -267,6 +267,36 @@ test("MCP transport enforces response identity, request timeout and negotiated s
   assert.equal(calls[0].options.headers["Mcp-Session-Id"], "session-123");
   assert.equal(calls[0].options.headers["Mcp-Protocol-Version"], "2025-03-26");
   assert.equal(calls[0].options.headers.Authorization, "Bearer short-lived-test-token");
+
+  const timeoutContext = {
+    ...context,
+    mcpRequestId: 0,
+    setTimeout: callback => { callback(); return 1; },
+    clearTimeout: () => {},
+    fetch: async () => {
+      const error = new Error("aborted");
+      error.name = "AbortError";
+      throw error;
+    },
+  };
+  await assert.rejects(
+    vm.runInNewContext(source + '\\n mcpRpc("tools/list",{});', timeoutContext),
+    /timed out after 20 seconds/,
+  );
+
+  const mismatchContext = {
+    ...context,
+    mcpRequestId: 0,
+    fetch: async () => ({
+      ok: true,
+      headers: { get: () => null },
+      payload: { jsonrpc: "2.0", id: 999, result: {} },
+    }),
+  };
+  await assert.rejects(
+    vm.runInNewContext(source + '\\n mcpRpc("tools/list",{});', mismatchContext),
+    /mismatched JSON-RPC response/,
+  );
 });
 
 test("MCP disconnect attempts authenticated Streamable HTTP session termination", async () => {
