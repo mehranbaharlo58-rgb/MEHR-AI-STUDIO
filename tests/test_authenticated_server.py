@@ -314,6 +314,22 @@ def test_authenticated_ai_registry_tools_are_tenant_scoped(monkeypatch, tmp_path
         "saved": False,
         "error": "unsupported_connector_mode",
     }
+    hosted_model = {
+        **model,
+        "id": "hosted.test",
+        "provider": "Test Cloud",
+        "access_mode": "openai_compatible",
+        "availability": "paid",
+        "endpoint": "https://api.example.test/v1",
+        "auth_required": True,
+    }
+    monkeypatch.delenv("MEHR_AI_API_KEY_TEST_CLOUD", raising=False)
+    assert app.tools["register_ai_model"](hosted_model) == {
+        "saved": False,
+        "error": "provider_credentials_missing",
+    }
+    monkeypatch.setenv("MEHR_AI_API_KEY_TEST_CLOUD", "test-only-secret")
+    assert app.tools["register_ai_model"](hosted_model)["saved"] is True
     forged_health = {
         **model,
         "status": "tested",
@@ -326,7 +342,7 @@ def test_authenticated_ai_registry_tools_are_tenant_scoped(monkeypatch, tmp_path
         "error": "health_state_must_be_set_by_connector_test",
     }
     alpha = app.tools["list_ai_models"]()
-    assert alpha["counts"]["configured"] == 1
+    assert alpha["counts"]["configured"] == 2
     assert alpha["models"][0]["id"] == "local.test"
     assert app.tools["match_ai_models"]("analysis")["matches"][0]["model_id"] == "local.test"
 
@@ -337,7 +353,7 @@ def test_authenticated_ai_registry_tools_are_tenant_scoped(monkeypatch, tmp_path
     assert app.tools["match_ai_models"]("analysis")["matches"] == []
 
     active_tenant["id"] = "tenant-alpha"
-    assert app.tools["list_ai_models"]()["counts"]["total"] == 1
+    assert app.tools["list_ai_models"]()["counts"]["total"] == 2
 
     for name in (
         "register_ai_model",
