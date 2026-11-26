@@ -571,3 +571,52 @@ test("CORS preflight explicitly permits the renegotiation PUT method", async () 
   assert.equal(response.status, 204);
   assert.match(response.headers.get("access-control-allow-methods"), /PUT/);
 });
+
+
+test("does not delete an application session when SFU track closure has unresolved errors", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const originalFetch = globalThis.fetch;
+  let deleted = false;
+  globalThis.fetch = async (url) => {
+    const target = String(url);
+    if (target.endsWith("/jwks-live-close-failure.json")) {
+      return new Response(JSON.stringify({ keys: [jwk] }), {
+        status: 200, headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (target === "https://rtc.live.cloudflare.com/v1/apps/test-app/sessions/provider-session/tracks/close") {
+      return Response.json({ tracks: [{ mid: "0", errorCode: "internal_error" }] });
+    }
+    assert.fail("Unexpected outbound request: " + target);
+  };
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/sessions/123e4567-e89b-12d3-a456-426614174000", {
+      method: "DELETE",
+      headers: { ...origin, Authorization: "Bearer " + token },
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks-live-close-failure.json",
+      OIDC_AUDIENCE: "mehr-api",
+      CLOUDFLARE_SFU_APP_ID: "test-app",
+      CLOUDFLARE_SFU_APP_SECRET: "test-secret",
+      LIVE_SESSIONS: {
+        idFromName: (id) => id,
+        get: () => ({
+          fetch: async (url) => {
+            const path = new URL(url).pathname;
+            if (path === "/authorize") return Response.json({
+              providerSessionId: "provider-session", mids: ["0"],
+            });
+            if (path === "/delete") { deleted = true; return new Response(null, { status: 200 }); }
+            assert.fail("Unexpected registry operation: " + path);
+          },
+        }),
+      },
+    });
+    assert.equal(response.status, 502);
+    assert.equal(deleted, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
