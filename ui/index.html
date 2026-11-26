@@ -319,7 +319,7 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
       <div class="live-device"><span>اتصال به ایجنت</span><span id="liveAgentState">قطع</span></div>
       <h2 class="live-title" style="font-size:15px;margin-top:20px">رونوشت مکالمه</h2>
       <div class="live-transcript" id="liveTranscript">پس از اتصال موتور گفت‌وگوی بلادرنگ، متن مکالمه و رویدادهای ایجنت در این بخش نمایش داده می‌شود.</div>
-      <p class="live-note">توکن OIDC باید از یک ارائه‌دهنده هویت معتبر صادر شده باشد. ورود یکپارچه Authorization Code + PKCE هنوز در حال تکمیل است.</p>
+      <p class="live-note">ورود یکپارچه با Authorization Code + PKCE آماده است؛ برای فعال‌سازی، تنظیمات ارائه‌دهنده هویت و نشانی‌های مجاز Worker باید پیکربندی شوند.</p>
     </aside>
   </div>
 </section>
@@ -526,12 +526,16 @@ function appendLiveTranscript(text){
  panel.scrollTop=panel.scrollHeight;
 }
 function bindRealtimeEvents(channel){
+ const streamedItems=new Set();
  channel.addEventListener("message",event=>{
   let data;try{data=JSON.parse(event.data);}catch{return;}
+  const itemKey=data.item_id||data.response_id||"";
   if(data.type==="response.output_audio_transcript.delta"||data.type==="response.output_text.delta"||data.type==="conversation.item.input_audio_transcription.delta"){
+   if(itemKey)streamedItems.add(itemKey);
    appendLiveTranscript(data.delta);
   }else if(data.type==="conversation.item.input_audio_transcription.completed"||data.type==="response.output_audio_transcript.done"){
-   appendLiveTranscript("\n"+(data.transcript||""));
+   if(itemKey&&streamedItems.has(itemKey)){appendLiveTranscript("\\n");streamedItems.delete(itemKey);}
+   else appendLiveTranscript("\\n"+(data.transcript||""));
   }else if(data.type==="error"){
    console.warn("Realtime event error:",data.error?.message||"unknown");
   }
