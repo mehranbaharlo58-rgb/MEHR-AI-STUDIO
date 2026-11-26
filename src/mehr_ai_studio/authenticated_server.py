@@ -232,6 +232,8 @@ def build_authenticated_server(
                 )
             except ConnectorConfigurationError:
                 return {"saved": False, "error": "invalid_connector_configuration"}
+            if parsed.auth_required and parsed.id not in build_adapters([parsed]):
+                return {"saved": False, "error": "provider_credentials_missing"}
         return tenant_ai_registry().upsert(parsed)
 
     @mcp.tool()
