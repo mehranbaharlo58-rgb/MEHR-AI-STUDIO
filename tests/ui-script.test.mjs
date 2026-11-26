@@ -333,7 +333,7 @@ test("MCP disconnect cancellation aborts in-flight requests and releases control
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(controllers.size, 1);
   for (const controller of controllers) controller.abort();
-  await assert.rejects(pending, /timed out after 20 seconds/);
+  await assert.rejects(pending, /cancelled because the control plane disconnected/);
   assert.equal(controllers.size, 0);
 });
 
