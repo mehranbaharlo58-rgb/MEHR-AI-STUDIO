@@ -258,7 +258,7 @@ export default {
       if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
       const appSessionId = livePublishMatch[1];
       const parsed = await readJsonLimited(request, MAX_LIVE_BODY_BYTES);
-      if (parsed.error) return response({ ok: false, error: parsed.error }, 400, cors);
+      if (parsed.error) return response({ ok: false, error: parsed.error }, parsed.error === "request_too_large" ? 413 : 400, cors);
       const body = parsed.value;
       const sdp = body?.sessionDescription;
       const tracks = body?.tracks;
@@ -469,9 +469,14 @@ export class LiveSessionRegistry {
     const path = new URL(request.url).pathname;
     const existing = await this.state.storage.get("session");
     if (path === "/create") {
-      if (existing || typeof body.subject !== "string" || typeof body.tenantId !== "string" ||
-          typeof body.providerSessionId !== "string" || !Number.isFinite(body.expiresAt) ||
-          body.expiresAt <= Math.floor(Date.now() / 1000)) return new Response(null, { status: 409 });
+      if (existing || typeof body.subject !== "string" || !body.subject.trim() || body.subject.length > 256 ||
+          typeof body.tenantId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(body.tenantId) ||
+          typeof body.providerSessionId !== "string" || !body.providerSessionId.trim() || body.providerSessionId.length > 256 ||
+          !Number.isFinite(body.expiresAt) || body.expiresAt <= Math.floor(Date.now() / 1000) ||
+          body.expiresAt > Math.floor(Date.now() / 1000) + MAX_LIVE_DURATION_SECONDS ||
+          !body.consent || body.consent.microphone !== true || typeof body.consent.camera !== "boolean") {
+        return new Response(null, { status: 409 });
+      }
       await this.state.storage.put("session", { ...body, mids: [] });
       return new Response(null, { status: 201 });
     }
