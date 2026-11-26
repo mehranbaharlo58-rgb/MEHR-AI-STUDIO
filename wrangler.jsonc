@@ -6,5 +6,21 @@
   "workers_dev": true,
   "vars": {
     "ALLOWED_ORIGIN": "https://mehranbaharlo58-rgb.github.io"
-  }
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "LIVE_SESSIONS",
+        "class_name": "LiveSessionRegistry"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1-live-session-registry",
+      "new_sqlite_classes": [
+        "LiveSessionRegistry"
+      ]
+    }
+  ]
 }
