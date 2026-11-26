@@ -180,6 +180,14 @@ async function sessionRegistry(env, appSessionId, operation, payload) {
   });
 }
 
+async function closeSfuTracks(env, providerSessionId, mids) {
+  if (!Array.isArray(mids) || mids.length === 0) return;
+  await sfuRequest(env, "/sessions/" + encodeURIComponent(providerSessionId) + "/tracks/close", {
+    method: "PUT",
+    body: JSON.stringify({ tracks: mids.map((mid) => ({ mid })), force: true }),
+  });
+}
+
 async function readLimitedText(response, limit) {
   const declaredLength = Number(response.headers.get("Content-Length") || 0);
   if (declaredLength > limit) return null;
@@ -272,42 +280,50 @@ export default {
           !tracks.some((track) => track.trackName === "microphone")) {
         return response({ ok: false, error: "invalid_publish_request" }, 422, cors);
       }
+      let providerSessionId = null;
+      let publishedMids = [];
       try {
         const auth = await sessionRegistry(env, appSessionId, "authorize", {
           subject: principal.subject, tenantId: principal.tenantId,
         });
         if (!auth.ok) return response({ ok: false, error: "session_not_found" }, 404, cors);
         const owned = await auth.json();
+        providerSessionId = owned.providerSessionId;
         if (owned.consent?.camera !== tracks.some((track) => track.trackName === "camera")) {
           return response({ ok: false, error: "consent_mismatch" }, 403, cors);
         }
-        const result = await sfuRequest(env, "/sessions/" + encodeURIComponent(owned.providerSessionId) + "/tracks/new", {
+        const result = await sfuRequest(env, "/sessions/" + encodeURIComponent(providerSessionId) + "/tracks/new", {
           method: "POST", body: JSON.stringify({ sessionDescription: sdp, tracks }),
         });
         const trackResults = Array.isArray(result.tracks) ? result.tracks : [];
         const requestedMids = new Set(tracks.map((track) => String(track.mid)));
-        const successfulMids = trackResults
+        publishedMids = trackResults
           .filter((item) => item && !item.errorCode && !item.errorDescription &&
             typeof item.mid === "string" && requestedMids.has(item.mid))
           .map((item) => item.mid);
-        if (successfulMids.length) {
-          const stored = await sessionRegistry(env, appSessionId, "update", {
-            subject: principal.subject, tenantId: principal.tenantId, mids: successfulMids,
-          });
-          if (!stored.ok) throw new Error("session_registry_update_failed");
-        }
         const description = result.sessionDescription;
         if (!description || !["answer", "offer"].includes(description.type) ||
             typeof description.sdp !== "string" || !description.sdp.trim()) {
           throw new Error("sfu_session_description_invalid");
         }
+        if (publishedMids.length) {
+          const stored = await sessionRegistry(env, appSessionId, "update", {
+            subject: principal.subject, tenantId: principal.tenantId, mids: publishedMids,
+          });
+          if (!stored.ok) throw new Error("session_registry_update_failed");
+        }
         return response({
           ok: true,
-          partial: successfulMids.length !== tracks.length,
+          partial: publishedMids.length !== tracks.length,
           sessionDescription: description,
           tracks: trackResults,
         }, 200, cors);
       } catch {
+        // If provider publication succeeded but our durable ownership update failed,
+        // close those tracks so they cannot outlive an untracked application session.
+        if (providerSessionId && publishedMids.length) {
+          try { await closeSfuTracks(env, providerSessionId, publishedMids); } catch { /* best-effort compensation */ }
+        }
         return response({ ok: false, error: "live_publish_failed" }, 502, cors);
       }
     }
