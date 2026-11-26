@@ -464,11 +464,12 @@ export default {
           method: "POST", body: JSON.stringify({ sessionDescription: sdp, tracks }),
         });
         const trackResults = Array.isArray(result.tracks) ? result.tracks : [];
-        const requestedMids = new Set(tracks.map((track) => String(track.mid)));
+        const requestedByMid = new Map(tracks.map((track) => [String(track.mid), track.trackName]));
         publishedMids = trackResults
           .filter((item) => item && !item.errorCode && !item.errorDescription &&
-            typeof item.mid === "string" && requestedMids.has(item.mid))
+            typeof item.mid === "string" && requestedByMid.has(item.mid))
           .map((item) => item.mid);
+        const publishedTracks = publishedMids.map((mid) => ({ mid, trackName: requestedByMid.get(mid) }));
         const description = result.sessionDescription;
         if (!description || !["answer", "offer"].includes(description.type) ||
             typeof description.sdp !== "string" || !description.sdp.trim()) {
@@ -476,7 +477,7 @@ export default {
         }
         if (publishedMids.length) {
           const stored = await sessionRegistry(env, appSessionId, "update", {
-            subject: principal.subject, tenantId: principal.tenantId, mids: publishedMids,
+            subject: principal.subject, tenantId: principal.tenantId, mids: publishedMids, tracks: publishedTracks,
           });
           if (!stored.ok) throw new Error("session_registry_update_failed");
         }
