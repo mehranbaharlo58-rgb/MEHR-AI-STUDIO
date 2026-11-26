@@ -375,6 +375,11 @@ def test_authenticated_ai_registry_tools_are_tenant_scoped(monkeypatch, tmp_path
     assert execution["results"]
     assert all(item["ok"] for item in execution["results"])
 
+    # A request for the full 100-entry capacity is accepted; actual matches remain bounded by registry contents.
+    full_capacity = asyncio.run(app.tools["execute_ai_task"]("analysis", limit=100))
+    assert full_capacity["ok"] is True
+    assert len(full_capacity["results"]) <= 100
+
     # The API accepts up to the full 100-entry catalogue and rejects larger fan-out.
     assert asyncio.run(app.tools["execute_ai_task"]("analysis", limit=101)) == {
         "ok": False,
