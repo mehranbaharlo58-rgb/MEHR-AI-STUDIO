@@ -436,6 +436,7 @@ $("#liveConnect").addEventListener("click",async()=>{
   const cameraTrack=liveState.camera?.getVideoTracks().find(t=>t.readyState==="live");
   const mode=cameraTrack?"voice_vision":"voice";
   const session=await liveApi("/api/live/sessions",{method:"POST",body:JSON.stringify({mode,consent:{microphone:true,camera:!!cameraTrack}})});
+  if(!session.session||typeof session.session.id!=="string"||!/^[0-9a-f-]{36}$/i.test(session.session.id))throw new Error("شناسه نشست دریافتی معتبر نیست.");
   sessionId=session.session.id;
   pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.cloudflare.com:3478"}]});
   const remoteStream=new MediaStream();
@@ -452,6 +453,7 @@ $("#liveConnect").addEventListener("click",async()=>{
   const published=await liveApi("/api/live/sessions/"+sessionId+"/publish",{
    method:"POST",body:JSON.stringify({sessionDescription:pc.localDescription,tracks})
   });
+  if(!published.sessionDescription||typeof published.sessionDescription.sdp!=="string"||published.sessionDescription.sdp.length<20)throw new Error("توضیحات رسانه‌ای دریافتی معتبر نیست.");
   if(published.sessionDescription.type==="answer"){
    await pc.setRemoteDescription(published.sessionDescription);
   }else if(published.sessionDescription.type==="offer"&&published.requiresImmediateRenegotiation===true){
