@@ -42,7 +42,7 @@ remain outside the current V1 integration.
 ## Next integration sequence
 1. Configure and verify a real OIDC resource server for the MCP endpoint.
 2. Provision provider credentials through the server-side secret manager.
-3. Complete provider smoke tests and verify bounded task execution.
+3. Provision provider secrets in the server environment, complete connector smoke tests, and verify bounded task execution.
 4. Add workflow progress, job history, and cancellation.
 5. Complete voice/camera end-to-end tests on supported Android and desktop devices.
 6. Finish accessibility, quota, cost, security, and release QA.
