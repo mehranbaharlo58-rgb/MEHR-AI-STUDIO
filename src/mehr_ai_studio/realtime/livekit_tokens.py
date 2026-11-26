@@ -6,7 +6,6 @@ from dataclasses import dataclass
 
 import jwt
 
-
 _IDENTIFIER_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}\\Z")
 _MIN_TTL_SECONDS = 60
 _MAX_TTL_SECONDS = 600
