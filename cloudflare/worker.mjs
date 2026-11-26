@@ -136,6 +136,7 @@ async function verifyOidcAccessToken(request, env) {
         (claims.nbf !== undefined && (!Number.isFinite(claims.nbf) || claims.nbf > now + 60)) ||
         typeof tenant !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(tenant) ||
         typeof clientId !== "string" || !clientId.trim() ||
+        (env.OIDC_CLIENT_ID && clientId !== env.OIDC_CLIENT_ID) ||
         !requiredScopes.every((scope) => scopes.includes(scope))) return null;
     return { subject: claims.sub, tenantId: tenant, clientId, expiresAt: claims.exp };
   } catch {
@@ -226,6 +227,29 @@ export default {
 
 
 
+
+
+    if (url.pathname === "/api/live/oidc/config" && request.method === "GET") {
+      try {
+        const authorizationUrl = new URL(env.OIDC_AUTHORIZATION_URL);
+        const tokenUrl = new URL(env.OIDC_TOKEN_URL);
+        const redirectUri = new URL(env.OIDC_REDIRECT_URI);
+        if (authorizationUrl.protocol !== "https:" || tokenUrl.protocol !== "https:" ||
+            redirectUri.protocol !== "https:" || authorizationUrl.username || authorizationUrl.password ||
+            tokenUrl.username || tokenUrl.password || redirectUri.origin !== env.ALLOWED_ORIGIN ||
+            !env.OIDC_CLIENT_ID) throw new Error("oidc_spa_not_configured");
+        return response({
+          ok: true,
+          authorization_url: authorizationUrl.toString(),
+          token_url: tokenUrl.toString(),
+          client_id: env.OIDC_CLIENT_ID,
+          redirect_uri: redirectUri.toString(),
+          scopes: (env.OIDC_PUBLIC_SCOPES || "openid profile studio:access").trim(),
+        }, 200, cors);
+      } catch {
+        return response({ ok: false, error: "oidc_pkce_not_configured" }, 503, cors);
+      }
+    }
 
     // Direct one-to-one Realtime WebRTC: audio travels directly between browser and model.
     // Camera frames, when consented, are sampled as still images over the data channel.
