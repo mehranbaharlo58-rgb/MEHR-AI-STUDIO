@@ -80,7 +80,7 @@ test("stopping the camera preserves an active voice connection", () => {
   const stopCamera = appScript.slice(start, end);
   assert.ok(stopCamera.includes("clearInterval(active.frameTimer)"));
   assert.ok(!stopCamera.includes("disconnectLiveSession"));
-  assert.ok(appScript.includes("startLiveCameraSampling();updateLiveState()"));
+  assert.ok(stopCamera.includes("stopSfuVideoBridge(active)"));
 });
 
 test("Realtime connect button prevents duplicate concurrent sessions", () => {
