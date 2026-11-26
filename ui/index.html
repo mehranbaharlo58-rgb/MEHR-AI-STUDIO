@@ -569,8 +569,10 @@ function sendSampledCameraFrame(channel){
  channel.send(JSON.stringify({type:"conversation.item.create",item:{type:"message",role:"user",content:[{type:"input_image",detail:"low",image_url:imageUrl}]}}));
 }
 $("#liveConnect").addEventListener("click",async()=>{
- const connect=$("#liveConnect");connect.disabled=true;
- let pc=null,channel=null,frameTimer=null;
+ const connect=$("#liveConnect");
+ if(liveConnection){say("ارتباط صوتی از قبل برقرار است.");return;}
+ connect.disabled=true;
+ let pc=null,channel=null;
  try{
   const audioTrack=liveState.mic?.getAudioTracks().find(t=>t.readyState==="live");
   if(!audioTrack)throw new Error("ابتدا میکروفون را فعال کنید.");
@@ -596,12 +598,11 @@ $("#liveConnect").addEventListener("click",async()=>{
    :"گفت‌وگوی صوتی بلادرنگ متصل است.";
   say("ارتباط صوتی با موتور بلادرنگ برقرار شد.");
  }catch(err){
-  if(frameTimer)clearInterval(frameTimer);
   if(pc)pc.close();
   $("#liveAgentState").textContent="خطا";
   $("#liveStatus").textContent="اتصال زنده ناموفق: "+err.message;
   say("ارتباط زنده برقرار نشد.");
- }finally{connect.disabled=false;}
+ }finally{connect.disabled=!!liveConnection;}
 });
 $("#liveDisconnect").addEventListener("click",async()=>{await disconnectLiveSession();$("#liveStatus").textContent="ارتباط با مدل قطع شد؛ پیش‌نمایش‌های محلی مستقل هستند.";});
 language("fa");
