@@ -462,22 +462,21 @@ async function mcpRpc(method,params={},notification=false){
  if(mcpSessionId){headers["Mcp-Session-Id"]=mcpSessionId;headers["Mcp-Protocol-Version"]=mcpProtocolVersion;}
  const controller=new AbortController();
  const timeout=setTimeout(()=>controller.abort(),20000);
- let response;
  try{
-  response=await fetch(mcpEndpoint(),{method:"POST",headers,signal:controller.signal,body:JSON.stringify({jsonrpc:"2.0",...(notification?{}:{id}),method,params})});
+  const response=await fetch(mcpEndpoint(),{method:"POST",headers,signal:controller.signal,body:JSON.stringify({jsonrpc:"2.0",...(notification?{}:{id}),method,params})});
+  if(!response.ok)throw new Error("MCP "+method+" failed (HTTP "+response.status+"). Check token, CORS and server logs.");
+  const session=response.headers.get("Mcp-Session-Id");
+  if(session)mcpSessionId=session;
+  if(notification)return null;
+  const payload=await readMcpResponse(response);
+  if(!payload)throw new Error("MCP "+method+" returned an empty response.");
+  if(payload.jsonrpc!=="2.0"||payload.id!==id)throw new Error("MCP "+method+" returned a mismatched JSON-RPC response.");
+  if(payload.error)throw new Error(payload.error.message||"MCP request failed.");
+  return payload.result??null;
  }catch(error){
   if(error.name==="AbortError")throw new Error("MCP "+method+" timed out after 20 seconds.");
-  throw new Error("MCP "+method+" network request failed. Check the endpoint and CORS configuration.");
+  throw error;
  }finally{clearTimeout(timeout);}
- if(!response.ok)throw new Error("MCP "+method+" failed (HTTP "+response.status+"). Check token, CORS and server logs.");
- const session=response.headers.get("Mcp-Session-Id");
- if(session)mcpSessionId=session;
- if(notification)return null;
- const payload=await readMcpResponse(response);
- if(!payload)throw new Error("MCP "+method+" returned an empty response.");
- if(payload.jsonrpc!=="2.0"||payload.id!==id)throw new Error("MCP "+method+" returned a mismatched JSON-RPC response.");
- if(payload.error)throw new Error(payload.error.message||"MCP request failed.");
- return payload.result??null;
 }
 async function closeMcpSession(endpoint,token,sessionId,protocolVersion=mcpProtocolVersion){
  if(!endpoint||!token||!sessionId)return false;
@@ -488,7 +487,7 @@ async function closeMcpSession(endpoint,token,sessionId,protocolVersion=mcpProto
    "Mcp-Session-Id":sessionId,
    "Mcp-Protocol-Version":protocolVersion
   },signal:controller.signal});
-  return response.ok||response.status===404||response.status===405;
+  return response.ok||response.status===404;
  }catch{return false;}
  finally{clearTimeout(timeout);}
 }
@@ -521,6 +520,7 @@ async function loadAgentRegistry(){
 async function connectMcpControlPlane(){
  const endpoint=mcpEndpoint(),token=$("#mcpToken").value.trim();
  if(!token)throw new Error("Enter an OIDC access token. It will not be stored.");
+ $("#mcpToken").value="";
  mcpAccessToken=token;mcpSessionId=null;mcpConnected=false;mcpProtocolVersion="2025-03-26";
  try{
   const initialized=await mcpRpc("initialize",{protocolVersion:"2025-03-26",capabilities:{},clientInfo:{name:"MEHR AI STUDIO Web",version:"0.4.1"}});
@@ -558,7 +558,7 @@ async function disconnectMcpControlPlane(){
 $("#mcpConnect").addEventListener("click",async()=>{
  const button=$("#mcpConnect");button.disabled=true;setMcpStatus("Authenticating and initializing MCP session…");
  try{await connectMcpControlPlane();say("Authenticated agent control plane connected.");}
- catch(error){mcpAccessToken=null;mcpSessionId=null;mcpConnected=false;button.disabled=false;$("#mcpDisconnect").disabled=true;$("#mcpRunTask").disabled=true;setMcpStatus("Connection failed: "+error.message);}
+ catch(error){mcpAccessToken=null;mcpSessionId=null;mcpConnected=false;button.disabled=false;$("#mcpToken").value="";$("#mcpDisconnect").disabled=true;$("#mcpRunTask").disabled=true;setMcpStatus("Connection failed: "+error.message);}
 });
 $("#mcpDisconnect").addEventListener("click",disconnectMcpControlPlane);
 $("#mcpRunTask").addEventListener("click",async()=>{
