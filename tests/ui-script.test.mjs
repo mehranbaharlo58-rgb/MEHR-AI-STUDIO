@@ -181,7 +181,7 @@ test("Agent workspace connects to the authenticated tenant-scoped MCP registry",
   assert.ok(appScript.includes('mcpRpc("initialize"'));
   assert.ok(appScript.includes('mcpRpc("notifications/initialized"'));
   assert.ok(appScript.includes('mcpRpc("tools/list"'));
-  assert.ok(appScript.includes('headers["Mcp-Protocol-Version"]="2025-03-26"'));
+  assert.ok(appScript.includes('headers["Mcp-Protocol-Version"]=mcpProtocolVersion'));
   assert.ok(appScript.includes('data-test-model'));
   assert.ok(appScript.includes('mcpTool("test_ai_connector"'));
   assert.ok(appScript.includes('if(mcpSessionId){headers["Mcp-Session-Id"]'));
