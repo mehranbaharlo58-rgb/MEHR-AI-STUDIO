@@ -18,7 +18,12 @@ from .ai_stack import AIExecutionManager, AIModel, AIRegistry, MatchRequest
 from .auth_context import current_request_tenant_id
 from .catalog import seed_ai_catalog as seed_catalog_records
 from .config import settings
-from .connectors import build_adapters, smoke_test_adapter
+from .connectors import (
+    ConnectorConfigurationError,
+    OpenAICompatibleAdapter,
+    build_adapters,
+    smoke_test_adapter,
+)
 from .core import assess_text, build_content_brief
 from .oidc import OIDCJWTTokenVerifier
 from .provider import ProviderError, ProviderNotConfigured, generate_text
@@ -215,6 +220,18 @@ def build_authenticated_server(
                 "saved": False,
                 "error": "health_state_must_be_set_by_connector_test",
             }
+        if parsed.status == "configured":
+            if parsed.access_mode not in {"openai_compatible", "local_runtime"}:
+                return {"saved": False, "error": "unsupported_connector_mode"}
+            try:
+                OpenAICompatibleAdapter(
+                    endpoint=parsed.endpoint or "",
+                    model_name=parsed.model_id or "",
+                    api_key="",
+                    timeout_s=settings.request_timeout,
+                )
+            except ConnectorConfigurationError:
+                return {"saved": False, "error": "invalid_connector_configuration"}
         return tenant_ai_registry().upsert(parsed)
 
     @mcp.tool()
