@@ -167,6 +167,9 @@ test("Agent workspace connects to the authenticated tenant-scoped MCP registry",
   assert.ok(appScript.includes('mcpTool("list_ai_models"'));
   assert.ok(appScript.includes('mcpTool("seed_ai_catalog"'));
   assert.ok(appScript.includes('mcpTool("execute_ai_task"'));
+  assert.ok(html.includes('id="mcpAgentLimit"'));
+  assert.ok(html.includes('<option>100</option>'));
+  assert.ok(appScript.includes('limit:Number($("#mcpAgentLimit").value)'));
   assert.ok(appScript.includes('mcpTool("register_ai_model",{model:payload})'));
   assert.ok(appScript.includes('mcpTool("test_ai_connector"'));
   assert.ok(appScript.includes('data-configure-model'));
