@@ -67,6 +67,7 @@ test("browser OIDC login uses Authorization Code with PKCE S256 and state valida
 test("camera vision sends bounded sampled still images through the Realtime data channel", () => {
   assert.ok(appScript.includes('setInterval(()=>sendSampledCameraFrame(channel),3000)'));
   assert.ok(appScript.includes('640/video.videoWidth'));
+  assert.ok(appScript.includes('channel.bufferedAmount>512*1024'));
   assert.ok(appScript.includes('type:"input_image"'));
   assert.ok(appScript.includes('clearInterval(active.frameTimer)'));
 });
