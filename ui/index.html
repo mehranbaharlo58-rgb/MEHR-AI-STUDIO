@@ -853,7 +853,16 @@ async function startSfuVideoBridge(active){
     if(typeof imageUrl!=="string"||active.channel.readyState!=="open"||active.channel.bufferedAmount>512*1024)return;
     active.channel.send(JSON.stringify({type:"conversation.item.create",item:{type:"message",role:"user",content:[{type:"input_image",detail:"low",image_url:imageUrl}]}}));
    });
-   socket.addEventListener("close",()=>{if(active.sfu?.socket===socket)$("#liveStatus").textContent="مسیر تصویر قطع شد؛ ارتباط صوتی برقرار می‌ماند.";});
+   socket.addEventListener("close",()=>{
+    if(active.sfu?.socket!==socket)return;
+    $("#liveStatus").textContent="مسیر تصویر SFU قطع شد؛ در حال فعال‌سازی مسیر جایگزین تصویر هستم.";
+    void stopSfuVideoBridge(active).finally(()=>{
+     if(liveConnection===active&&liveState.camera){
+      startLiveCameraSampling();
+      $("#liveStatus").textContent="صوت زنده برقرار است؛ تصویر از مسیر جایگزین فریم‌های نمونه‌ای ارسال می‌شود.";
+     }
+    });
+   });
    active.sfu={sessionId,pc,socket};
    if(active.frameTimer){clearInterval(active.frameTimer);active.frameTimer=null;}
    $("#liveStatus").textContent="صوت زنده متصل است؛ تصویر دوربین از مسیر SFU با فریم‌های JPEG دریافت می‌شود.";
@@ -906,13 +915,12 @@ $("#liveConnect").addEventListener("click",async()=>{
    if(liveConnection?.pc!==pc)return;
    if(pc.connectionState==="disconnected")$("#liveStatus").textContent="اختلال شبکه؛ WebRTC در حال تلاش برای بازیابی است.";
    if(pc.connectionState==="failed"||pc.connectionState==="closed"){
-    const active=liveConnection;liveConnection=null;
-    if(active.frameTimer)clearInterval(active.frameTimer);
-    $("#liveRemoteAudio").srcObject=null;
-    $("#liveConnect").disabled=false;$("#liveDisconnect").disabled=true;
-    $("#liveAgentState").textContent="قطع";
-    $("#liveStatus").textContent="ارتباط صوتی به‌دلیل خطای شبکه قطع شد؛ دوباره متصل شوید.";
-    updateLiveState();
+    $("#liveStatus").textContent="ارتباط صوتی به‌دلیل خطای شبکه قطع شد؛ منابع نشست در حال پاک‌سازی هستند.";
+    void disconnectLiveSession().finally(()=>{
+     $("#liveAgentState").textContent="قطع";
+     $("#liveStatus").textContent="ارتباط صوتی قطع شد و منابع نشست پاک‌سازی شدند؛ دوباره متصل شوید.";
+     updateLiveState();
+    });
    }
   });
   pc.addTrack(audioTrack,liveState.mic);
