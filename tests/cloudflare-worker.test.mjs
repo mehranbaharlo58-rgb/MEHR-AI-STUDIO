@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import worker, { LiveSessionRegistry } from "../cloudflare/worker.mjs";
+import worker, { LiveSessionRegistry, decodeSfuJpegPacket } from "../cloudflare/worker.mjs";
 
 const env = {
   ALLOWED_ORIGIN: "https://mehranbaharlo58-rgb.github.io",
@@ -278,6 +278,18 @@ test("live capabilities accurately report a configured session transport", async
   }
 });
 
+test("decodes a Cloudflare SFU protobuf JPEG packet", () => {
+  const packet = Uint8Array.from([0x2a, 0x04, 0xff, 0xd8, 0xff, 0xd9]);
+  assert.deepEqual(Array.from(decodeSfuJpegPacket(packet)), [0xff, 0xd8, 0xff, 0xd9]);
+});
+
+test("rejects malformed, non-JPEG, and oversized SFU video packets", () => {
+  assert.equal(decodeSfuJpegPacket(Uint8Array.from([0x2a, 0x04, 0xff, 0xd8])), null);
+  assert.equal(decodeSfuJpegPacket(Uint8Array.from([0x2a, 0x04, 1, 2, 3, 4])), null);
+  assert.equal(decodeSfuJpegPacket(Uint8Array.from([0x2a, 0x80])), null);
+  assert.equal(decodeSfuJpegPacket(new Uint8Array(1024 * 1024 + 100)), null);
+});
+
 test("live session registry binds records to subject and tenant", async () => {
   const values = new Map();
   const state = { storage: {
@@ -310,6 +322,48 @@ test("live session registry binds records to subject and tenant", async () => {
   }));
   assert.equal(allowed.status, 200);
   assert.equal((await allowed.json()).providerSessionId, "sfu-1");
+});
+
+test("live session registry stores camera track identity and gates video relay tokens", async () => {
+  const values = new Map();
+  const registry = new LiveSessionRegistry({ storage: {
+    get: async (key) => values.get(key),
+    put: async (key, value) => values.set(key, value),
+    delete: async (key) => values.delete(key),
+  }});
+  const expiresAt = Math.floor(Date.now() / 1000) + 300;
+  assert.equal((await registry.fetch(new Request("https://session.internal/create", {
+    method: "POST", body: JSON.stringify({
+      subject: "owner", tenantId: "tenant", providerSessionId: "sfu",
+      expiresAt, consent: { microphone: true, camera: true },
+    }),
+  }))).status, 201);
+  assert.equal((await registry.fetch(new Request("https://session.internal/update", {
+    method: "POST", body: JSON.stringify({
+      subject: "owner", tenantId: "tenant", mids: ["0", "1"],
+      tracks: [{ mid: "0", trackName: "microphone" }, { mid: "1", trackName: "camera" }],
+    }),
+  }))).status, 200);
+  const prepared = await registry.fetch(new Request("https://session.internal/prepare-video", {
+    method: "POST", body: JSON.stringify({
+      subject: "owner", tenantId: "tenant", ingestToken: "a".repeat(64),
+      viewerToken: "b".repeat(64), expiresAt,
+    }),
+  }));
+  assert.equal(prepared.status, 201);
+  const authorized = await registry.fetch(new Request("https://session.internal/authorize", {
+    method: "POST", body: JSON.stringify({ subject: "owner", tenantId: "tenant" }),
+  }));
+  const data = await authorized.json();
+  assert.equal(data.tracks.find((track) => track.trackName === "camera").mid, "1");
+  assert.equal(data.videoRelay.ingestToken, "a".repeat(64));
+  assert.equal(data.videoRelay.viewerToken, "b".repeat(64));
+  assert.equal((await registry.fetch(new Request("https://session.internal/prepare-video", {
+    method: "POST", body: JSON.stringify({
+      subject: "owner", tenantId: "tenant", ingestToken: "c".repeat(64),
+      viewerToken: "d".repeat(64), expiresAt,
+    }),
+  }))).status, 409);
 });
 
 test("live session registry rejects expired sessions", async () => {
