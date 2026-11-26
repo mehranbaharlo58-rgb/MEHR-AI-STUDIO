@@ -328,6 +328,33 @@ export default {
       }
     }
 
+    const liveInspectMatch = url.pathname.match(/^\/api\/live\/sessions\/([0-9a-f-]{36})$/i);
+    if (liveInspectMatch && request.method === "GET") {
+      const principal = await verifyOidcAccessToken(request, env);
+      if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
+      try {
+        const auth = await sessionRegistry(env, liveInspectMatch[1], "authorize", {
+          subject: principal.subject, tenantId: principal.tenantId,
+        });
+        if (!auth.ok) return response({ ok: false, error: "session_not_found" }, 404, cors);
+        const owned = await auth.json();
+        const state = await sfuRequest(env, "/sessions/" + encodeURIComponent(owned.providerSessionId), {
+          method: "GET",
+        });
+        const tracks = Array.isArray(state.tracks) ? state.tracks
+          .filter((track) => track && typeof track.mid === "string")
+          .map((track) => ({
+            mid: track.mid,
+            trackName: typeof track.trackName === "string" ? track.trackName : null,
+            location: track.location === "local" || track.location === "remote" ? track.location : null,
+            status: ["active", "inactive", "initializing"].includes(track.status) ? track.status : "unknown",
+          })) : [];
+        return response({ ok: true, expiresAt: owned.expiresAt, tracks }, 200, cors);
+      } catch {
+        return response({ ok: false, error: "live_session_inspection_failed" }, 502, cors);
+      }
+    }
+
     const liveRenegotiateMatch = url.pathname.match(/^\/api\/live\/sessions\/([0-9a-f-]{36})\/renegotiate$/i);
     if (liveRenegotiateMatch && request.method === "PUT") {
       const principal = await verifyOidcAccessToken(request, env);
