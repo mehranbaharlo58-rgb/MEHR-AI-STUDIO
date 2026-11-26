@@ -43,6 +43,6 @@ test("MEHR Live uses separate local media permissions and stops tracks", () => {
   assert.ok(appScript.includes('getUserMedia({audio:true,video:false})'));
   assert.ok(appScript.includes('getUserMedia({audio:false,video:'));
   assert.ok(appScript.includes('getTracks().forEach(t=>t.stop())'));
-  assert.ok(appScript.includes('window.addEventListener("pagehide",stopLiveDevices)'));
-  assert.ok(appScript.includes('if(p!=="live"&&typeof stopLiveDevices==="function")stopLiveDevices()'));
+  assert.ok(appScript.includes('window.addEventListener("pagehide",()=>{disconnectLiveSession();stopLiveDevices();})'));
+  assert.ok(appScript.includes('if(p!=="live"&&typeof stopLiveDevices==="function"){if(typeof disconnectLiveSession==="function")void disconnectLiveSession();stopLiveDevices();}'));
 });
