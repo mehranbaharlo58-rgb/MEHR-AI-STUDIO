@@ -181,6 +181,12 @@ async function sessionRegistry(env, appSessionId, operation, payload) {
   });
 }
 
+async function consumeLiveRateLimit(env, principal, action) {
+  const key = "rate:" + principal.tenantId + ":" + principal.subject;
+  const result = await sessionRegistry(env, key, "consume", { action });
+  return result.status;
+}
+
 async function closeSfuTracks(env, providerSessionId, mids) {
   if (!Array.isArray(mids) || mids.length === 0) return;
   await sfuRequest(env, "/sessions/" + encodeURIComponent(providerSessionId) + "/tracks/close", {
@@ -268,6 +274,9 @@ export default {
           !consent || consent.microphone !== true || typeof consent.camera !== "boolean") {
         return response({ ok: false, error: "invalid_realtime_offer_or_consent" }, 422, cors);
       }
+      const rateStatus = await consumeLiveRateLimit(env, principal, "realtime").catch(() => 503);
+      if (rateStatus === 429) return response({ ok: false, error: "rate_limit_exceeded" }, 429, cors);
+      if (rateStatus !== 200) return response({ ok: false, error: "rate_limiter_unavailable" }, 503, cors);
       try {
         const identity = new TextEncoder().encode(principal.tenantId + ":" + principal.subject);
         const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", identity));
@@ -333,6 +342,9 @@ export default {
           (mode === "voice" && consent.camera !== false)) {
         return response({ ok: false, error: "invalid_consent_or_mode" }, 422, cors);
       }
+      const rateStatus = await consumeLiveRateLimit(env, principal, "create").catch(() => 503);
+      if (rateStatus === 429) return response({ ok: false, error: "rate_limit_exceeded" }, 429, cors);
+      if (rateStatus !== 200) return response({ ok: false, error: "rate_limiter_unavailable" }, 503, cors);
       try {
         const created = await sfuRequest(env, "/sessions/new", { method: "POST", body: "{}" });
         if (typeof created.sessionId !== "string" || !created.sessionId) throw new Error("sfu_response_invalid");
@@ -636,6 +648,28 @@ export class LiveSessionRegistry {
     let body;
     try { body = await request.json(); } catch { return new Response(null, { status: 400 }); }
     const path = new URL(request.url).pathname;
+    if (path === "/consume") {
+      const policies = {
+        create: { limit: 3, windowSeconds: 600 },
+        realtime: { limit: 5, windowSeconds: 600 },
+        publish: { limit: 12, windowSeconds: 60 },
+        renegotiate: { limit: 20, windowSeconds: 60 },
+        inspect: { limit: 60, windowSeconds: 60 },
+      };
+      const policy = policies[body.action];
+      if (!policy) return new Response(null, { status: 400 });
+      const now = Math.floor(Date.now() / 1000);
+      const key = "rate:" + body.action;
+      const stored = await this.state.storage.get(key);
+      const window = stored && now - stored.startedAt < policy.windowSeconds
+        ? stored : { startedAt: now, count: 0 };
+      if (window.count >= policy.limit) {
+        return Response.json({ ok: false, retryAfter: Math.max(1, policy.windowSeconds - (now - window.startedAt)) }, { status: 429 });
+      }
+      window.count += 1;
+      await this.state.storage.put(key, window);
+      return Response.json({ ok: true, remaining: policy.limit - window.count });
+    }
     const existing = await this.state.storage.get("session");
     if (path === "/create") {
       if (existing || typeof body.subject !== "string" || !body.subject.trim() || body.subject.length > 256 ||
