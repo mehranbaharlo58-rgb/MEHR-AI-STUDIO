@@ -1169,3 +1169,70 @@ test("live session registry serializes mutations with an owner-scoped expiring l
   assert.equal((await lock(winner, "unlock")).status, 200);
   assert.equal((await lock(loser)).status, 200);
 });
+
+test("viewer WebSocket ticket is single-use and never accepted from a query parameter", async () => {
+  const values = new Map();
+  const storage = {
+    get: async (key) => values.get(key),
+    put: async (key, value) => values.set(key, value),
+    delete: async (key) => values.delete(key),
+    transaction: async (callback) => callback({
+      get: async (key) => values.get(key),
+      put: async (key, value) => values.set(key, value),
+      delete: async (key) => values.delete(key),
+    }),
+  };
+  const registry = new LiveSessionRegistry({
+    storage,
+    acceptWebSocket: (socket) => { socket.accepted = true; },
+  });
+  const expiresAt = Math.floor(Date.now() / 1000) + 180;
+  const post = async (path, body) => registry.fetch(new Request("https://session.internal" + path, {
+    method: "POST", body: JSON.stringify({ subject: "owner", tenantId: "tenant", ...body }),
+  }));
+  assert.equal((await post("/create", {
+    providerSessionId: "sfu", expiresAt, consent: { microphone: true, camera: true },
+  })).status, 201);
+  assert.equal((await post("/update", {
+    mids: ["0"], tracks: [{ mid: "0", trackName: "camera" }],
+  })).status, 200);
+  assert.equal((await post("/prepare-video", {
+    ingestToken: "a".repeat(64), expiresAt,
+  })).status, 201);
+  assert.equal((await post("/complete-video", { adapterId: "adapter-1" })).status, 200);
+  const ticket = "c".repeat(64);
+  assert.equal((await post("/issue-viewer-ticket", {
+    ticket, ticketExpiresAt: Math.floor(Date.now() / 1000) + 25,
+  })).status, 201);
+
+  const originalResponse = globalThis.Response;
+  const originalPair = globalThis.WebSocketPair;
+  globalThis.Response = class {
+    constructor(body, init = {}) { this.body = body; this.status = init.status || 200; this.headers = new Headers(init.headers || {}); this.webSocket = init.webSocket; }
+  };
+  globalThis.WebSocketPair = class {
+    constructor() {
+      const client = {};
+      const server = { serializeAttachment(value) { this.attachment = value; } };
+      return { client, server };
+    }
+  };
+  try {
+    const request = () => new Request("https://session.internal/media", {
+      headers: { Upgrade: "websocket", "Sec-WebSocket-Protocol": "mehr.viewer, mehr-ticket." + ticket },
+    });
+    const accepted = await registry.fetch(request());
+    assert.equal(accepted.status, 101);
+    assert.equal(accepted.headers.get("Sec-WebSocket-Protocol"), "mehr.viewer");
+    assert.equal(values.get("session").viewerTicket, null);
+    const replay = await registry.fetch(request());
+    assert.equal(replay.status, 401);
+    const queryOnly = await registry.fetch(new Request("https://session.internal/media?role=viewer&token=" + ticket, {
+      headers: { Upgrade: "websocket" },
+    }));
+    assert.equal(queryOnly.status, 401);
+  } finally {
+    globalThis.Response = originalResponse;
+    globalThis.WebSocketPair = originalPair;
+  }
+});
