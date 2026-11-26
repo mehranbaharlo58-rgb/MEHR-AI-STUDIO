@@ -383,12 +383,14 @@ $("#liveMicToggle").addEventListener("click",()=>{
  if(!liveState.mic)return;liveState.muted=!liveState.muted;liveState.mic.getAudioTracks().forEach(t=>t.enabled=!liveState.muted);updateLiveState();
 });
 $("#liveCameraStart").addEventListener("click",async()=>{
- try{if(!navigator.mediaDevices?.getUserMedia)throw new Error("مرورگر یا اتصال امن از دسترسی رسانه پشتیبانی نمی‌کند.");if(liveState.camera)liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}}});$("#liveCameraPreview").srcObject=liveState.camera;$("#liveCameraPreview").hidden=false;$("#liveVideoPlaceholder").hidden=true;await $("#liveCameraPreview").play();startLiveCameraSampling();updateLiveState();say(liveConnection?"دوربین فعال شد؛ فریم‌های ثابت به نشست صوتی ارسال می‌شوند.":"پیش‌نمایش دوربین فعال شد؛ هنوز ارسال شبکه‌ای انجام نمی‌شود.");}
+ try{if(!navigator.mediaDevices?.getUserMedia)throw new Error("مرورگر یا اتصال امن از دسترسی رسانه پشتیبانی نمی‌کند.");if(liveState.camera)liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}}});$("#liveCameraPreview").srcObject=liveState.camera;$("#liveCameraPreview").hidden=false;$("#liveVideoPlaceholder").hidden=true;await $("#liveCameraPreview").play();updateLiveState();if(liveConnection){startSfuVideoBridge(liveConnection).catch(error=>{if(liveConnection)startLiveCameraSampling();$("#liveStatus").textContent="پل ویدئوی SFU آماده نشد؛ ارسال فریم‌های نمونه‌برداری‌شده فعال شد: "+error.message;});}say(liveConnection?"دوربین فعال شد؛ در حال اتصال مسیر ویدئوی SFU هستم.":"پیش‌نمایش دوربین فعال شد؛ هنوز ارسال شبکه‌ای انجام نمی‌شود.");}
  catch(err){say("دسترسی دوربین ناموفق: "+err.message);}
 });
 function stopLiveCamera(){
  const active=liveConnection;
  if(active?.frameTimer){clearInterval(active.frameTimer);active.frameTimer=null;}
+ if(active?.sfuStarting)active.sfuCancel=true;
+ if(active?.sfu)stopSfuVideoBridge(active).catch(()=>null);
  if(liveState.camera){liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=null;}
  $("#liveCameraPreview").srcObject=null;$("#liveCameraPreview").hidden=true;$("#liveVideoPlaceholder").hidden=false;
  if(active)$("#liveStatus").textContent="گفت‌وگوی صوتی همچنان متصل است؛ ارسال تصویر متوقف شد.";
@@ -503,6 +505,8 @@ function waitForIceGathering(pc){
 async function disconnectLiveSession(){
  const active=liveConnection;liveConnection=null;
  if(active?.frameTimer)clearInterval(active.frameTimer);
+ if(active?.sfuStarting)active.sfuCancel=true;
+ if(active?.sfu)await stopSfuVideoBridge(active).catch(()=>null);
  if(active?.pc){active.pc.ontrack=null;active.pc.close();}
  $("#liveRemoteAudio").srcObject=null;
  $("#liveConnect").disabled=false;$("#liveDisconnect").disabled=true;
@@ -549,6 +553,82 @@ function bindRealtimeEvents(channel){
    console.warn("Realtime event error:",data.error?.message||"unknown");
   }
  });
+}
+async function stopSfuVideoBridge(active){
+ const sfu=active?.sfu;
+ if(!sfu)return;
+ active.sfu=null;
+ if(sfu.socket&&sfu.socket.readyState<2)try{sfu.socket.close(1000,"camera stopped");}catch{}
+ if(sfu.pc)try{sfu.pc.close();}catch{}
+ if(sfu.sessionId)await liveApi("/api/live/sessions/"+encodeURIComponent(sfu.sessionId),{method:"DELETE"});
+}
+async function startSfuVideoBridge(active){
+ if(!active||active.sfu||active.sfuStarting||!liveState.camera||!liveState.mic)return;
+ active.sfuCancel=false;
+ active.sfuStarting=(async()=>{
+  let sessionId=null,pc=null,socket=null;
+  try{
+   const micTrack=liveState.mic.getAudioTracks().find(track=>track.readyState==="live");
+   const cameraTrack=liveState.camera.getVideoTracks().find(track=>track.readyState==="live");
+   if(!micTrack||!cameraTrack)throw new Error("میکروفون و دوربین باید فعال باشند.");
+   const created=await liveApi("/api/live/sessions",{method:"POST",body:JSON.stringify({mode:"voice_vision",consent:{microphone:true,camera:true}})});
+   sessionId=created.session?.id;
+   if(!sessionId)throw new Error("شناسه نشست SFU دریافت نشد.");
+   pc=new RTCPeerConnection();
+   const micSender=pc.addTrack(micTrack,liveState.mic);
+   const cameraSender=pc.addTrack(cameraTrack,liveState.camera);
+   const offer=await pc.createOffer();
+   await pc.setLocalDescription(offer);
+   await waitForIceGathering(pc);
+   const transceivers=pc.getTransceivers();
+   const micMid=transceivers.find(item=>item.sender===micSender)?.mid;
+   const cameraMid=transceivers.find(item=>item.sender===cameraSender)?.mid;
+   if(micMid===null||micMid===undefined||cameraMid===null||cameraMid===undefined)throw new Error("شناسه ترک‌های WebRTC آماده نشد.");
+   const published=await liveApi("/api/live/sessions/"+encodeURIComponent(sessionId)+"/publish",{
+    method:"POST",body:JSON.stringify({sessionDescription:{type:"offer",sdp:pc.localDescription.sdp},tracks:[
+     {location:"local",mid:String(micMid),trackName:"microphone"},
+     {location:"local",mid:String(cameraMid),trackName:"camera"}
+    ]})
+   });
+   if(published.partial)throw new Error("انتشار همه ترک‌های صوت/تصویر کامل نشد.");
+   await pc.setRemoteDescription(published.sessionDescription);
+   if(published.sessionDescription.type==="offer"){
+    const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await waitForIceGathering(pc);
+    await liveApi("/api/live/sessions/"+encodeURIComponent(sessionId)+"/renegotiate",{
+     method:"PUT",body:JSON.stringify({sessionDescription:{type:"answer",sdp:pc.localDescription.sdp}})
+    });
+   }
+   await waitForPeerConnected(pc,20000);
+   if(active.sfuCancel||liveConnection!==active||!liveState.camera)throw new Error("ارسال دوربین پیش از تکمیل لغو شد.");
+   const adapter=await liveApi("/api/live/sessions/"+encodeURIComponent(sessionId)+"/video-adapter",{method:"POST",body:"{}"});
+   if(typeof adapter.viewer_url!=="string"||!adapter.viewer_url.startsWith("wss://"))throw new Error("نشانی امن دریافت فریم معتبر نیست.");
+   socket=new WebSocket(adapter.viewer_url);socket.binaryType="arraybuffer";
+   await new Promise((resolve,reject)=>{
+    const timeout=setTimeout(()=>reject(new Error("مهلت اتصال دریافت تصویر تمام شد.")),10000);
+    socket.addEventListener("open",()=>{clearTimeout(timeout);resolve();},{once:true});
+    socket.addEventListener("error",()=>{clearTimeout(timeout);reject(new Error("اتصال دریافت تصویر برقرار نشد."));},{once:true});
+   });
+   if(active.sfuCancel||liveConnection!==active)throw new Error("نشست ویدئو لغو شد.");
+   socket.addEventListener("message",async event=>{
+    if(document.hidden||!active.channel||active.channel.readyState!=="open"||active.channel.bufferedAmount>512*1024)return;
+    if(!(event.data instanceof ArrayBuffer)||event.data.byteLength>1024*1024)return;
+    const blob=new Blob([event.data],{type:"image/jpeg"});
+    const imageUrl=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>resolve(null);reader.readAsDataURL(blob);});
+    if(typeof imageUrl!=="string"||active.channel.readyState!=="open"||active.channel.bufferedAmount>512*1024)return;
+    active.channel.send(JSON.stringify({type:"conversation.item.create",item:{type:"message",role:"user",content:[{type:"input_image",detail:"low",image_url:imageUrl}]}}));
+   });
+   socket.addEventListener("close",()=>{if(active.sfu?.socket===socket)$("#liveStatus").textContent="مسیر تصویر قطع شد؛ ارتباط صوتی برقرار می‌ماند.";});
+   active.sfu={sessionId,pc,socket};
+   if(active.frameTimer){clearInterval(active.frameTimer);active.frameTimer=null;}
+   $("#liveStatus").textContent="صوت زنده متصل است؛ تصویر دوربین از مسیر SFU با فریم‌های JPEG دریافت می‌شود.";
+  }catch(error){
+   if(socket&&socket.readyState<2)try{socket.close();}catch{}
+   if(pc)try{pc.close();}catch{}
+   if(sessionId)await liveApi("/api/live/sessions/"+encodeURIComponent(sessionId),{method:"DELETE"}).catch(()=>null);
+   throw error;
+  }finally{active.sfuStarting=null;}
+ })();
+ return active.sfuStarting;
 }
 function startLiveCameraSampling(){
  const active=liveConnection;
@@ -614,10 +694,10 @@ $("#liveConnect").addEventListener("click",async()=>{
   liveConnection={pc,channel,frameTimer:null};
   $("#liveDisconnect").disabled=false;
   $("#liveAgentState").textContent="متصل";
-  if(cameraTrack)startLiveCameraSampling();
-  $("#liveStatus").textContent=cameraTrack
-   ?"گفت‌وگوی صوتی متصل است؛ فریم دوربین هر ۳ ثانیه به‌صورت تصویر ثابت نمونه‌برداری می‌شود."
-   :"گفت‌وگوی صوتی بلادرنگ متصل است.";
+  if(cameraTrack){
+   try{await startSfuVideoBridge(liveConnection);}
+   catch(error){startLiveCameraSampling();$("#liveStatus").textContent="پل ویدئوی SFU آماده نشد؛ حالت فریم ثابت فعال شد: "+error.message;}
+  }else $("#liveStatus").textContent="گفت‌وگوی صوتی بلادرنگ متصل است.";
   say("ارتباط صوتی با موتور بلادرنگ برقرار شد.");
  }catch(err){
   if(pc)pc.close();
