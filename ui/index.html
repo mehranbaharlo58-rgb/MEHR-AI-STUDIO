@@ -470,7 +470,13 @@ $("#liveConnect").addEventListener("click",async()=>{
   await waitForPeerConnected(pc,15000);
   liveConnection={sessionId,pc};
   $("#liveDisconnect").disabled=false;
-  $("#liveStatus").textContent=published.partial?"ارتباط برقرار شد؛ بخشی از رسانه‌ها منتشر نشدند.":"اتصال WebRTC برقرار شد؛ موتور مکالمه هوشمند هنوز متصل نیست.";
+  let trackDiagnostic="وضعیت ترک‌ها دریافت نشد.";
+  try{
+   const inspection=await liveApi("/api/live/sessions/"+sessionId);
+   const activeTracks=inspection.tracks.filter(track=>track.status==="active").length;
+   trackDiagnostic="وضعیت SFU: "+activeTracks+"/"+inspection.tracks.length+" ترک فعال (این وضعیت تضمین‌کننده رسیدن بسته‌های رسانه نیست).";
+  }catch(diagnosticError){console.warn("Live session inspection failed:",diagnosticError.message);}
+  $("#liveStatus").textContent=(published.partial?"انتشار ناقص رسانه؛ ":"اتصال WebRTC برقرار شد؛ ")+trackDiagnostic+" موتور مکالمه هوشمند هنوز متصل نیست.";
   say("اتصال رسانه‌ای به SFU برقرار شد.");
  }catch(err){
   if(pc)pc.close();
