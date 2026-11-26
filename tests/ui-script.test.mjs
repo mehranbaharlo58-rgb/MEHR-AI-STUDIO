@@ -46,3 +46,12 @@ test("MEHR Live uses separate local media permissions and stops tracks", () => {
   assert.ok(appScript.includes('window.addEventListener("pagehide",()=>{disconnectLiveSession();stopLiveDevices();})'));
   assert.ok(appScript.includes('if(p!=="live"&&typeof stopLiveDevices==="function"){if(typeof disconnectLiveSession==="function")void disconnectLiveSession();stopLiveDevices();}'));
 });
+
+
+test("dashboard completes an SFU offer-answer renegotiation before marking the session connected", () => {
+  assert.ok(appScript.includes('published.sessionDescription.type==="offer"&&published.requiresImmediateRenegotiation===true'));
+  assert.ok(appScript.includes('await pc.createAnswer()'));
+  assert.ok(appScript.includes('"/api/live/sessions/"+sessionId+"/renegotiate"'));
+  assert.ok(appScript.includes('method:"PUT"'));
+  assert.ok(appScript.includes('await waitForIceGathering(pc)'));
+});
