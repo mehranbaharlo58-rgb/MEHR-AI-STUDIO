@@ -43,6 +43,80 @@ function authorized(request, env) {
     equalSecret(supplied, configured);
 }
 
+
+function decodeBase64Url(value) {
+  if (typeof value !== "string" || !/^[A-Za-z0-9_-]+$/.test(value)) throw new Error("invalid_base64url");
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const binary = atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "="));
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+}
+
+function parseJwtPart(value) {
+  return JSON.parse(new TextDecoder().decode(decodeBase64Url(value)));
+}
+
+async function verifyOidcAccessToken(request, env) {
+  const issuer = env.OIDC_ISSUER_URL;
+  const jwksUrl = env.OIDC_JWKS_URL;
+  const audience = env.OIDC_AUDIENCE;
+  const requiredScopes = (env.OIDC_REQUIRED_SCOPES || "studio:access").trim().split(/\\s+/).filter(Boolean);
+  const tenantClaim = env.OIDC_TENANT_CLAIM || "tenant_id";
+  try {
+    const issuerUrl = new URL(issuer);
+    const keysUrl = new URL(jwksUrl);
+    if (issuerUrl.protocol !== "https:" || keysUrl.protocol !== "https:" ||
+        issuerUrl.username || issuerUrl.password || keysUrl.username || keysUrl.password ||
+        keysUrl.search || keysUrl.hash || !audience || !requiredScopes.length) return null;
+
+    const authorization = request.headers.get("Authorization") || "";
+    if (!authorization.startsWith("Bearer ")) return null;
+    const token = authorization.slice(7);
+    if (!token || token.length > 16384) return null;
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const header = parseJwtPart(parts[0]);
+    const claims = parseJwtPart(parts[1]);
+    if (header.alg !== "RS256" || typeof header.kid !== "string" ||
+        claims.iss !== issuer || typeof claims.sub !== "string" || !claims.sub.trim()) return null;
+
+    const jwksResponse = await fetch(keysUrl.toString(), {
+      method: "GET", redirect: "manual", headers: { accept: "application/json" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!jwksResponse.ok || (jwksResponse.headers.get("content-type") || "").toLowerCase().split(";")[0] !== "application/json") return null;
+    const jwks = await jwksResponse.json();
+    if (!Array.isArray(jwks.keys) || jwks.keys.length > 100) return null;
+    const jwk = jwks.keys.find((key) => key && key.kid === header.kid && key.kty === "RSA" &&
+      key.use !== "enc" && (!key.alg || key.alg === "RS256"));
+    if (!jwk) return null;
+    const publicKey = await crypto.subtle.importKey(
+      "jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"],
+    );
+    const validSignature = await crypto.subtle.verify(
+      "RSASSA-PKCS1-v1_5", publicKey, decodeBase64Url(parts[2]),
+      new TextEncoder().encode(parts[0] + "." + parts[1]),
+    );
+    if (!validSignature) return null;
+
+    const now = Math.floor(Date.now() / 1000);
+    const audiences = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+    const scopes = typeof claims.scope === "string" ? claims.scope.split(/\\s+/) :
+      Array.isArray(claims.scp) && claims.scp.every((scope) => typeof scope === "string") ? claims.scp : [];
+    const tenant = claims[tenantClaim];
+    const clientId = claims.azp || claims.client_id;
+    if (!audiences.includes(audience) || !Number.isFinite(claims.exp) ||
+        !Number.isFinite(claims.iat) || claims.exp <= now || claims.iat > now + 60 ||
+        claims.exp - claims.iat > 86400 ||
+        (claims.nbf !== undefined && (!Number.isFinite(claims.nbf) || claims.nbf > now + 60)) ||
+        typeof tenant !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(tenant) ||
+        typeof clientId !== "string" || !clientId.trim() ||
+        !requiredScopes.every((scope) => scopes.includes(scope))) return null;
+    return { subject: claims.sub, tenantId: tenant, clientId, expiresAt: claims.exp };
+  } catch {
+    return null;
+  }
+}
+
 async function readLimitedText(response, limit) {
   const declaredLength = Number(response.headers.get("Content-Length") || 0);
   if (declaredLength > limit) return null;
@@ -77,6 +151,22 @@ export default {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: cors });
+    }
+
+
+    if (url.pathname === "/api/live/capabilities" && request.method === "GET") {
+      const principal = await verifyOidcAccessToken(request, env);
+      if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
+      const configured = Boolean(env.CLOUDFLARE_SFU_APP_ID && env.CLOUDFLARE_SFU_APP_SECRET);
+      return response({
+        ok: true,
+        authenticated: true,
+        live_transport: configured ? "cloudflare_realtime_sfu" : "not_configured",
+        modes: configured ? ["voice", "voice_vision"] : [],
+        session_creation_enabled: false,
+        reason: configured ? "session_registry_required" : "sfu_credentials_missing",
+        consent_required: { microphone: true, camera: true },
+      }, configured ? 200 : 503, cors);
     }
 
     if (url.pathname === "/api/health" && request.method === "GET") {
