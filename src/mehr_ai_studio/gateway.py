@@ -157,3 +157,18 @@ def create_app(
 
 
 app = create_app()
+
+
+def main() -> None:
+    """Run the local gateway; keep the listener on loopback by default."""
+    import uvicorn
+
+    host = os.getenv("MEHR_GATEWAY_HOST", "127.0.0.1")
+    port = int(os.getenv("MEHR_GATEWAY_PORT", "8080"))
+    if not 1 <= port <= 65535:
+        raise ValueError("MEHR_GATEWAY_PORT_must_be_valid")
+    uvicorn.run(app, host=host, port=port, proxy_headers=False)
+
+
+if __name__ == "__main__":
+    main()
