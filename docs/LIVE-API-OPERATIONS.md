@@ -14,7 +14,7 @@ The Cloudflare Worker now includes:
 - Strict media request size, SDP length, track-name, MID, mode, and consent checks.
 - CORS preflight support for the DELETE close operation.
 
-This is server-side groundwork, not a complete live product. The dashboard does not yet perform OIDC Authorization Code + PKCE, call these endpoints, create a PeerConnection, or play remote media. No AI real-time speech provider is connected.
+This is an incremental live-media implementation, not a complete live AI product. The dashboard now requests explicit local media permissions, creates a PeerConnection, publishes microphone/camera tracks through the authenticated Worker routes, handles an SFU renegotiation offer, and waits for the transport to connect. It still requires a manually supplied OIDC access token; browser Authorization Code + PKCE, remote agent audio subscription/playback, and a realtime speech/LLM provider are not implemented.
 
 ## Required runtime configuration
 
@@ -95,7 +95,7 @@ Only the verified owner in the same tenant can close the session. The Worker ask
 - If an SFU create succeeds but registry persistence fails, an orphaned provider session may remain until SFU resource cleanup. Add compensating cleanup and reconciliation before production.
 - The publish route records only successful track MIDs returned by the SFU and exposes a `partial` flag. Validate the exact per-track response shape against live SFU responses before production.
 - The browser dashboard still uses a legacy owner-token flow for the separate text-generation endpoint. Do not expose that token to untrusted users.
-- No public deployment, real OIDC issuer, SFU credentials, or end-to-end browser test has been verified.
+- No public deployment, production OIDC issuer, SFU credentials, or end-to-end browser-to-SFU test has been verified. The browser waits for WebRTC connection state but media packet delivery and remote playback still need independent verification.
 
 ## Validation required next
 
