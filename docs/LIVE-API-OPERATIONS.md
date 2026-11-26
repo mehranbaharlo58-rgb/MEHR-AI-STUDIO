@@ -88,13 +88,25 @@ The Live Room browser now:
 
 These are browser-side lifecycle safeguards, not proof of live provider media quality. The current Realtime vision path remains sampled still images; it is not a continuous video stream.
 
-## Continuous video path — not yet implemented
+## SFU camera-to-vision bridge — implemented, not live-verified
 
-The next video milestone is a separate media pipeline:
-1. Browser publishes a consented camera MediaStreamTrack to a Cloudflare Realtime SFU session.
-2. An authenticated server-side media adapter receives the SFU video publication as JPEG frames.
-3. A server-side frame gate enforces per-session authorization, sampling rate, resolution, byte limits, and backpressure.
-4. The gateway forwards approved frames to the active vision conversation as image inputs, correlating them with the same user/session and audio conversation.
-5. Session shutdown revokes the adapter, closes SFU tracks, stops camera capture, and records final usage.
+The browser and Worker now contain the first integrated SFU-to-vision path:
+1. The browser creates an authenticated SFU application session after microphone and camera consent.
+2. It publishes microphone and camera tracks and records their MID-to-track-name mapping in the Durable Object registry.
+3. The Worker creates a Cloudflare WebSocket media-egress adapter for the published `camera` track, using JPEG output.
+4. Cloudflare connects to a session-scoped Worker WebSocket endpoint. The Durable Object validates a random 256-bit ingest token and a separate viewer token.
+5. The Durable Object decodes the Cloudflare protobuf packet, accepts only bounded JPEG frames, rate-limits forwarding, and relays frames to the authorized browser viewer.
+6. The browser forwards received JPEG frames as image inputs over the existing OpenAI Realtime data channel. It applies hidden-tab and data-channel backpressure checks.
+7. Session shutdown closes the WebSocket adapter before SFU tracks and deletes the owned session record.
 
-Cloudflare documents WebRTC media forwarding and a WebSocket adapter for video egress as JPEG frames. The MEHR SFU API foundation exists, but this browser publisher → JPEG adapter → vision-session bridge is not yet wired or live-tested. Do not describe the product as continuous-video AI until that pipeline passes end-to-end tests.
+The WebSocket adapter is documented by Cloudflare as video egress to JPEG at approximately 1 FPS by default; it is not a full-frame-rate video stream. The frame relay and browser bridge are now wired in code, but still require non-production credentials and end-to-end verification. Do not claim verified continuous video, real-time scene understanding, or a particular frame rate until actual media packets and model responses are observed on Android and desktop.
+
+### Video adapter configuration and operational constraints
+
+- The SFU App Secret remains server-side. The ingest endpoint token is random, session-scoped, time-limited, and never returned to the browser.
+- The viewer token is separately random and only returned to the authenticated session owner as a WSS URL.
+- The Durable Object accepts only WebSocket roles with the matching stored token; viewers are receive-only.
+- JPEG frames are capped at 1 MiB, checked for JPEG start/end markers, and relayed no faster than one frame per 700 ms by the application gate. Cloudflare's adapter currently defaults to about 1 FPS.
+- The browser ignores frames while hidden or when the Realtime data channel is congested.
+- Closing the application session closes the adapter first; failures prevent the application session record from being deleted.
+- Provider adapter creation, reconnect behavior, actual packet delivery, viewer authorization in the deployed Worker, and image interpretation remain unverified without a configured test environment.
