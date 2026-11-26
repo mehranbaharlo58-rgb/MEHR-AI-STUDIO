@@ -244,6 +244,7 @@ test("MCP transport enforces response identity, request timeout and negotiated s
     mcpSessionId: "session-123",
     mcpRequestId: 4,
     mcpProtocolVersion: "2025-03-26",
+    mcpActiveControllers: new Set(),
     AbortController,
     setTimeout,
     clearTimeout,
@@ -297,6 +298,43 @@ test("MCP transport enforces response identity, request timeout and negotiated s
     vm.runInNewContext(source + '\n mcpRpc("tools/list",{});', mismatchContext),
     /mismatched JSON-RPC response/,
   );
+});
+
+test("MCP disconnect cancellation aborts in-flight requests and releases controller references", async () => {
+  const start = appScript.indexOf("async function mcpRpc(");
+  const end = appScript.indexOf("\\nasync function closeMcpSession", start);
+  assert.ok(start >= 0 && end > start);
+  const source = appScript.slice(start, end);
+  const controllers = new Set();
+  const context = {
+    mcpAccessToken: "short-lived-test-token",
+    mcpSessionId: "session-123",
+    mcpRequestId: 0,
+    mcpProtocolVersion: "2025-03-26",
+    mcpActiveControllers: controllers,
+    AbortController,
+    setTimeout,
+    clearTimeout,
+    JSON,
+    Error,
+    URL,
+    $: () => ({ value: "https://studio.example.test/mcp" }),
+    mcpEndpoint: () => "https://studio.example.test/mcp",
+    readMcpResponse: async response => response.payload,
+    fetch: async (_url, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener("abort", () => {
+        const error = new Error("aborted");
+        error.name = "AbortError";
+        reject(error);
+      }, { once: true });
+    }),
+  };
+  const pending = vm.runInNewContext(source + '\\n mcpRpc("tools/call",{});', context);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(controllers.size, 1);
+  for (const controller of controllers) controller.abort();
+  await assert.rejects(pending, /timed out after 20 seconds/);
+  assert.equal(controllers.size, 0);
 });
 
 test("MCP disconnect attempts authenticated Streamable HTTP session termination", async () => {
