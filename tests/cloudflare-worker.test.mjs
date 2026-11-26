@@ -710,3 +710,120 @@ test("inspects SFU track state for the verified owner without exposing provider 
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("creates an authenticated direct Realtime WebRTC call without exposing the API key", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const originalFetch = globalThis.fetch;
+  let captured = null;
+  globalThis.fetch = async (url, init = {}) => {
+    const target = String(url);
+    if (target.endsWith("/jwks-realtime-call.json")) {
+      return new Response(JSON.stringify({ keys: [jwk] }), {
+        status: 200, headers: { "Content-Type": "application/json" },
+      });
+    }
+    assert.equal(target, "https://api.openai.com/v1/realtime/calls");
+    captured = { init, form: init.body };
+    return new Response("v=0\\r\\nvalid-realtime-answer-sdp", {
+      status: 200, headers: { "Content-Type": "application/sdp" },
+    });
+  };
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/realtime/calls", {
+      method: "POST",
+      headers: { ...origin, Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionDescription: "v=0\\r\\no=- 1 1 IN IP4 127.0.0.1\\r\\nm=audio 9 UDP/TLS/RTP/SAVPF 111\\r\\nm=application 9 UDP/DTLS/SCTP webrtc-datachannel",
+        consent: { microphone: true, camera: false },
+      }),
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks-realtime-call.json",
+      OIDC_AUDIENCE: "mehr-api",
+      OPENAI_API_KEY: "server-only-realtime-secret",
+      OPENAI_REALTIME_MODEL: "gpt-realtime-2.1",
+    });
+    const answer = await response.text();
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("content-type"), "application/sdp");
+    assert.equal(answer, "v=0\\r\\nvalid-realtime-answer-sdp");
+    assert.equal(captured.init.redirect, "manual");
+    assert.equal(new Headers(captured.init.headers).get("authorization"), "Bearer server-only-realtime-secret");
+    assert.match(new Headers(captured.init.headers).get("OpenAI-Safety-Identifier"), /^[a-f0-9]{64}$/);
+    assert.equal(captured.form.get("sdp").startsWith("v=0"), true);
+    const session = JSON.parse(captured.form.get("session"));
+    assert.equal(session.type, "realtime");
+    assert.equal(session.model, "gpt-realtime-2.1");
+    assert.equal(session.audio.output.voice, "marin");
+    assert.equal(answer.includes("server-only-realtime-secret"), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("rejects direct Realtime offers containing video tracks because vision uses sampled images", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const originalFetch = globalThis.fetch;
+  let providerCalled = false;
+  globalThis.fetch = async (url) => {
+    if (String(url).endsWith("/jwks-realtime-video-reject.json")) {
+      return new Response(JSON.stringify({ keys: [jwk] }), {
+        status: 200, headers: { "Content-Type": "application/json" },
+      });
+    }
+    providerCalled = true;
+    throw new Error("Provider must not be contacted");
+  };
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/realtime/calls", {
+      method: "POST",
+      headers: { ...origin, Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionDescription: "v=0\\r\\nm=audio 9 UDP/TLS/RTP/SAVPF 111\\r\\nm=video 9 UDP/TLS/RTP/SAVPF 96",
+        consent: { microphone: true, camera: true },
+      }),
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks-realtime-video-reject.json",
+      OIDC_AUDIENCE: "mehr-api",
+      OPENAI_API_KEY: "server-only-realtime-secret",
+    });
+    assert.equal(response.status, 422);
+    assert.equal(providerCalled, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("reports Realtime as unconfigured without making an upstream call", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    assert.match(String(url), /jwks-realtime-unconfigured/);
+    return new Response(JSON.stringify({ keys: [jwk] }), {
+      status: 200, headers: { "Content-Type": "application/json" },
+    });
+  };
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/realtime/calls", {
+      method: "POST",
+      headers: { ...origin, Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionDescription: "v=0\\r\\nm=audio 9 UDP/TLS/RTP/SAVPF 111",
+        consent: { microphone: true, camera: false },
+      }),
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks-realtime-unconfigured.json",
+      OIDC_AUDIENCE: "mehr-api",
+    });
+    assert.equal(response.status, 503);
+    assert.equal((await response.json()).error, "realtime_provider_not_configured");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
