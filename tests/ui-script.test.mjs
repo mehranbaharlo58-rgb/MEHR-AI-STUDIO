@@ -302,7 +302,7 @@ test("MCP transport enforces response identity, request timeout and negotiated s
 
 test("MCP disconnect cancellation aborts in-flight requests and releases controller references", async () => {
   const start = appScript.indexOf("async function mcpRpc(");
-  const end = appScript.indexOf("\\nasync function closeMcpSession", start);
+  const end = appScript.indexOf("async function closeMcpSession", start);
   assert.ok(start >= 0 && end > start);
   const source = appScript.slice(start, end);
   const controllers = new Set();
