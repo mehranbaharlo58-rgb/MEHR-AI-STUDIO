@@ -877,3 +877,24 @@ test("rejects a validly signed OIDC token issued to a different configured clien
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("live rate limiter enforces per-user action quotas in a fixed window", async () => {
+  const values = new Map();
+  const registry = new LiveSessionRegistry({ storage: {
+    get: async (key) => values.get(key),
+    put: async (key, value) => values.set(key, value),
+    delete: async (key) => values.delete(key),
+  }});
+  for (let i = 0; i < 3; i += 1) {
+    const allowed = await registry.fetch(new Request("https://session.internal/consume", {
+      method: "POST", body: JSON.stringify({ action: "create" }),
+    }));
+    assert.equal(allowed.status, 200);
+  }
+  const limited = await registry.fetch(new Request("https://session.internal/consume", {
+    method: "POST", body: JSON.stringify({ action: "create" }),
+  }));
+  assert.equal(limited.status, 429);
+  assert.ok((await limited.json()).retryAfter > 0);
+});
