@@ -299,7 +299,7 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
         <button type="button" id="liveCameraStop" disabled>توقف دوربین</button>
         <button type="button" id="liveStopAll">پایان آزمایش</button>
       </div>
-      <p class="live-note">هیچ صدا یا تصویری ضبط یا ارسال نمی‌شود. برای خروج، «پایان آزمایش» را بزنید.</p>
+      <p class="live-note">صدا فقط هنگام اتصال به مدل ارسال می‌شود؛ در صورت فعال‌بودن دوربین، فریم‌های ثابت هر ۳ ثانیه ارسال می‌شوند. برای توقف، «پایان آزمایش» را بزنید.</p>
     </div>
     <aside class="live-side">
       <h2 class="live-title" style="font-size:15px">اتصال واقعی به سرور</h2>
@@ -431,7 +431,7 @@ async function disconnectLiveSession(){
 }
 async function createRealtimeCall(sdp,cameraConsent){
  const token=$("#liveOidcToken").value.trim();
- const base=getConnection().url.replace(/\\/+$/,"");
+ const base=getConnection().url.replace(/\/+$/,"");
  if(!base)throw new Error("ابتدا نشانی Worker را در تنظیمات ثبت کنید.");
  if(!token)throw new Error("توکن OIDC معتبر را وارد کنید.");
  const response=await fetch(base+"/api/live/realtime/calls",{
@@ -460,7 +460,7 @@ function bindRealtimeEvents(channel){
   if(data.type==="response.output_audio_transcript.delta"||data.type==="response.output_text.delta"||data.type==="conversation.item.input_audio_transcription.delta"){
    appendLiveTranscript(data.delta);
   }else if(data.type==="conversation.item.input_audio_transcription.completed"||data.type==="response.output_audio_transcript.done"){
-   appendLiveTranscript("\\n"+(data.transcript||""));
+   appendLiveTranscript("\n"+(data.transcript||""));
   }else if(data.type==="error"){
    console.warn("Realtime event error:",data.error?.message||"unknown");
   }
