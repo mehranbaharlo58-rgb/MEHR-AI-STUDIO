@@ -31,12 +31,12 @@ test("dashboard warns that file selection is not a real upload", () => {
 });
 
 
-test("MEHR Live exposes local microphone and camera controls without claiming AI connectivity", () => {
+test("MEHR Live exposes separate media controls and clearly discloses sampled camera transmission", () => {
   assert.ok(html.includes('id="livePanel"'));
   assert.ok(html.includes('id="liveMicStart"'));
   assert.ok(html.includes('id="liveCameraStart"'));
-  assert.ok(html.includes("ارتباط هوش مصنوعی متصل نیست"));
-  assert.ok(html.includes("هیچ داده‌ای ارسال نمی‌شود"));
+  assert.ok(html.includes("فریم‌های ثابت هر ۳ ثانیه ارسال می‌شوند"));
+  assert.ok(html.includes("صدا فقط هنگام اتصال به مدل ارسال می‌شود"));
 });
 
 test("MEHR Live uses separate local media permissions and stops tracks", () => {
@@ -48,17 +48,25 @@ test("MEHR Live uses separate local media permissions and stops tracks", () => {
 });
 
 
-test("dashboard completes an SFU offer-answer renegotiation before marking the session connected", () => {
-  assert.ok(appScript.includes('published.sessionDescription.type==="offer"&&published.requiresImmediateRenegotiation===true'));
-  assert.ok(appScript.includes('await pc.createAnswer()'));
-  assert.ok(appScript.includes('"/api/live/sessions/"+sessionId+"/renegotiate"'));
-  assert.ok(appScript.includes('method:"PUT"'));
-  assert.ok(appScript.includes('await waitForIceGathering(pc)'));
+test("MEHR Live uses authenticated direct Realtime WebRTC with server-held credentials", () => {
+  assert.ok(html.includes('id="liveOidcLogin"'));
+  assert.ok(appScript.includes('"/api/live/realtime/calls"'));
+  assert.ok(appScript.includes('pc.createDataChannel("oai-events")'));
+  assert.ok(appScript.includes('await pc.setRemoteDescription({type:"answer",sdp:answer})'));
+  assert.ok(appScript.includes('liveAccessToken||$("#liveOidcToken").value.trim()'));
 });
 
+test("browser OIDC login uses Authorization Code with PKCE S256 and state validation", () => {
+  assert.ok(appScript.includes('code_challenge_method","S256"'));
+  assert.ok(appScript.includes('code_verifier:verifier'));
+  assert.ok(appScript.includes('params.get("state")!==expectedState'));
+  assert.ok(appScript.includes('liveAccessToken=tokens.access_token'));
+  assert.ok(!appScript.includes('sessionStorage.setItem("mehr-oidc-access-token"'));
+});
 
-test("dashboard inspects sanitized SFU track state after WebRTC connects", () => {
-  assert.ok(appScript.includes('liveApi("/api/live/sessions/"+sessionId)'));
-  assert.ok(appScript.includes('inspection.tracks.filter(track=>track.status==="active").length'));
-  assert.ok(appScript.includes("این وضعیت تضمین‌کننده رسیدن بسته‌های رسانه نیست"));
+test("camera vision sends bounded sampled still images through the Realtime data channel", () => {
+  assert.ok(appScript.includes('setInterval(()=>sendSampledCameraFrame(channel),3000)'));
+  assert.ok(appScript.includes('640/video.videoWidth'));
+  assert.ok(appScript.includes('type:"input_image"'));
+  assert.ok(appScript.includes('clearInterval(active.frameTimer)'));
 });
