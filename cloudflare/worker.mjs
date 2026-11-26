@@ -384,6 +384,13 @@ export default {
       const rateStatus = await consumeLiveRateLimit(env, principal, "publish").catch(() => 503);
       if (rateStatus === 429) return response({ ok: false, error: "rate_limit_exceeded" }, 429, cors);
       if (rateStatus !== 200) return response({ ok: false, error: "rate_limiter_unavailable" }, 503, cors);
+      const lockToken = crypto.randomUUID();
+      const lock = await sessionRegistry(env, appSessionId, "lock", {
+        subject: principal.subject, tenantId: principal.tenantId, lockToken,
+      }).catch(() => null);
+      if (!lock) return response({ ok: false, error: "session_lock_unavailable" }, 503, cors);
+      if (lock.status === 409) return response({ ok: false, error: "session_busy" }, 409, cors);
+      if (!lock.ok) return response({ ok: false, error: "session_lock_unavailable" }, 503, cors);
       let providerSessionId = null;
       let publishedMids = [];
       try {
@@ -429,6 +436,10 @@ export default {
           try { await closeSfuTracks(env, providerSessionId, publishedMids); } catch { /* best-effort compensation */ }
         }
         return response({ ok: false, error: "live_publish_failed" }, 502, cors);
+      } finally {
+        await sessionRegistry(env, appSessionId, "unlock", {
+          subject: principal.subject, tenantId: principal.tenantId, lockToken,
+        }).catch(() => null);
       }
     }
 
@@ -480,6 +491,13 @@ export default {
       const rateStatus = await consumeLiveRateLimit(env, principal, "renegotiate").catch(() => 503);
       if (rateStatus === 429) return response({ ok: false, error: "rate_limit_exceeded" }, 429, cors);
       if (rateStatus !== 200) return response({ ok: false, error: "rate_limiter_unavailable" }, 503, cors);
+      const lockToken = crypto.randomUUID();
+      const lock = await sessionRegistry(env, appSessionId, "lock", {
+        subject: principal.subject, tenantId: principal.tenantId, lockToken,
+      }).catch(() => null);
+      if (!lock) return response({ ok: false, error: "session_lock_unavailable" }, 503, cors);
+      if (lock.status === 409) return response({ ok: false, error: "session_busy" }, 409, cors);
+      if (!lock.ok) return response({ ok: false, error: "session_lock_unavailable" }, 503, cors);
       try {
         const auth = await sessionRegistry(env, appSessionId, "authorize", {
           subject: principal.subject, tenantId: principal.tenantId,
@@ -492,6 +510,10 @@ export default {
         return response({ ok: true, result }, 200, cors);
       } catch {
         return response({ ok: false, error: "live_renegotiation_failed" }, 502, cors);
+      } finally {
+        await sessionRegistry(env, appSessionId, "unlock", {
+          subject: principal.subject, tenantId: principal.tenantId, lockToken,
+        }).catch(() => null);
       }
     }
 
@@ -500,6 +522,16 @@ export default {
       const principal = await verifyOidcAccessToken(request, env);
       if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
       const appSessionId = liveCloseMatch[1];
+      const rateStatus = await consumeLiveRateLimit(env, principal, "close").catch(() => 503);
+      if (rateStatus === 429) return response({ ok: false, error: "rate_limit_exceeded" }, 429, cors);
+      if (rateStatus !== 200) return response({ ok: false, error: "rate_limiter_unavailable" }, 503, cors);
+      const lockToken = crypto.randomUUID();
+      const lock = await sessionRegistry(env, appSessionId, "lock", {
+        subject: principal.subject, tenantId: principal.tenantId, lockToken,
+      }).catch(() => null);
+      if (!lock) return response({ ok: false, error: "session_lock_unavailable" }, 503, cors);
+      if (lock.status === 409) return response({ ok: false, error: "session_busy" }, 409, cors);
+      if (!lock.ok) return response({ ok: false, error: "session_lock_unavailable" }, 503, cors);
       try {
         const auth = await sessionRegistry(env, appSessionId, "authorize", {
           subject: principal.subject, tenantId: principal.tenantId,
@@ -524,6 +556,10 @@ export default {
         return response({ ok: true, closed: true }, 200, cors);
       } catch {
         return response({ ok: false, error: "live_session_close_failed" }, 502, cors);
+      } finally {
+        await sessionRegistry(env, appSessionId, "unlock", {
+          subject: principal.subject, tenantId: principal.tenantId, lockToken,
+        }).catch(() => null);
       }
     }
 
@@ -664,6 +700,7 @@ export class LiveSessionRegistry {
         publish: { limit: 12, windowSeconds: 60 },
         renegotiate: { limit: 20, windowSeconds: 60 },
         inspect: { limit: 60, windowSeconds: 60 },
+        close: { limit: 5, windowSeconds: 600 },
       };
       const policy = policies[body.action];
       if (!policy) return new Response(null, { status: 400 });
@@ -701,6 +738,28 @@ export class LiveSessionRegistry {
     if (!existing || existing.expiresAt <= Math.floor(Date.now() / 1000) ||
         existing.subject !== body.subject || existing.tenantId !== body.tenantId) {
       return new Response(null, { status: 404 });
+    }
+    if (path === "/lock" || path === "/unlock") {
+      if (typeof body.lockToken !== "string" || !/^[0-9a-f-]{36}$/i.test(body.lockToken)) {
+        return new Response(null, { status: 400 });
+      }
+      if (typeof this.state.storage.transaction !== "function") {
+        return new Response(null, { status: 503 });
+      }
+      const lockResult = await this.state.storage.transaction(async (transaction) => {
+        const key = "mutationLock";
+        const current = await transaction.get(key);
+        const now = Math.floor(Date.now() / 1000);
+        if (path === "/lock") {
+          if (current && current.expiresAt > now && current.lockToken !== body.lockToken) return false;
+          await transaction.put(key, { lockToken: body.lockToken, expiresAt: now + 30 });
+          return true;
+        }
+        if (!current || current.lockToken !== body.lockToken) return false;
+        await transaction.delete(key);
+        return true;
+      });
+      return new Response(null, { status: lockResult ? 200 : 409 });
     }
     if (path === "/authorize") {
       const { providerSessionId, expiresAt, consent, mids } = existing;
