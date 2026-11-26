@@ -199,7 +199,7 @@ export default {
         return response({ ok: false, error: "live_transport_not_configured" }, 503, cors);
       }
       const parsed = await readJsonLimited(request, 4096);
-      if (parsed.error) return response({ ok: false, error: parsed.error }, 400, cors);
+      if (parsed.error) return response({ ok: false, error: parsed.error }, parsed.error === "request_too_large" ? 413 : 400, cors);
       const body = parsed.value;
       const mode = body?.mode;
       const consent = body?.consent;
@@ -295,7 +295,7 @@ export default {
     if (url.pathname === "/api/live/capabilities" && request.method === "GET") {
       const principal = await verifyOidcAccessToken(request, env);
       if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
-      const configured = Boolean(env.CLOUDFLARE_SFU_APP_ID && env.CLOUDFLARE_SFU_APP_SECRET);
+      const configured = Boolean(env.CLOUDFLARE_SFU_APP_ID && env.CLOUDFLARE_SFU_APP_SECRET && env.LIVE_SESSIONS);
       return response({
         ok: true,
         authenticated: true,
