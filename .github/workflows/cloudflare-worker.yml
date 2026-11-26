@@ -29,4 +29,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: node --test tests/cloudflare-worker.test.mjs tests/ui-script.test.mjs
+      - name: Validate Wrangler configuration and build Worker
+        run: npx --yes wrangler@3.114.17 deploy --dry-run --config wrangler.jsonc
+      - name: Run Worker and UI regression tests
+        run: node --test tests/cloudflare-worker.test.mjs tests/ui-script.test.mjs
