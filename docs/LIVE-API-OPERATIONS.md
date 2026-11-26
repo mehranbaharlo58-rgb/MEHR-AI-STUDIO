@@ -94,7 +94,7 @@ The browser and Worker now contain the first integrated SFU-to-vision path:
 1. The browser creates an authenticated SFU application session after microphone and camera consent.
 2. It publishes microphone and camera tracks and records their MID-to-track-name mapping in the Durable Object registry.
 3. The Worker creates a Cloudflare WebSocket media-egress adapter for the published `camera` track, using JPEG output.
-4. Cloudflare connects to a session-scoped Worker WebSocket endpoint. The Durable Object validates a random 256-bit ingest token and a separate viewer token.
+4. Cloudflare connects to a session-scoped Worker WebSocket endpoint. The Durable Object validates a random 256-bit ingest token for the SFU adapter. The browser viewer receives a separate 256-bit, 30-second, single-use ticket through the WebSocket subprotocol rather than a bearer token in the URL query string; the Durable Object consumes the ticket transactionally before accepting the viewer socket.
 5. The Durable Object decodes the Cloudflare protobuf packet, accepts only bounded JPEG frames, rate-limits forwarding, and relays frames to the authorized browser viewer.
 6. The browser forwards received JPEG frames as image inputs over the existing OpenAI Realtime data channel. It applies hidden-tab and data-channel backpressure checks.
 7. Session shutdown closes the WebSocket adapter before SFU tracks and deletes the owned session record.
