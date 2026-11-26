@@ -82,19 +82,19 @@ Only the verified owner in the same tenant can close the session. The Worker ask
 
 ## Security and operational limitations
 
-- The OIDC verifier currently fetches the JWKS on each request; add a bounded, rotation-aware cache before production traffic.
+- The OIDC verifier uses a five-minute in-memory JWKS cache and forces one refresh when a key is unknown or signature verification fails. Validate this behavior against the selected identity provider's key-rotation policy.
 - The current session registry enforces ownership and expiry, but does not yet provide per-user concurrency quotas or distributed rate limiting.
 - Session setup and SFU negotiation must be serialized per PeerConnection. The current browser client and renegotiation route are not implemented.
 - The close route closes media tracks; it does not claim to terminate a provider-side session with a dedicated DELETE operation.
 - If an SFU create succeeds but registry persistence fails, an orphaned provider session may remain until SFU resource cleanup. Add compensating cleanup and reconciliation before production.
-- SFU partial track failures must be reconciled per returned track result; do not assume every requested track was published.
+- The publish route records only successful track MIDs returned by the SFU and exposes a `partial` flag. Validate the exact per-track response shape against live SFU responses before production.
 - The browser dashboard still uses a legacy owner-token flow for the separate text-generation endpoint. Do not expose that token to untrusted users.
 - No public deployment, real OIDC issuer, SFU credentials, or end-to-end browser test has been verified.
 
 ## Validation required next
 
-1. Add tests for malformed, expired, wrong-audience, wrong-issuer, missing-scope, and cross-tenant tokens.
-2. Test SFU create/publish/partial-failure/close with a deterministic API mock.
+1. Add broader negative tests for malformed, expired, wrong-audience, wrong-issuer, and missing-scope tokens.
+2. Add deterministic SFU publish/partial-failure/close tests and verify the live response schema.
 3. Add compensating cleanup and per-user limits.
 4. Implement browser OIDC PKCE and media publishing/remote playback.
 5. Run the Durable Object migration in a non-production environment.
