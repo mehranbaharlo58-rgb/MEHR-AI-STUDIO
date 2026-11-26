@@ -201,8 +201,9 @@ test("SFU viewer loss falls back to sampled camera frames without dropping voice
 });
 
 test("Realtime peer failure performs full session teardown instead of dropping the session reference", () => {
-  const start = appScript.indexOf('if(pc.connectionState==="failed"||pc.connectionState==="closed"){');
-  const end = appScript.indexOf('\n  });', start);
+  const marker = 'if(pc.connectionState==="failed"||pc.connectionState==="closed"){\n    $("#liveStatus")';
+  const start = appScript.indexOf(marker);
+  const end = appScript.indexOf('\n   }\n  });', start);
   assert.ok(start >= 0 && end > start);
   const failureHandler = appScript.slice(start, end);
   assert.ok(failureHandler.includes("disconnectLiveSession()"));
