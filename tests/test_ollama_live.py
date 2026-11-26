@@ -7,10 +7,13 @@ import pytest
 from mehr_ai_studio.ollama_adapter import OllamaAdapter
 
 MODEL = os.getenv("MEHR_OLLAMA_TEST_MODEL")
-pytestmark = pytest.mark.skipif(
-    not MODEL,
-    reason="set MEHR_OLLAMA_TEST_MODEL and run with -m integration",
-)
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.skipif(
+        not MODEL,
+        reason="set MEHR_OLLAMA_TEST_MODEL and run with -m integration",
+    ),
+]
 
 
 def test_live_ollama_chat_and_stream():
