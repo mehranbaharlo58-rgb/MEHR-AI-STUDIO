@@ -93,6 +93,21 @@ test("Realtime remote audio playback handles browser autoplay restrictions", () 
   assert.ok(appScript.includes("playResult.catch"));
 });
 
+test("MEHR Live publishes the camera to SFU and forwards JPEG frames into the Realtime vision channel", () => {
+  assert.ok(appScript.includes('"/api/live/sessions"'));
+  assert.ok(appScript.includes('"/publish"'));
+  assert.ok(appScript.includes('"/video-adapter"'));
+  assert.ok(appScript.includes('new WebSocket(adapter.viewer_url)'));
+  assert.ok(appScript.includes('type:"input_image",detail:"low",image_url:imageUrl'));
+  assert.ok(appScript.includes('active.sfu={sessionId,pc,socket}'));
+});
+
+test("MEHR Live tears down the SFU video session independently from the voice call", () => {
+  assert.ok(appScript.includes("async function stopSfuVideoBridge(active)"));
+  assert.ok(appScript.includes('method:"DELETE"'));
+  assert.ok(appScript.includes('if(active?.sfu)stopSfuVideoBridge(active).catch(()=>null)'));
+});
+
 test("Realtime network failure clears the session and restores controls", () => {
   assert.ok(appScript.includes('pc.connectionState==="disconnected"'));
   assert.ok(appScript.includes('pc.connectionState==="failed"||pc.connectionState==="closed"'));
