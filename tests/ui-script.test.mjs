@@ -97,7 +97,9 @@ test("MEHR Live publishes the camera to SFU and forwards JPEG frames into the Re
   assert.ok(appScript.includes('"/api/live/sessions"'));
   assert.ok(appScript.includes('"/publish"'));
   assert.ok(appScript.includes('"/video-adapter"'));
-  assert.ok(appScript.includes('new WebSocket(adapter.viewer_url)'));
+  assert.ok(appScript.includes('new WebSocket(adapter.viewer_url,["mehr.viewer","mehr-ticket."+adapter.viewer_ticket])'));
+  assert.ok(appScript.includes('adapter.viewer_ticket'));
+  assert.ok(appScript.includes('mehr-ticket.'));
   assert.ok(appScript.includes('type:"input_image",detail:"low",image_url:imageUrl'));
   assert.ok(appScript.includes('active.sfu={sessionId,pc,socket}'));
 });
