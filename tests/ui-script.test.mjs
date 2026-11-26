@@ -151,6 +151,26 @@ test("Agent workspace escapes catalogue data before inserting it into the UI", (
   assert.ok(appScript.includes("safeText(item.provider)"));
 });
 
+test("MCP endpoint validation rejects unsafe URL components and normalizes the endpoint path", () => {
+  const start = appScript.indexOf("function mcpEndpoint()");
+  const end = appScript.indexOf("function showMcpOutput", start);
+  assert.ok(start >= 0 && end > start);
+  const source = appScript.slice(start, end);
+  const evaluate = value => vm.runInNewContext(source + "\\nmcpEndpoint();", {
+    URL,
+    $: () => ({ value }),
+  });
+  assert.equal(evaluate("https://studio.example.test"), "https://studio.example.test/mcp");
+  assert.equal(evaluate("https://studio.example.test/api/mcp/"), "https://studio.example.test/api/mcp");
+  for (const unsafe of [
+    "http://studio.example.test/mcp",
+    "https://user:secret@studio.example.test/mcp",
+    "https://studio.example.test/mcp?token=secret",
+    "https://studio.example.test/mcp#fragment",
+    "not-a-url",
+  ]) assert.throws(() => evaluate(unsafe));
+});
+
 test("Agent workspace connects to the authenticated tenant-scoped MCP registry", () => {
   assert.ok(html.includes('id="mcpEndpoint"'));
   assert.ok(html.includes('id="mcpToken"'));
