@@ -89,7 +89,7 @@ def test_rejects_non_boolean_grants(grant, value):
     }
     grants[grant] = value
 
-    with pytest.raises(ValueError, match=grant):
+    with pytest.raises(TypeError, match=grant):
         issuer.issue(room="room_123", identity="user_123", **grants)
 
 
