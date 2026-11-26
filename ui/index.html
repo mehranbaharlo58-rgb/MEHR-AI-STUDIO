@@ -386,8 +386,8 @@ function stopLiveDevices(){
  for(const key of ["mic","camera"]){if(liveState[key]){liveState[key].getTracks().forEach(t=>t.stop());liveState[key]=null;}}
  $("#liveCameraPreview").srcObject=null;$("#liveCameraPreview").hidden=true;$("#liveVideoPlaceholder").hidden=false;liveState.muted=false;updateLiveState();
 }
-$("#liveCameraStop").addEventListener("click",()=>{if(liveState.camera){liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=null;}$("#liveCameraPreview").srcObject=null;$("#liveCameraPreview").hidden=true;$("#liveVideoPlaceholder").hidden=false;updateLiveState();});
-$("#liveStopAll").addEventListener("click",()=>{stopLiveDevices();say("تمام دسترسی‌های رسانه متوقف شد.");});
+$("#liveCameraStop").addEventListener("click",async()=>{if(liveConnection)await disconnectLiveSession();if(liveState.camera){liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=null;}$("#liveCameraPreview").srcObject=null;$("#liveCameraPreview").hidden=true;$("#liveVideoPlaceholder").hidden=false;updateLiveState();});
+$("#liveStopAll").addEventListener("click",async()=>{await disconnectLiveSession();stopLiveDevices();say("تمام دسترسی‌های رسانه و ارتباط شبکه‌ای متوقف شد.");});
 window.addEventListener("pagehide",()=>{disconnectLiveSession();stopLiveDevices();});
 
 let liveConnection=null;
