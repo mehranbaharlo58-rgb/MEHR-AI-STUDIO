@@ -1,9 +1,5 @@
 """Server-side LiveKit access-token issuance with least-privilege room grants."""
 
-# ruff: noqa: I001
-
-from __future__ import annotations
-
 import re
 import time
 from dataclasses import dataclass
@@ -40,7 +36,7 @@ class LiveKitTokenIssuer:
             )
 
     @classmethod
-    def from_env(cls) -> LiveKitTokenIssuer:
+    def from_env(cls) -> "LiveKitTokenIssuer":
         """Load credentials only from the server process environment."""
         import os
 
