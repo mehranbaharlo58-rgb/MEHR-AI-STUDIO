@@ -534,8 +534,8 @@ function bindRealtimeEvents(channel){
    if(itemKey)streamedItems.add(itemKey);
    appendLiveTranscript(data.delta);
   }else if(data.type==="conversation.item.input_audio_transcription.completed"||data.type==="response.output_audio_transcript.done"){
-   if(itemKey&&streamedItems.has(itemKey)){appendLiveTranscript("\\n");streamedItems.delete(itemKey);}
-   else appendLiveTranscript("\\n"+(data.transcript||""));
+   if(itemKey&&streamedItems.has(itemKey)){appendLiveTranscript("\n");streamedItems.delete(itemKey);}
+   else appendLiveTranscript("\n"+(data.transcript||""));
   }else if(data.type==="error"){
    console.warn("Realtime event error:",data.error?.message||"unknown");
   }
