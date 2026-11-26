@@ -56,7 +56,12 @@ This is a code-level integration, not a live deployment. It requires a running
 HTTPS MCP service, a correctly configured OIDC issuer/audience/scope/tenant
 claim, an exact CORS origin allowlist when cross-origin, and a short-lived token
 valid for this MCP resource. The separate Cloudflare Worker login is not
-automatically valid for the Python MCP audience. Provider keys remain on the
+automatically valid for the Python MCP audience. The Python service now
+rejects production OIDC verifier configurations whose issuer, resource URL,
+or required scopes do not exactly match the MCP AuthSettings; OAuth URLs with
+credentials, query strings, or fragments are rejected. The Agent workspace
+exposes a bounded 1–100 dispatch selector, while server-side parallel
+execution remains capped at three by default. Provider keys remain on the
 server; no API-key entry field is exposed to the browser.
 
 Remaining release blockers are live identity-provider validation, server-side
