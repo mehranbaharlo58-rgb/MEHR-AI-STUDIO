@@ -55,6 +55,19 @@ function parseJwtPart(value) {
   return JSON.parse(new TextDecoder().decode(decodeBase64Url(value)));
 }
 
+let jwksCache = null;
+
+async function loadJwks(url, forceRefresh = false) {
+  const now = Date.now();
+  if (!forceRefresh && jwksCache && jwksCache.url === url && now - jwksCache.fetchedAt < 300000) return jwksCache.keys;
+  const result = await fetch(url, { method: "GET", redirect: "manual", headers: { accept: "application/json" }, signal: AbortSignal.timeout(5000) });
+  if (!result.ok || (result.headers.get("content-type") || "").toLowerCase().split(";")[0] !== "application/json") throw new Error("jwks_unavailable");
+  const data = await result.json();
+  if (!Array.isArray(data.keys) || data.keys.length > 100) throw new Error("jwks_invalid");
+  jwksCache = { url, fetchedAt: now, keys: data.keys };
+  return data.keys;
+}
+
 async function verifyOidcAccessToken(request, env) {
   const issuer = env.OIDC_ISSUER_URL;
   const jwksUrl = env.OIDC_JWKS_URL;
@@ -79,15 +92,14 @@ async function verifyOidcAccessToken(request, env) {
     if (header.alg !== "RS256" || typeof header.kid !== "string" ||
         claims.iss !== issuer || typeof claims.sub !== "string" || !claims.sub.trim()) return null;
 
-    const jwksResponse = await fetch(keysUrl.toString(), {
-      method: "GET", redirect: "manual", headers: { accept: "application/json" },
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!jwksResponse.ok || (jwksResponse.headers.get("content-type") || "").toLowerCase().split(";")[0] !== "application/json") return null;
-    const jwks = await jwksResponse.json();
-    if (!Array.isArray(jwks.keys) || jwks.keys.length > 100) return null;
-    const jwk = jwks.keys.find((key) => key && key.kid === header.kid && key.kty === "RSA" &&
+    let keys = await loadJwks(keysUrl.toString());
+    let jwk = keys.find((key) => key && key.kid === header.kid && key.kty === "RSA" &&
       key.use !== "enc" && (!key.alg || key.alg === "RS256"));
+    if (!jwk) {
+      keys = await loadJwks(keysUrl.toString(), true);
+      jwk = keys.find((key) => key && key.kid === header.kid && key.kty === "RSA" &&
+        key.use !== "enc" && (!key.alg || key.alg === "RS256"));
+    }
     if (!jwk) return null;
     const publicKey = await crypto.subtle.importKey(
       "jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"],
@@ -204,9 +216,10 @@ export default {
       const mode = body?.mode;
       const consent = body?.consent;
       if (!["voice", "voice_vision"].includes(mode) ||
-          !consent || consent.microphone !== true ||
+          !consent || Object.keys(consent).some((key) => !["microphone", "camera"].includes(key)) ||
+          consent.microphone !== true ||
           (mode === "voice_vision" && consent.camera !== true) ||
-          (mode === "voice" && consent.camera === true)) {
+          (mode === "voice" && consent.camera !== false)) {
         return response({ ok: false, error: "invalid_consent_or_mode" }, 422, cors);
       }
       try {
