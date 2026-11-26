@@ -364,6 +364,71 @@ test("creates a session-owned Cloudflare JPEG egress adapter only for a publishe
   }
 });
 
+test("does not create a Cloudflare adapter when the session mutation lock is busy", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const originalFetch = globalThis.fetch;
+  let adapterRequest = null;
+  const registryCalls = [];
+  globalThis.fetch = async (url, init = {}) => {
+    const target = String(url);
+    if (target.endsWith("/jwks-video-adapter.json")) {
+      return Response.json({ keys: [jwk] });
+    }
+    if (target === "https://rtc.live.cloudflare.com/v1/apps/test-app/adapters/websocket/new") {
+      adapterRequest = JSON.parse(init.body);
+      return Response.json({ tracks: [{ adapterId: "adapter-123" }] });
+    }
+    assert.fail("Unexpected outbound request: " + target);
+  };
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/sessions/123e4567-e89b-12d3-a456-426614174000/video-adapter", {
+      method: "POST",
+      headers: { ...origin, Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: "{}",
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks-video-adapter.json",
+      OIDC_AUDIENCE: "mehr-api",
+      CLOUDFLARE_SFU_APP_ID: "test-app",
+      CLOUDFLARE_SFU_APP_SECRET: "sfu-secret",
+      LIVE_SESSIONS: {
+        idFromName: (id) => id,
+        get: () => ({ fetch: async (url, init) => {
+          const path = new URL(url).pathname;
+          registryCalls.push(path);
+          if (path === "/lock") return new Response(null, { status: 409 });
+          if (path === "/unlock") return new Response(null, { status: 200 });
+          if (path === "/authorize") return Response.json({
+            providerSessionId: "provider-session", expiresAt: Math.floor(Date.now() / 1000) + 240,
+            consent: { microphone: true, camera: true },
+            tracks: [{ mid: "1", trackName: "camera" }],
+            videoRelay: null,
+          });
+          if (path === "/prepare-video") {
+            const body = JSON.parse(init.body);
+            assert.match(body.ingestToken, /^[a-f0-9]{64}$/);
+            assert.match(body.viewerToken, /^[a-f0-9]{64}$/);
+            return new Response(null, { status: 201 });
+          }
+          if (path === "/complete-video") {
+            assert.equal(JSON.parse(init.body).adapterId, "adapter-123");
+            return new Response(null, { status: 200 });
+          }
+          assert.fail("Unexpected registry operation: " + path);
+        }}),
+      },
+    });
+    const body = await response.json();
+    assert.equal(response.status, 409);
+    assert.equal(body.error, "session_busy");
+    assert.equal(adapterRequest, null);
+    assert.deepEqual(registryCalls, ["/lock"]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("live session registry binds records to subject and tenant", async () => {
   const values = new Map();
   const state = { storage: {
