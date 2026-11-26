@@ -355,6 +355,39 @@ def test_authenticated_ai_registry_tools_are_tenant_scoped(monkeypatch, tmp_path
     active_tenant["id"] = "tenant-alpha"
     assert app.tools["list_ai_models"]()["counts"]["total"] == 2
 
+    import asyncio
+
+    async def fake_adapter(selected_model, task):
+        return {"text": "mock execution passed", "model": selected_model.model_id}
+
+    monkeypatch.setattr(
+        authenticated_server,
+        "build_adapters",
+        lambda models, **kwargs: {
+            item.id: fake_adapter for item in models
+            if item.status in {"configured", "tested"}
+        },
+    )
+    execution = asyncio.run(
+        app.tools["execute_ai_task"]("analysis", limit=2)
+    )
+    assert execution["ok"] is True
+    assert execution["results"]
+    assert all(item["ok"] for item in execution["results"])
+
+    async def fake_smoke(adapter, selected_model, timeout_s):
+        return {"latency_ms": 12.3, "response": "mock connector check passed"}
+
+    monkeypatch.setattr(
+        authenticated_server, "smoke_test_adapter", fake_smoke
+    )
+    health = asyncio.run(app.tools["test_ai_connector"]("local.test"))
+    assert health["ok"] is True
+    assert health["status"] == "tested"
+    counts = app.tools["list_ai_models"]()["counts"]
+    assert counts["tested"] == 1
+    assert counts["configured"] == 1
+
     for name in (
         "register_ai_model",
         "list_ai_models",
