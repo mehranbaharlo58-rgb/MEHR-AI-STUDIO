@@ -161,6 +161,7 @@ test("MCP endpoint validation rejects unsafe URL components and normalizes the e
     $: () => ({ value }),
   });
   assert.equal(evaluate("https://studio.example.test"), "https://studio.example.test/mcp");
+  assert.equal(evaluate("https://studio.example.test/"), "https://studio.example.test/mcp");
   assert.equal(evaluate("https://studio.example.test/api/mcp/"), "https://studio.example.test/api/mcp");
   for (const unsafe of [
     "http://studio.example.test/mcp",
