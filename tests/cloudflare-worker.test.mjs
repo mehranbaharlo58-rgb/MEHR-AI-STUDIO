@@ -827,3 +827,53 @@ test("reports Realtime as unconfigured without making an upstream call", async (
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("publishes only public OIDC Authorization Code with PKCE settings", async () => {
+  const response = await worker.fetch(new Request("https://worker.test/api/live/oidc/config", {
+    headers: origin,
+  }), {
+    ...env,
+    OIDC_AUTHORIZATION_URL: "https://identity.example.test/oauth2/authorize",
+    OIDC_TOKEN_URL: "https://identity.example.test/oauth2/token",
+    OIDC_CLIENT_ID: "mehr-web-client",
+    OIDC_REDIRECT_URI: "https://mehranbaharlo58-rgb.github.io/MEHR-AI-STUDIO/",
+    OIDC_PUBLIC_SCOPES: "openid profile studio:access",
+  });
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.client_id, "mehr-web-client");
+  assert.equal(body.token_url, "https://identity.example.test/oauth2/token");
+  assert.equal(body.redirect_uri, "https://mehranbaharlo58-rgb.github.io/MEHR-AI-STUDIO/");
+  assert.equal(JSON.stringify(body).includes("client_secret"), false);
+});
+
+test("fails closed when OIDC PKCE public client configuration is incomplete", async () => {
+  const response = await worker.fetch(new Request("https://worker.test/api/live/oidc/config", {
+    headers: origin,
+  }), env);
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).error, "oidc_pkce_not_configured");
+});
+
+test("rejects a validly signed OIDC token issued to a different configured client", async () => {
+  const { token, jwk } = await makeOidcToken({ azp: "attacker-client" });
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ keys: [jwk] }), {
+    status: 200, headers: { "Content-Type": "application/json" },
+  });
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/capabilities", {
+      headers: { ...origin, Authorization: "Bearer " + token },
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks-client-check.json",
+      OIDC_AUDIENCE: "mehr-api",
+      OIDC_CLIENT_ID: "mehr-web-client",
+    });
+    assert.equal(response.status, 401);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
