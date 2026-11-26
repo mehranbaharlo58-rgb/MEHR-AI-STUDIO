@@ -149,3 +149,101 @@ test("rejects oversized streamed request bodies without Content-Length", async (
   assert.equal(result.error, "request_too_large");
   assert.equal(cancelled, true);
 });
+
+
+function base64urlJson(value) {
+  return Buffer.from(JSON.stringify(value)).toString("base64url");
+}
+
+async function makeOidcToken() {
+  const pair = await crypto.subtle.generateKey({
+    name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+    publicExponent: Uint8Array.of(1, 0, 1), hash: "SHA-256",
+  }, true, ["sign", "verify"]);
+  const jwk = await crypto.subtle.exportKey("jwk", pair.publicKey);
+  jwk.kid = "test-key";
+  jwk.use = "sig";
+  jwk.alg = "RS256";
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64urlJson({ alg: "RS256", typ: "JWT", kid: "test-key" });
+  const payload = base64urlJson({
+    iss: "https://issuer.example.test",
+    aud: "mehr-api",
+    sub: "user-123",
+    azp: "mehr-web",
+    tenant_id: "tenant-123",
+    scope: "studio:access",
+    iat: now,
+    exp: now + 300,
+  });
+  const signingInput = header + "." + payload;
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5", pair.privateKey, new TextEncoder().encode(signingInput),
+  );
+  return {
+    token: signingInput + "." + Buffer.from(signature).toString("base64url"),
+    jwk,
+  };
+}
+
+test("live capabilities reject requests without a verified OIDC token", async () => {
+  const response = await worker.fetch(new Request("https://worker.test/api/live/capabilities", {
+    headers: origin,
+  }), env);
+  assert.equal(response.status, 401);
+});
+
+test("verifies OIDC signature and trusted claims before live capability checks", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    assert.equal(String(url), "https://issuer.example.test/jwks.json");
+    assert.equal(init.redirect, "manual");
+    return new Response(JSON.stringify({ keys: [jwk] }), {
+      status: 200, headers: { "Content-Type": "application/json" },
+    });
+  };
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/capabilities", {
+      headers: { ...origin, Authorization: "Bearer " + token },
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks.json",
+      OIDC_AUDIENCE: "mehr-api",
+      OIDC_REQUIRED_SCOPES: "studio:access",
+    });
+    const body = await response.json();
+    assert.equal(response.status, 503);
+    assert.equal(body.authenticated, true);
+    assert.equal(body.live_transport, "not_configured");
+    assert.equal(body.session_creation_enabled, false);
+    assert.equal(JSON.stringify(body).includes(token), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("rejects an OIDC token with a modified signature", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const parts = token.split(".");
+  parts[2] = "AAAA";
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ keys: [jwk] }), {
+    status: 200, headers: { "Content-Type": "application/json" },
+  });
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/capabilities", {
+      headers: { ...origin, Authorization: "Bearer " + parts.join(".") },
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks.json",
+      OIDC_AUDIENCE: "mehr-api",
+      OIDC_REQUIRED_SCOPES: "studio:access",
+    });
+    assert.equal(response.status, 401);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
