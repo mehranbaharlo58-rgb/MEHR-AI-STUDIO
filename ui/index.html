@@ -433,7 +433,7 @@ function mcpEndpoint(){
  try{parsed=new URL(value);}catch{throw new Error("Enter a valid absolute MCP endpoint URL.");}
  if(parsed.protocol!=="https:"||parsed.username||parsed.password||parsed.search||parsed.hash)
   throw new Error("MCP endpoint must use HTTPS without credentials, query parameters or fragments.");
- parsed.pathname=parsed.pathname.replace(/\\/+$/,"");
+ parsed.pathname=parsed.pathname.replace(/\/+$/,"");
  if(!parsed.pathname.endsWith("/mcp"))parsed.pathname+="/mcp";
  return parsed.toString();
 }
