@@ -287,6 +287,33 @@ def test_authenticated_ai_registry_tools_are_tenant_scoped(monkeypatch, tmp_path
         "auth_required": False,
     }
     assert app.tools["register_ai_model"](model)["saved"] is True
+    invalid_endpoint = {
+        **model,
+        "id": "local.bad-endpoint",
+        "endpoint": "http://example.com/v1",
+    }
+    assert app.tools["register_ai_model"](invalid_endpoint) == {
+        "saved": False,
+        "error": "invalid_connector_configuration",
+    }
+    missing_adapter_fields = {
+        **model,
+        "id": "local.missing-fields",
+        "model_id": None,
+    }
+    assert app.tools["register_ai_model"](missing_adapter_fields) == {
+        "saved": False,
+        "error": "invalid_connector_configuration",
+    }
+    unsupported_configured_mode = {
+        **model,
+        "id": "native.unimplemented",
+        "access_mode": "native_api",
+    }
+    assert app.tools["register_ai_model"](unsupported_configured_mode) == {
+        "saved": False,
+        "error": "unsupported_connector_mode",
+    }
     forged_health = {
         **model,
         "status": "tested",
