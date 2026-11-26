@@ -1,6 +1,6 @@
 # MEHR Live non-production provisioning and deployment
 
-Status: deployment automation prepared; credentials and real provider verification remain external prerequisites.
+Status: production deployment automation prepared; a separate staging Worker/environment is not yet configured.
 
 ## Architecture boundary
 
