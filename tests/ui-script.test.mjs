@@ -150,3 +150,21 @@ test("Agent workspace escapes catalogue data before inserting it into the UI", (
   assert.ok(appScript.includes("safeText(item.name)"));
   assert.ok(appScript.includes("safeText(item.provider)"));
 });
+
+test("Agent workspace connects to the authenticated tenant-scoped MCP registry", () => {
+  assert.ok(html.includes('id="mcpEndpoint"'));
+  assert.ok(html.includes('id="mcpToken"'));
+  assert.ok(html.includes('id="mcpConnect"'));
+  assert.ok(html.includes('id="mcpDisconnect"'));
+  assert.ok(html.includes('id="mcpRunTask"'));
+  assert.ok(appScript.includes('method:"initialize"') === false);
+  assert.ok(appScript.includes('mcpRpc("initialize"'));
+  assert.ok(appScript.includes('mcpRpc("notifications/initialized"'));
+  assert.ok(appScript.includes('mcpRpc("tools/list"'));
+  assert.ok(appScript.includes('mcpTool("list_ai_models"'));
+  assert.ok(appScript.includes('mcpTool("seed_ai_catalog"'));
+  assert.ok(appScript.includes('mcpTool("execute_ai_task"'));
+  assert.ok(appScript.includes('mcpAccessToken=null'));
+  assert.ok(!appScript.includes('localStorage.setItem("mehr-mcp-token"'));
+  assert.ok(!appScript.includes('sessionStorage.setItem("mehr-mcp-token"'));
+});
