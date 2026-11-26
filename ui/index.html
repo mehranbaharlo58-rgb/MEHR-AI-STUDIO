@@ -271,6 +271,17 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
 .mcp-output.show{display:block}
 @media(max-width:760px){.mcp-connect-panel{grid-template-columns:1fr 1fr}.mcp-taskbar{grid-template-columns:1fr}}
 @media(max-width:420px){.mcp-connect-panel{grid-template-columns:1fr}}
+
+.agent-config-panel{margin:16px 0;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+.agent-config-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.agent-config-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.agent-config-fields label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.agent-config-fields input:not([type=checkbox]),.agent-config-fields select{width:100%;min-width:0;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--text)}
+.agent-auth-toggle{flex-direction:row!important;align-items:center;align-self:end;padding:10px}
+.agent-config-help{font-size:12px;line-height:1.6;color:var(--muted);margin:12px 0}
+.agent-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.agent-card-actions button{font-size:12px;padding:7px 10px}
+
 </style></head>
 <body><div class="shell">
 <aside class="sidebar" id="sidebar"><a class="brand" href="#"><span class="mark">M</span><span class="brandcopy"><b>MEHR</b><small>AI STUDIO</small></span></a>
@@ -319,6 +330,18 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
   <button type="button" class="primary" id="mcpRunTask" disabled>Match &amp; run task</button>
  </div>
  <div class="mcp-output" id="mcpOutput" role="status" aria-live="polite"></div>
+ <div class="agent-config-panel" id="agentConfigPanel" hidden>
+  <div class="agent-config-heading"><strong id="agentConfigTitle">Configure model</strong><button type="button" id="agentConfigClose">Close</button></div>
+  <div class="agent-config-fields">
+   <label>Model API identifier<input id="agentModelId" maxlength="200" autocomplete="off" placeholder="provider-model-name"></label>
+   <label>API endpoint<input id="agentEndpoint" maxlength="1000" type="url" placeholder="https://api.provider.com/v1"></label>
+   <label>Connector type<select id="agentAccessMode"><option value="openai_compatible">OpenAI-compatible API</option><option value="local_runtime">Local runtime</option></select></label>
+   <label class="agent-auth-toggle"><input id="agentAuthRequired" type="checkbox" checked> API key required</label>
+  </div>
+  <p class="agent-config-help" id="agentCredentialHelp">Provider credentials are never entered here. Add the server-side environment variable shown after selecting a model, then restart the MCP service.</p>
+  <button type="button" class="primary" id="agentConfigSave">Save model configuration</button>
+  <p class="mcp-state" id="agentConfigStatus" role="status" aria-live="polite"></p>
+ </div>
  <div class="agent-toolbar"><input id="agentSearch" type="search" data-placeholder="searchAgents" placeholder="Search agents, providers or capabilities"><select id="agentCategory" aria-label="Filter by category"><option value="">All categories</option></select><select id="agentStatus" aria-label="Filter by status"><option value="">All states</option><option value="catalog_only">Catalog only</option><option value="configured">Configured</option><option value="tested">Tested</option><option value="degraded">Degraded</option><option value="disabled">Disabled</option></select></div>
  <div class="agent-grid" id="agentGrid"><div class="agent-empty">Loading catalogue…</div></div>
 </section>
@@ -513,8 +536,8 @@ function renderAgentCatalogue(){
  $("#agentGrid").innerHTML=filtered.length?filtered.map(item=>{
   const state=item.status||"catalog_only";
   const tags=(item.capabilities||[]).slice(0,3).map(tag=>'<span class="agent-chip">'+safeText(tag)+'</span>').join("");
-  const action=mcpConnected&&["configured","tested","degraded"].includes(state)?'<button type="button" data-test-model="'+safeText(item.id)+'">Test connector</button>':"";
-  return '<article class="agent-card"><div class="agent-card-top"><h3>'+safeText(item.name)+'</h3><span class="agent-state '+(state==="tested"?"tested":"")+'">'+safeText(state.replaceAll("_"," "))+'</span></div><div class="agent-provider">'+safeText(item.provider)+' · '+safeText(item.category)+' · '+safeText(item.access_mode)+'</div><div>'+tags+'</div>'+action+'</article>';
+  const actions=mcpConnected?'<div class="agent-card-actions"><button type="button" data-configure-model="'+safeText(item.id)+'">Configure</button>'+(["configured","tested","degraded"].includes(state)?'<button type="button" data-test-model="'+safeText(item.id)+'">Test connector</button>':"")+'</div>':"";
+  return '<article class="agent-card"><div class="agent-card-top"><h3>'+safeText(item.name)+'</h3><span class="agent-state '+(state==="tested"?"tested":"")+'">'+safeText(state.replaceAll("_"," "))+'</span></div><div class="agent-provider">'+safeText(item.provider)+' · '+safeText(item.category)+' · '+safeText(item.access_mode)+'</div><div>'+tags+'</div>'+actions+'</article>';
  }).join(""):'<div class="agent-empty">No matching catalogue entries.</div>';
 }
 async function loadAgentCatalogue(){
@@ -522,7 +545,44 @@ async function loadAgentCatalogue(){
  try{const response=await fetch("./ai-catalog.json",{cache:"no-store"});if(!response.ok)throw new Error("catalogue_http_"+response.status);const data=await response.json();if(!Array.isArray(data))throw new Error("catalogue_format_invalid");agentCatalogue=data;const counts={catalog_only:0,configured:0,tested:0,degraded:0,disabled:0};data.forEach(item=>{if(Object.hasOwn(counts,item.status))counts[item.status]++;});$("#agentTotal").textContent=data.length;$("#agentReady").textContent=counts.configured+counts.tested;$("#agentTested").textContent=counts.tested;$("#agentPending").textContent=counts.catalog_only;const categories=[...new Set(data.map(item=>item.category).filter(Boolean))].sort();$("#agentCategory").innerHTML='<option value="">All categories</option>'+categories.map(value=>'<option value="'+safeText(value)+'">'+safeText(value)+'</option>').join("");$("#agentNotice").textContent=lang==="fa"?"این فهرست شامل "+data.length+" مدخل است؛ تعداد متصل و آزمایش‌شده جداگانه نمایش داده می‌شود. ثبت در فهرست به معنی اتصال فعال نیست.":"Catalogue loaded: "+data.length+" entries. Configured and tested integrations are counted separately; catalogue presence does not mean a live connection.";renderAgentCatalogue();}
  catch(error){grid.innerHTML='<div class="agent-empty">Catalogue could not be loaded: '+safeText(error.message)+'</div>';$("#agentNotice").textContent="Static catalogue unavailable. Check that ui/ai-catalog.json is deployed beside index.html.";}
 }
+let editingAgentId=null;
+function providerSecretName(provider){
+ const slug=String(provider||"").toUpperCase().replace(/[^A-Z0-9]+/g,"_").replace(/^_+|_+$/g,"");
+ return "MEHR_AI_API_KEY_"+slug;
+}
+function openAgentConfig(modelId){
+ const item=agentCatalogue.find(entry=>entry.id===modelId);if(!item)return;
+ editingAgentId=modelId;
+ $("#agentConfigTitle").textContent="Configure · "+item.name;
+ $("#agentModelId").value=item.model_id||"";
+ $("#agentEndpoint").value=item.endpoint||"";
+ $("#agentAccessMode").value=["openai_compatible","local_runtime"].includes(item.access_mode)?item.access_mode:"openai_compatible";
+ $("#agentAuthRequired").checked=item.auth_required!==false;
+ $("#agentCredentialHelp").textContent=item.auth_required===false
+  ?"No provider key is requested by this model. Confirm the endpoint is reachable from the MCP server."
+  :"No API key is entered in this dashboard. Provision "+providerSecretName(item.provider)+" in the server-side .env.mcp file, then restart the MCP service.";
+ $("#agentConfigStatus").textContent="";
+ $("#agentConfigPanel").hidden=false;
+ $("#agentConfigPanel").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+$("#agentConfigClose").addEventListener("click",()=>{$("#agentConfigPanel").hidden=true;editingAgentId=null;});
+$("#agentConfigSave").addEventListener("click",async()=>{
+ if(!mcpConnected||!editingAgentId)return;
+ const current=agentCatalogue.find(entry=>entry.id===editingAgentId);if(!current)return;
+ const modelId=$("#agentModelId").value.trim(),endpoint=$("#agentEndpoint").value.trim();
+ if(!modelId||!endpoint){$("#agentConfigStatus").textContent="Model identifier and endpoint are required.";return;}
+ let parsed;try{parsed=new URL(endpoint);}catch{$("#agentConfigStatus").textContent="Enter a valid absolute endpoint URL.";return;}
+ const mode=$("#agentAccessMode").value;
+ if(parsed.protocol!=="https:"&&!(mode==="local_runtime"&&parsed.protocol==="http:"&&["localhost","127.0.0.1","::1"].includes(parsed.hostname))){$("#agentConfigStatus").textContent="Use HTTPS; HTTP is allowed only for a local runtime loopback endpoint.";return;}
+ const payload={...current,model_id:modelId,endpoint,access_mode:mode,auth_required:$("#agentAuthRequired").checked,status:"configured",verification_status:"unverified",last_verified_at:null,latency_ms:null};
+ const button=$("#agentConfigSave");button.disabled=true;$("#agentConfigStatus").textContent="Saving configuration to the authenticated tenant registry…";
+ try{const result=await mcpTool("register_ai_model",{model:payload});if(!result.saved)throw new Error(result.error||"Model configuration was rejected.");await loadAgentRegistry();$("#agentConfigStatus").textContent="Configuration saved. Ensure the server-side provider key is provisioned, then run Test connector.";say("Model configuration saved.");}
+ catch(error){$("#agentConfigStatus").textContent="Save failed: "+error.message;}
+ finally{button.disabled=false;}
+});
 $("#agentGrid").addEventListener("click",async event=>{
+ const configure=event.target.closest("[data-configure-model]");
+ if(configure&&mcpConnected){openAgentConfig(configure.dataset.configureModel);return;}
  const button=event.target.closest("[data-test-model]");
  if(!button||!mcpConnected)return;
  button.disabled=true;
