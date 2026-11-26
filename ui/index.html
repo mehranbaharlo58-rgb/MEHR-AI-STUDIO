@@ -560,7 +560,7 @@ function openAgentConfig(modelId){
  $("#agentAuthRequired").checked=item.auth_required!==false;
  $("#agentCredentialHelp").textContent=item.auth_required===false
   ?(lang==="fa"?"برای این مدل کلید ارائه‌دهنده لازم نیست. دسترسی سرور MCP به endpoint را بررسی کنید.":"No provider key is requested by this model. Confirm the endpoint is reachable from the MCP server.")
-  :(lang==="fa"?"کلید در داشبورد وارد نمی‌شود. متغیر "+providerSecretName(item.provider)+" را در فایل محرمانه سمت سرور تنظیم و سرویس MCP را راه‌اندازی مجدد کنید.":"No API key is entered in this dashboard. Provision "+providerSecretName(item.provider)+" in the server-side .env.mcp file, then restart the MCP service.");
+  :(lang==="fa"?"کلید در داشبورد وارد نمی‌شود. ابتدا متغیر "+providerSecretName(item.provider)+" را در فایل محرمانه سمت سرور تنظیم و سرویس MCP را راه‌اندازی مجدد کنید؛ سپس پیکربندی را ذخیره کنید.":"No API key is entered in this dashboard. First provision "+providerSecretName(item.provider)+" in the server-side .env.mcp file and restart the MCP service; then save this configuration.");
  $("#agentConfigStatus").textContent="";
  $("#agentConfigPanel").hidden=false;
  $("#agentConfigPanel").scrollIntoView({behavior:"smooth",block:"nearest"});
@@ -576,7 +576,7 @@ $("#agentConfigSave").addEventListener("click",async()=>{
  if(parsed.protocol!=="https:"&&!(mode==="local_runtime"&&parsed.protocol==="http:"&&["localhost","127.0.0.1","::1"].includes(parsed.hostname))){$("#agentConfigStatus").textContent="Use HTTPS; HTTP is allowed only for a local runtime loopback endpoint.";return;}
  const payload={...current,model_id:modelId,endpoint,access_mode:mode,auth_required:$("#agentAuthRequired").checked,status:"configured",verification_status:"unverified",last_verified_at:null,latency_ms:null};
  const button=$("#agentConfigSave");button.disabled=true;$("#agentConfigStatus").textContent="Saving configuration to the authenticated tenant registry…";
- try{const result=await mcpTool("register_ai_model",{model:payload});if(!result.saved)throw new Error(result.error||"Model configuration was rejected.");await loadAgentRegistry();$("#agentConfigStatus").textContent="Configuration saved. Ensure the server-side provider key is provisioned, then run Test connector.";say("Model configuration saved.");}
+ try{const result=await mcpTool("register_ai_model",{model:payload});if(!result.saved){if(result.error==="provider_credentials_missing")throw new Error("Provision "+providerSecretName(current.provider)+" in the server-side .env.mcp file and restart MCP before saving.");throw new Error(result.error||"Model configuration was rejected.");}await loadAgentRegistry();$("#agentConfigStatus").textContent="Configuration saved. Ensure the server-side provider key is provisioned, then run Test connector.";say("Model configuration saved.");}
  catch(error){$("#agentConfigStatus").textContent="Save failed: "+error.message;}
  finally{button.disabled=false;}
 });
