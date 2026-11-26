@@ -452,8 +452,19 @@ $("#liveConnect").addEventListener("click",async()=>{
   const published=await liveApi("/api/live/sessions/"+sessionId+"/publish",{
    method:"POST",body:JSON.stringify({sessionDescription:pc.localDescription,tracks})
   });
-  if(published.sessionDescription.type!=="answer")throw new Error("پاسخ SFU از نوع answer نیست؛ مذاکره مجدد هنوز پشتیبانی نمی‌شود.");
-  await pc.setRemoteDescription(published.sessionDescription);
+  if(published.sessionDescription.type==="answer"){
+   await pc.setRemoteDescription(published.sessionDescription);
+  }else if(published.sessionDescription.type==="offer"&&published.requiresImmediateRenegotiation===true){
+   await pc.setRemoteDescription(published.sessionDescription);
+   const answer=await pc.createAnswer();
+   await pc.setLocalDescription(answer);
+   await waitForIceGathering(pc);
+   await liveApi("/api/live/sessions/"+sessionId+"/renegotiate",{
+    method:"PUT",body:JSON.stringify({sessionDescription:pc.localDescription})
+   });
+  }else{
+   throw new Error("پاسخ مذاکره SFU معتبر نیست یا نیازمند مذاکره مجدد اعلام نشده است.");
+  }
   await waitForPeerConnected(pc,15000);
   liveConnection={sessionId,pc};
   $("#liveDisconnect").disabled=false;
