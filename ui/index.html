@@ -303,8 +303,12 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
     </div>
     <aside class="live-side">
       <h2 class="live-title" style="font-size:15px">اتصال واقعی به سرور</h2>
-      <label for="liveOidcToken">توکن دسترسی OIDC معتبر</label>
-      <input id="liveOidcToken" type="password" autocomplete="off" placeholder="OIDC access token">
+      <button type="button" id="liveOidcLogin">ورود امن با حساب کاربری (OIDC)</button>
+      <p class="live-note" id="liveAuthStatus" role="status">برای ورود، تنظیمات OIDC باید روی Worker پیکربندی شده باشد.</p>
+      <details><summary>توکن موقت توسعه (اختیاری)</summary>
+        <label for="liveOidcToken">توکن دسترسی OIDC</label>
+        <input id="liveOidcToken" type="password" autocomplete="off" placeholder="OIDC access token">
+      </details>
       <button type="button" id="liveConnect">شروع ارتباط زنده</button>
       <button type="button" id="liveDisconnect" disabled>قطع ارتباط زنده</button>
       <audio id="liveRemoteAudio" autoplay playsinline></audio>
@@ -391,8 +395,9 @@ $("#liveStopAll").addEventListener("click",async()=>{await disconnectLiveSession
 window.addEventListener("pagehide",()=>{disconnectLiveSession();stopLiveDevices();});
 
 let liveConnection=null;
+let liveAccessToken=null;
 async function liveApi(path, options={}){
- const token=$("#liveOidcToken").value.trim();
+ const token=liveAccessToken||$("#liveOidcToken").value.trim();
  const base=getConnection().url.replace(/\/+$/,"");
  if(!base)throw new Error("ابتدا نشانی Worker را در تنظیمات ثبت کنید.");
  if(!token)throw new Error("توکن OIDC معتبر را وارد کنید.");
@@ -401,6 +406,72 @@ async function liveApi(path, options={}){
  if(!response.ok||data.ok===false)throw new Error(data.error||("HTTP "+response.status));
  return data;
 }
+function base64Url(bytes){
+ let binary="";for(const byte of bytes)binary+=String.fromCharCode(byte);
+ return btoa(binary).replace(/\\+/g,"-").replace(/\\//g,"_").replace(/=+$/g,"");
+}
+async function getOidcPkceConfig(){
+ const base=getConnection().url.replace(/\\/+$/,"");
+ if(!base)throw new Error("ابتدا نشانی Worker را در تنظیمات ثبت کنید.");
+ const response=await fetch(base+"/api/live/oidc/config");
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok||!data.ok)throw new Error(data.error||"تنظیمات ورود امن در سرور موجود نیست.");
+ return data;
+}
+async function beginOidcLogin(){
+ const config=await getOidcPkceConfig();
+ const random=new Uint8Array(32);crypto.getRandomValues(random);
+ const verifier=base64Url(random);
+ const stateBytes=new Uint8Array(24);crypto.getRandomValues(stateBytes);
+ const state=base64Url(stateBytes);
+ const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(verifier));
+ const challenge=base64Url(new Uint8Array(digest));
+ sessionStorage.setItem("mehr-oidc-verifier",verifier);
+ sessionStorage.setItem("mehr-oidc-state",state);
+ const authorize=new URL(config.authorization_url);
+ authorize.searchParams.set("response_type","code");
+ authorize.searchParams.set("client_id",config.client_id);
+ authorize.searchParams.set("redirect_uri",config.redirect_uri);
+ authorize.searchParams.set("scope",config.scopes);
+ authorize.searchParams.set("state",state);
+ authorize.searchParams.set("code_challenge",challenge);
+ authorize.searchParams.set("code_challenge_method","S256");
+ location.assign(authorize.toString());
+}
+async function completeOidcCallback(){
+ const params=new URLSearchParams(location.search);
+ const code=params.get("code");
+ if(!code)return;
+ const status=$("#liveAuthStatus");
+ try{
+  const expectedState=sessionStorage.getItem("mehr-oidc-state");
+  const verifier=sessionStorage.getItem("mehr-oidc-verifier");
+  if(!expectedState||!verifier||params.get("state")!==expectedState)throw new Error("اعتبارسنجی state ناموفق بود.");
+  const config=await getOidcPkceConfig();
+  const form=new URLSearchParams({
+   grant_type:"authorization_code",code,redirect_uri:config.redirect_uri,
+   client_id:config.client_id,code_verifier:verifier
+  });
+  const tokenResponse=await fetch(config.token_url,{
+   method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:form.toString()
+  });
+  const tokens=await tokenResponse.json().catch(()=>({}));
+  if(!tokenResponse.ok||typeof tokens.access_token!=="string"||!tokens.access_token)throw new Error(tokens.error_description||tokens.error||"تبادل کد ورود ناموفق بود.");
+  liveAccessToken=tokens.access_token;
+  status.textContent="ورود موفق؛ توکن فقط در حافظه همین صفحه نگهداری می‌شود.";
+  sessionStorage.removeItem("mehr-oidc-verifier");
+  sessionStorage.removeItem("mehr-oidc-state");
+ }catch(error){
+  status.textContent="ورود ناموفق: "+error.message;
+ }finally{
+  history.replaceState(null,"",location.pathname+location.hash);
+ }
+}
+$("#liveOidcLogin").addEventListener("click",async()=>{
+ const button=$("#liveOidcLogin");button.disabled=true;
+ try{await beginOidcLogin();}catch(error){$("#liveAuthStatus").textContent="ورود امن فعال نیست: "+error.message;button.disabled=false;}
+});
+void completeOidcCallback();
 function waitForPeerConnected(pc,timeoutMs){
  if(pc.connectionState==="connected")return Promise.resolve();
  return new Promise((resolve,reject)=>{
