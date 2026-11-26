@@ -280,7 +280,7 @@ test("MCP transport enforces response identity, request timeout and negotiated s
     },
   };
   await assert.rejects(
-    vm.runInNewContext(source + '\\n mcpRpc("tools/list",{});', timeoutContext),
+    vm.runInNewContext(source + '\n mcpRpc("tools/list",{});', timeoutContext),
     /timed out after 20 seconds/,
   );
 
@@ -294,7 +294,7 @@ test("MCP transport enforces response identity, request timeout and negotiated s
     }),
   };
   await assert.rejects(
-    vm.runInNewContext(source + '\\n mcpRpc("tools/list",{});', mismatchContext),
+    vm.runInNewContext(source + '\n mcpRpc("tools/list",{});', mismatchContext),
     /mismatched JSON-RPC response/,
   );
 });
