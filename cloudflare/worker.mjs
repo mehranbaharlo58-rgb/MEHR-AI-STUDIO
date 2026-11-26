@@ -669,15 +669,21 @@ export class LiveSessionRegistry {
       if (!policy) return new Response(null, { status: 400 });
       const now = Math.floor(Date.now() / 1000);
       const key = "rate:" + body.action;
-      const stored = await this.state.storage.get(key);
-      const window = stored && now - stored.startedAt < policy.windowSeconds
-        ? stored : { startedAt: now, count: 0 };
-      if (window.count >= policy.limit) {
-        return Response.json({ ok: false, retryAfter: Math.max(1, policy.windowSeconds - (now - window.startedAt)) }, { status: 429 });
-      }
-      window.count += 1;
-      await this.state.storage.put(key, window);
-      return Response.json({ ok: true, remaining: policy.limit - window.count });
+      const consume = async (storage) => {
+        const stored = await storage.get(key);
+        const window = stored && now - stored.startedAt < policy.windowSeconds
+          ? stored : { startedAt: now, count: 0 };
+        if (window.count >= policy.limit) {
+          return { status: 429, body: { ok: false, retryAfter: Math.max(1, policy.windowSeconds - (now - window.startedAt)) } };
+        }
+        window.count += 1;
+        await storage.put(key, window);
+        return { status: 200, body: { ok: true, remaining: policy.limit - window.count } };
+      };
+      const result = typeof this.state.storage.transaction === "function"
+        ? await this.state.storage.transaction((transaction) => consume(transaction))
+        : await consume(this.state.storage);
+      return Response.json(result.body, { status: result.status });
     }
     const existing = await this.state.storage.get("session");
     if (path === "/create") {
