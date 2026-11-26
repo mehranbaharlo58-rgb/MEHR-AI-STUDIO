@@ -104,9 +104,9 @@ The WebSocket adapter is documented by Cloudflare as video egress to JPEG at app
 ### Video adapter configuration and operational constraints
 
 - The SFU App Secret remains server-side. The ingest endpoint token is random, session-scoped, time-limited, and never returned to the browser.
-- The viewer token is separately random and only returned to the authenticated session owner as a WSS URL.
-- The Durable Object accepts only WebSocket roles with the matching stored token; viewers are receive-only.
+- Viewer authorization uses a random 256-bit ticket with a 30-second lifetime, delivered in the WebSocket subprotocol rather than the URL. The Durable Object consumes it transactionally and rejects replay; the viewer URL contains no bearer token.
+- The Durable Object accepts ingest only with the server-side session token and viewer only with the single-use ticket; viewers are receive-only.
 - JPEG frames are capped at 1 MiB, checked for JPEG start/end markers, and relayed no faster than one frame per 700 ms by the application gate. Cloudflare's adapter currently defaults to about 1 FPS.
 - The browser ignores frames while hidden or when the Realtime data channel is congested.
 - Closing the application session closes the adapter first; failures prevent the application session record from being deleted.
-- Provider adapter creation, reconnect behavior, actual packet delivery, viewer authorization in the deployed Worker, and image interpretation remain unverified without a configured test environment.
+- Provider adapter creation, reconnect behavior, actual packet delivery, deployed ticket authorization, and image interpretation remain unverified without a configured test environment.
