@@ -368,9 +368,15 @@ export default {
         if (!auth.ok) return response({ ok: false, error: "session_not_found" }, 404, cors);
         const owned = await auth.json();
         if (owned.mids?.length) {
-          await sfuRequest(env, "/sessions/" + encodeURIComponent(owned.providerSessionId) + "/tracks/close", {
+          const closed = await sfuRequest(env, "/sessions/" + encodeURIComponent(owned.providerSessionId) + "/tracks/close", {
             method: "PUT", body: JSON.stringify({ tracks: owned.mids.map((mid) => ({ mid })), force: true }),
           });
+          const closeResults = Array.isArray(closed.tracks) ? closed.tracks : [];
+          const unresolved = owned.mids.filter((mid) => {
+            const item = closeResults.find((entry) => entry && String(entry.mid) === String(mid));
+            return !item || (item.errorCode && item.errorCode !== "close_track_error");
+          });
+          if (unresolved.length) throw new Error("sfu_track_close_incomplete");
         }
         await sessionRegistry(env, appSessionId, "delete", {
           subject: principal.subject, tenantId: principal.tenantId,
