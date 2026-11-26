@@ -1,14 +1,14 @@
 # Realtime SFU Integration Gate
 
-Status: blocked on production identity and SFU application provisioning
+Status: server-side session API scaffold implemented; browser integration and deployment remain blocked
 Branch: `feat/mehr-live-session-contracts`
 Last reviewed: 2026-11-26
 
 ## Verified repository state
 
-- `cloudflare/worker.mjs` exposes only `GET /api/health` and `POST /api/generate`.
+- `cloudflare/worker.mjs` retains text API routes and now adds OIDC-protected live capability, session-create, track-publish, and session-close routes.
 - Both routes currently use one static `MEHR_API_TOKEN`. The browser stores this token in `sessionStorage` and sends it as a bearer credential.
-- The current Worker does not validate per-user OIDC access tokens, derive a tenant from a verified identity, or maintain session ownership.
+- The Worker now verifies RS256 OIDC access tokens against a configured HTTPS JWKS endpoint and binds opaque application session IDs to verified subject and tenant using a Durable Object.
 - The Live page currently obtains local camera/microphone permission and previews the camera. Its own status text confirms that no media is sent to a network endpoint.
 - The Python OIDC verifier and authenticated MCP server factory exist, but the repository documentation says they do not yet expose a production HTTP listener.
 - `wrangler.jsonc` does not contain an SFU App ID. No SFU App Secret is present in the repository (and none should be committed).
@@ -77,7 +77,7 @@ Important protocol constraints:
 - [ ] Add only allowlisted UI actions with visible per-action approval.
 - [ ] Keep shell execution and unrestricted remote control out of scope.
 
-## Acceptance evidence required before calling this live
+## Known implementation gaps\n\n- JWKS is currently fetched for each authenticated request; add a bounded rotation-aware cache.\n- No real OIDC issuer or SFU app has been configured.\n- No browser OIDC PKCE flow, PeerConnection client, remote playback, or AI speech adapter exists yet.\n- The current close endpoint force-closes recorded media tracks but does not claim a provider-side session DELETE.\n- Session create can leave an orphaned SFU session if Durable Object persistence fails; compensating cleanup is required.\n- The dashboard still uses its legacy owner-token flow for text generation and is not yet wired to these OIDC endpoints.\n\n## Acceptance evidence required before calling this live
 
 - Automated security and contract tests pass.
 - Two independent browser clients exchange real audio/video through the SFU.
