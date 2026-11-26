@@ -298,3 +298,88 @@ test("live session registry rejects expired sessions", async () => {
   }));
   assert.equal(result.status, 404);
 });
+
+
+test("live session creation enforces explicit camera consent", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).endsWith("/jwks-live-consent.json")) {
+      return new Response(JSON.stringify({ keys: [jwk] }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+    assert.fail("SFU must not be contacted for invalid consent");
+  };
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/sessions", {
+      method: "POST",
+      headers: { ...origin, Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "voice", consent: { microphone: true } }),
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks-live-consent.json",
+      OIDC_AUDIENCE: "mehr-api",
+      CLOUDFLARE_SFU_APP_ID: "test-app",
+      CLOUDFLARE_SFU_APP_SECRET: "test-secret",
+      LIVE_SESSIONS: { idFromName: () => "session-id", get: () => ({ fetch: async () => new Response(null, { status: 201 }) }) },
+    });
+    assert.equal(response.status, 422);
+    assert.equal((await response.json()).error, "invalid_consent_or_mode");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("creates an opaque app session after OIDC validation and durable ownership write", async () => {
+  const { token, jwk } = await makeOidcToken();
+  const originalFetch = globalThis.fetch;
+  let sfuCalls = 0;
+  let registryPath = "";
+  globalThis.fetch = async (url, init) => {
+    if (String(url).endsWith("/jwks-live-create.json")) {
+      return new Response(JSON.stringify({ keys: [jwk] }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+    if (String(url) === "https://rtc.live.cloudflare.com/v1/apps/test-app/sessions/new") {
+      sfuCalls += 1;
+      assert.equal(init.redirect, "manual");
+      return new Response(JSON.stringify({ sessionId: "internal-sfu-session-id" }), {
+        status: 200, headers: { "Content-Type": "application/json" },
+      });
+    }
+    assert.fail("Unexpected outbound request");
+  };
+  try {
+    const response = await worker.fetch(new Request("https://worker.test/api/live/sessions", {
+      method: "POST",
+      headers: { ...origin, Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "voice", consent: { microphone: true, camera: false } }),
+    }), {
+      ...env,
+      OIDC_ISSUER_URL: "https://issuer.example.test",
+      OIDC_JWKS_URL: "https://issuer.example.test/jwks-live-create.json",
+      OIDC_AUDIENCE: "mehr-api",
+      CLOUDFLARE_SFU_APP_ID: "test-app",
+      CLOUDFLARE_SFU_APP_SECRET: "test-secret",
+      LIVE_SESSIONS: {
+        idFromName: (name) => name,
+        get: () => ({ fetch: async (_url, init) => {
+          registryPath = new URL(_url).pathname;
+          const stored = JSON.parse(init.body);
+          assert.equal(stored.subject, "user-123");
+          assert.equal(stored.tenantId, "tenant-123");
+          assert.equal(stored.providerSessionId, "internal-sfu-session-id");
+          return new Response(null, { status: 201 });
+        }}),
+      },
+    });
+    const body = await response.json();
+    assert.equal(response.status, 201);
+    assert.equal(sfuCalls, 1);
+    assert.equal(registryPath, "/create");
+    assert.match(body.session.id, /^[0-9a-f-]{36}$/i);
+    assert.equal(JSON.stringify(body).includes("internal-sfu-session-id"), false);
+    assert.equal(body.session.consent.camera, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
