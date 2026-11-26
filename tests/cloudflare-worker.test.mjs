@@ -333,12 +333,18 @@ test("creates a session-owned Cloudflare JPEG egress adapter only for a publishe
           if (path === "/prepare-video") {
             const body = JSON.parse(init.body);
             assert.match(body.ingestToken, /^[a-f0-9]{64}$/);
-            assert.match(body.viewerToken, /^[a-f0-9]{64}$/);
+            assert.equal("viewerToken" in body, false);
             return new Response(null, { status: 201 });
           }
           if (path === "/complete-video") {
             assert.equal(JSON.parse(init.body).adapterId, "adapter-123");
             return new Response(null, { status: 200 });
+          }
+          if (path === "/issue-viewer-ticket") {
+            const body = JSON.parse(init.body);
+            assert.match(body.ticket, /^[a-f0-9]{64}$/);
+            assert.ok(body.ticketExpiresAt > Math.floor(Date.now() / 1000));
+            return new Response(null, { status: 201 });
           }
           assert.fail("Unexpected registry operation: " + path);
         }}),
@@ -349,6 +355,9 @@ test("creates a session-owned Cloudflare JPEG egress adapter only for a publishe
     assert.equal(body.adapter_active, true);
     assert.equal(body.frame_format, "jpeg");
     assert.match(body.viewer_url, /^wss:\/\/worker\.test\/api\/live\/media\//);
+    assert.match(body.viewer_ticket, /^[a-f0-9]{64}$/);
+    assert.equal(body.viewer_url.includes("token="), false);
+    assert.equal(registryCalls.includes("/issue-viewer-ticket"), true);
     assert.equal(adapterRequest.tracks[0].location, "remote");
     assert.equal(adapterRequest.tracks[0].sessionId, "provider-session");
     assert.equal(adapterRequest.tracks[0].trackName, "camera");
@@ -408,12 +417,18 @@ test("does not create a Cloudflare adapter when the session mutation lock is bus
           if (path === "/prepare-video") {
             const body = JSON.parse(init.body);
             assert.match(body.ingestToken, /^[a-f0-9]{64}$/);
-            assert.match(body.viewerToken, /^[a-f0-9]{64}$/);
+            assert.equal("viewerToken" in body, false);
             return new Response(null, { status: 201 });
           }
           if (path === "/complete-video") {
             assert.equal(JSON.parse(init.body).adapterId, "adapter-123");
             return new Response(null, { status: 200 });
+          }
+          if (path === "/issue-viewer-ticket") {
+            const body = JSON.parse(init.body);
+            assert.match(body.ticket, /^[a-f0-9]{64}$/);
+            assert.ok(body.ticketExpiresAt > Math.floor(Date.now() / 1000));
+            return new Response(null, { status: 201 });
           }
           assert.fail("Unexpected registry operation: " + path);
         }}),
