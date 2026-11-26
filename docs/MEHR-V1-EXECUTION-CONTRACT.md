@@ -22,8 +22,8 @@ Version 1 is the core Agent Stack product: a polished bilingual workspace, a cen
 | 12 | Escape catalogue content in UI | Done: safe text renderer + regression test |
 | 13 | Validate inline UI JavaScript | Existing Node VM syntax test |
 | 14 | Validate 100 unique catalogue IDs | Done: new UI regression test |
-| 15 | Wire UI task composer to authenticated orchestrator API | Pending |
-| 16 | Add provider credentials UI without exposing secrets | Pending |
+| 15 | Wire UI task composer to authenticated orchestrator API | Done at code level: browser MCP client initializes authenticated sessions, reads tenant registry, seeds empty registry and dispatches tasks; live IdP test pending |
+| 16 | Add provider credentials UI without exposing secrets | Pending: provider keys remain server-side; secure server secret provisioning documented, no browser key form |
 | 17 | Add provider-specific adapters and live smoke tests | Partial: OpenAI-compatible adapter exists; live provider proof pending |
 | 18 | Finish real-time audio end-to-end verification | Partial: browser/Worker path exists; provider/device test pending |
 | 19 | Verify camera vision path end-to-end | Partial: sampled image and SFU bridge code exists; deployed provider/device test pending |
@@ -44,6 +44,21 @@ The 100 records are curated discovery candidates. They are not 100 live integrat
 - Live voice and visual input are verified with a real configured provider on supported devices.
 - Production deployment remains gated on owner approval and external provider credentials.
 
-## Current limitation
+## Current implementation boundary
 
-The new Agent workspace is a real catalogue browser, not yet a live management console. Its UI does not yet call the Python registry/orchestration service. The current GitHub Pages site is static; it cannot securely hold provider keys or directly access the local MCP server. The next engineering gate is an authenticated browser-facing API contract between the static UI and the server-side orchestrator.
+The Agent workspace can now connect directly to the opt-in authenticated Python
+MCP service over Streamable HTTP. It can initialize an authenticated session,
+read the caller's tenant-scoped registry, seed the 100-entry catalogue into an
+empty tenant registry, and dispatch a task to configured adapters. It also
+keeps the access token in page memory only and clears it on disconnect/reload.
+
+This is a code-level integration, not a live deployment. It requires a running
+HTTPS MCP service, a correctly configured OIDC issuer/audience/scope/tenant
+claim, an exact CORS origin allowlist when cross-origin, and a short-lived token
+valid for this MCP resource. The separate Cloudflare Worker login is not
+automatically valid for the Python MCP audience. Provider keys remain on the
+server; no API-key entry field is exposed to the browser.
+
+Remaining release blockers are live identity-provider validation, server-side
+provider credential provisioning, successful provider smoke tests, real
+Android/desktop voice and camera verification, and release security/cost/QA.
