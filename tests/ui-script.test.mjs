@@ -329,7 +329,7 @@ test("MCP disconnect cancellation aborts in-flight requests and releases control
       }, { once: true });
     }),
   };
-  const pending = vm.runInNewContext(source + '\\n mcpRpc("tools/call",{});', context);
+  const pending = vm.runInNewContext(source + '\n mcpRpc("tools/call",{});', context);
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(controllers.size, 1);
   for (const controller of controllers) controller.abort();
