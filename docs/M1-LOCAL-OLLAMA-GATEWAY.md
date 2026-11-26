@@ -73,6 +73,18 @@ curl -sS http://127.0.0.1:8080/v1/embeddings \
   -d '{"model":"nomic-embed-text","input":"MEHR AI local embeddings"}'
 ```
 
+## Opt-in live integration test
+
+The repository includes `tests/test_ollama_live.py`. It is skipped unless a model name is explicitly supplied. With Ollama running and the model already downloaded, run:
+
+```bash
+export MEHR_OLLAMA_URL='http://127.0.0.1:11434'
+export MEHR_OLLAMA_TEST_MODEL='qwen2.5:3b'
+pytest -q -m integration tests/test_ollama_live.py
+```
+
+This test calls the actual Ollama daemon for health, model discovery, non-streaming chat, and streaming chat. A passing run is the evidence required before marking live chat/stream as TESTED. CI without a local Ollama daemon cannot provide this evidence and will skip the opt-in test.
+
 ## Tests
 
 Run the repository suite:
