@@ -8,6 +8,7 @@ on:
       - "ui/**"
       - "wrangler.jsonc"
       - ".github/workflows/cloudflare-worker.yml"
+      - ".github/workflows/deploy-cloudflare-worker.yml"
   pull_request:
     paths:
       - "cloudflare/**"
@@ -16,6 +17,7 @@ on:
       - "ui/**"
       - "wrangler.jsonc"
       - ".github/workflows/cloudflare-worker.yml"
+      - ".github/workflows/deploy-cloudflare-worker.yml"
   workflow_dispatch:
 
 permissions:
@@ -29,6 +31,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Validate GitHub Actions workflow syntax
+        run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+          "$(go env GOPATH)/bin/actionlint" .github/workflows/*.yml
       - name: Validate Wrangler configuration and build Worker
         run: npx --yes wrangler@4.168.0 deploy --dry-run --config wrangler.jsonc
       - name: Run Worker and UI regression tests
