@@ -430,8 +430,8 @@ async function readMcpResponse(response){
 async function mcpRpc(method,params={},notification=false){
  if(!mcpAccessToken)throw new Error("Connect with a short-lived OIDC access token first.");
  const id=notification?undefined:++mcpRequestId;
- const headers={"Authorization":"Bearer "+mcpAccessToken,"Content-Type":"application/json","Accept":"application/json, text/event-stream","Mcp-Protocol-Version":"2025-03-26"};
- if(mcpSessionId)headers["Mcp-Session-Id"]=mcpSessionId;
+ const headers={"Authorization":"Bearer "+mcpAccessToken,"Content-Type":"application/json","Accept":"application/json, text/event-stream"};
+ if(mcpSessionId){headers["Mcp-Session-Id"]=mcpSessionId;headers["Mcp-Protocol-Version"]="2025-03-26";}
  const response=await fetch(mcpEndpoint(),{method:"POST",headers,body:JSON.stringify({jsonrpc:"2.0",...(notification?{}:{id}),method,params})});
  if(!response.ok&&!(notification&&response.status===202))throw new Error("MCP "+method+" failed (HTTP "+response.status+"). Check token, CORS and server logs.");
  const session=response.headers.get("Mcp-Session-Id");
