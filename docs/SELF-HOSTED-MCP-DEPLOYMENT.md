@@ -14,7 +14,8 @@ Linux host or container platform; adding the files does not deploy the service.
    - `MEHR_OIDC_AUDIENCE`
    - `MEHR_MCP_RESOURCE_URL`
 4. Set `MEHR_ALLOWED_ORIGINS` to the exact HTTPS dashboard origin if the
-   browser and MCP service use different origins.
+   browser and MCP service use different origins. The service rejects HTTP,
+   wildcard, credential-bearing, path-bearing, query, or fragment entries.
 5. Configure provider credentials server-side using `AI_BASE_URL`,
    `AI_API_KEY`, `AI_MODEL`, or the supported provider-specific secret
    environment. Never put provider keys in the browser or catalogue.
