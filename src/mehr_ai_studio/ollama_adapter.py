@@ -91,17 +91,16 @@ class OllamaAdapter:
         temperature: float = 0.2,
     ) -> AsyncIterator[str]:
         try:
-            async with self._client() as client:
-                async with client.stream(
-                    "POST",
-                    "/api/chat",
-                    json={
-                        "model": model,
-                        "messages": list(messages),
-                        "stream": True,
-                        "options": {"temperature": temperature},
-                    },
-                ) as response:
+            async with self._client() as client, client.stream(
+                "POST",
+                "/api/chat",
+                json={
+                    "model": model,
+                    "messages": list(messages),
+                    "stream": True,
+                    "options": {"temperature": temperature},
+                },
+            ) as response:
                     response.raise_for_status()
                     async for line in response.aiter_lines():
                         if not line:
