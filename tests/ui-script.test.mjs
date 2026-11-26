@@ -55,3 +55,10 @@ test("dashboard completes an SFU offer-answer renegotiation before marking the s
   assert.ok(appScript.includes('method:"PUT"'));
   assert.ok(appScript.includes('await waitForIceGathering(pc)'));
 });
+
+
+test("dashboard inspects sanitized SFU track state after WebRTC connects", () => {
+  assert.ok(appScript.includes('liveApi("/api/live/sessions/"+sessionId)'));
+  assert.ok(appScript.includes('inspection.tracks.filter(track=>track.status==="active").length'));
+  assert.ok(appScript.includes("این وضعیت تضمین‌کننده رسیدن بسته‌های رسانه نیست"));
+});
