@@ -23,7 +23,8 @@ mehr-ai-gateway = "mehr_ai_studio.gateway:main"
 where = ["src"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]\nmarkers = ["integration: requires a running local Ollama daemon and a downloaded model"]
+testpaths = ["tests"]
+markers = ["integration: requires a running local Ollama daemon and a downloaded model"]
 
 [tool.setuptools.package-data]
 mehr_ai_studio = ["data/*.json"]
