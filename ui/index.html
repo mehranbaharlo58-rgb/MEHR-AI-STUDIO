@@ -602,7 +602,8 @@ async function startSfuVideoBridge(active){
    if(active.sfuCancel||liveConnection!==active||!liveState.camera)throw new Error("ارسال دوربین پیش از تکمیل لغو شد.");
    const adapter=await liveApi("/api/live/sessions/"+encodeURIComponent(sessionId)+"/video-adapter",{method:"POST",body:"{}"});
    if(typeof adapter.viewer_url!=="string"||!adapter.viewer_url.startsWith("wss://"))throw new Error("نشانی امن دریافت فریم معتبر نیست.");
-   socket=new WebSocket(adapter.viewer_url);socket.binaryType="arraybuffer";
+   if(typeof adapter.viewer_ticket!=="string"||! /^[a-f0-9]{64}$/.test(adapter.viewer_ticket))throw new Error("مجوز یک‌بارمصرف دریافت تصویر معتبر نیست.");
+   socket=new WebSocket(adapter.viewer_url,["mehr.viewer","mehr-ticket."+adapter.viewer_ticket]);socket.binaryType="arraybuffer";
    await new Promise((resolve,reject)=>{
     const timeout=setTimeout(()=>reject(new Error("مهلت اتصال دریافت تصویر تمام شد.")),10000);
     socket.addEventListener("open",()=>{clearTimeout(timeout);resolve();},{once:true});
