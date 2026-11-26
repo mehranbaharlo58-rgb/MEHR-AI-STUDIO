@@ -262,7 +262,7 @@ test("MCP transport enforces response identity, request timeout and negotiated s
       };
     },
   };
-  const result = await vm.runInNewContext(source + '\\n mcpRpc("tools/list",{});', context);
+  const result = await vm.runInNewContext(source + '\n mcpRpc("tools/list",{});', context);
   assert.deepEqual(JSON.parse(JSON.stringify(result)), { tools: [] });
   assert.equal(calls[0].options.headers["Mcp-Session-Id"], "session-123");
   assert.equal(calls[0].options.headers["Mcp-Protocol-Version"], "2025-03-26");
@@ -285,7 +285,7 @@ test("MCP disconnect attempts authenticated Streamable HTTP session termination"
     },
   };
   const closed = await vm.runInNewContext(
-    source + '\\n closeMcpSession("https://studio.example.test/mcp","token","session","2025-03-26");',
+    source + '\n closeMcpSession("https://studio.example.test/mcp","token","session","2025-03-26");',
     context,
   );
   assert.equal(closed, true);
