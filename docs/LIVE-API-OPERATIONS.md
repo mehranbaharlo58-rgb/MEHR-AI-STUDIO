@@ -75,3 +75,26 @@ The Durable Object uses atomic storage transactions for quota counters. SFU publ
 8. Deploy only after the above gates pass and the owner explicitly approves deployment.
 
 No production deployment, real provider credential, or live end-to-end device test is claimed by this document.
+
+## Browser media lifecycle hardening
+
+The Live Room browser now:
+- Starts or stops camera sampling independently of the active voice connection. Stopping the camera no longer tears down an otherwise healthy audio call.
+- Starts sampling when the camera is enabled either before connecting or during an established voice call.
+- Sends bounded JPEG still frames at a three-second interval, capped at 640 pixels on the longest edge, with low image detail.
+- Pauses frame transmission while the page is hidden and skips frames when the Realtime data channel is congested.
+- Prevents duplicate concurrent Realtime calls, handles remote-audio autoplay rejection with a visible status message, and clears the session/UI state after terminal WebRTC failure.
+- Stops local media tracks and the sampling timer when the user ends the session or leaves the Live Room.
+
+These are browser-side lifecycle safeguards, not proof of live provider media quality. The current Realtime vision path remains sampled still images; it is not a continuous video stream.
+
+## Continuous video path — not yet implemented
+
+The next video milestone is a separate media pipeline:
+1. Browser publishes a consented camera MediaStreamTrack to a Cloudflare Realtime SFU session.
+2. An authenticated server-side media adapter receives the SFU video publication as JPEG frames.
+3. A server-side frame gate enforces per-session authorization, sampling rate, resolution, byte limits, and backpressure.
+4. The gateway forwards approved frames to the active vision conversation as image inputs, correlating them with the same user/session and audio conversation.
+5. Session shutdown revokes the adapter, closes SFU tracks, stops camera capture, and records final usage.
+
+Cloudflare documents WebRTC media forwarding and a WebSocket adapter for video egress as JPEG frames. The MEHR SFU API foundation exists, but this browser publisher → JPEG adapter → vision-session bridge is not yet wired or live-tested. Do not describe the product as continuous-video AI until that pipeline passes end-to-end tests.
