@@ -500,8 +500,7 @@ test("live session registry stores camera track identity and gates video relay t
   }))).status, 200);
   const prepared = await registry.fetch(new Request("https://session.internal/prepare-video", {
     method: "POST", body: JSON.stringify({
-      subject: "owner", tenantId: "tenant", ingestToken: "a".repeat(64),
-      viewerToken: "b".repeat(64), expiresAt,
+      subject: "owner", tenantId: "tenant", ingestToken: "a".repeat(64), expiresAt,
     }),
   }));
   assert.equal(prepared.status, 201);
@@ -511,11 +510,21 @@ test("live session registry stores camera track identity and gates video relay t
   const data = await authorized.json();
   assert.equal(data.tracks.find((track) => track.trackName === "camera").mid, "1");
   assert.equal(data.videoRelay.ingestToken, "a".repeat(64));
-  assert.equal(data.videoRelay.viewerToken, "b".repeat(64));
+  assert.equal("viewerToken" in data.videoRelay, false);
+  assert.equal((await registry.fetch(new Request("https://session.internal/complete-video", {
+    method: "POST", body: JSON.stringify({ subject: "owner", tenantId: "tenant", adapterId: "adapter-1" }),
+  }))).status, 200);
+  const ticket = "c".repeat(64);
+  assert.equal((await registry.fetch(new Request("https://session.internal/issue-viewer-ticket", {
+    method: "POST", body: JSON.stringify({
+      subject: "owner", tenantId: "tenant", ticket,
+      ticketExpiresAt: Math.floor(Date.now() / 1000) + 20,
+    }),
+  }))).status, 201);
+  assert.equal(values.get("session").viewerTicket.token, ticket);
   assert.equal((await registry.fetch(new Request("https://session.internal/prepare-video", {
     method: "POST", body: JSON.stringify({
-      subject: "owner", tenantId: "tenant", ingestToken: "c".repeat(64),
-      viewerToken: "d".repeat(64), expiresAt,
+      subject: "owner", tenantId: "tenant", ingestToken: "d".repeat(64), expiresAt,
     }),
   }))).status, 409);
 });
