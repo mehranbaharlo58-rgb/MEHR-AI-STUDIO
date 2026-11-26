@@ -226,6 +226,71 @@ export default {
 
 
 
+
+    // Direct one-to-one Realtime WebRTC: audio travels directly between browser and model.
+    // Camera frames, when consented, are sampled as still images over the data channel.
+    if (url.pathname === "/api/live/realtime/calls" && request.method === "POST") {
+      const principal = await verifyOidcAccessToken(request, env);
+      if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
+      if (typeof env.OPENAI_API_KEY !== "string" || !env.OPENAI_API_KEY.trim()) {
+        return response({ ok: false, error: "realtime_provider_not_configured" }, 503, cors);
+      }
+      const parsed = await readJsonLimited(request, MAX_LIVE_BODY_BYTES);
+      if (parsed.error) return response({ ok: false, error: parsed.error }, parsed.error === "request_too_large" ? 413 : 400, cors);
+      const sdp = parsed.value?.sessionDescription;
+      const consent = parsed.value?.consent;
+      if (typeof sdp !== "string" || sdp.length < 20 || sdp.length > 100000 ||
+          !/^v=0/m.test(sdp) || !/^m=audio\\s/m.test(sdp) || /^m=video\\s/m.test(sdp) ||
+          !consent || consent.microphone !== true || typeof consent.camera !== "boolean") {
+        return response({ ok: false, error: "invalid_realtime_offer_or_consent" }, 422, cors);
+      }
+      try {
+        const identity = new TextEncoder().encode(principal.tenantId + ":" + principal.subject);
+        const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", identity));
+        const safetyIdentifier = Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
+        const session = {
+          type: "realtime",
+          model: env.OPENAI_REALTIME_MODEL || "gpt-realtime-2.1",
+          instructions: "You are MEHR, a precise bilingual voice assistant. Reply in the user's language. When image frames are supplied, describe only what is visible and distinguish observations from assumptions.",
+          audio: {
+            input: { turn_detection: { type: "semantic_vad" } },
+            output: { voice: env.OPENAI_REALTIME_VOICE || "marin" },
+          },
+        };
+        const form = new FormData();
+        form.set("sdp", sdp);
+        form.set("session", JSON.stringify(session));
+        const upstream = await fetch("https://api.openai.com/v1/realtime/calls", {
+          method: "POST",
+          redirect: "manual",
+          headers: {
+            authorization: "Bearer " + env.OPENAI_API_KEY,
+            "OpenAI-Safety-Identifier": safetyIdentifier,
+          },
+          body: form,
+          signal: AbortSignal.timeout(20000),
+        });
+        if (!upstream.ok) {
+          return response({ ok: false, error: "realtime_provider_request_failed", provider_status: upstream.status }, 502, cors);
+        }
+        const contentType = (upstream.headers.get("content-type") || "").toLowerCase().split(";")[0].trim();
+        if (contentType !== "application/sdp") {
+          return response({ ok: false, error: "realtime_provider_response_invalid" }, 502, cors);
+        }
+        const answer = await readLimitedText(upstream, 100000);
+        if (answer === null || answer.length < 20 || !/^v=0/m.test(answer)) {
+          return response({ ok: false, error: "realtime_provider_response_invalid" }, 502, cors);
+        }
+        return new Response(answer, {
+          status: 200,
+          headers: { ...cors, "content-type": "application/sdp", "cache-control": "no-store" },
+        });
+      } catch (error) {
+        const timedOut = error?.name === "TimeoutError" || error?.name === "AbortError";
+        return response({ ok: false, error: timedOut ? "realtime_provider_timeout" : "realtime_provider_unavailable" }, 502, cors);
+      }
+    }
+
     if (url.pathname === "/api/live/sessions" && request.method === "POST") {
       const principal = await verifyOidcAccessToken(request, env);
       if (!principal) return response({ ok: false, error: "unauthorized" }, 401, cors);
