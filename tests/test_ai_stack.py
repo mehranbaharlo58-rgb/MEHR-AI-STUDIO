@@ -161,3 +161,65 @@ def test_matcher_understands_persian_task_descriptions():
     research_result = registry.match(MatchRequest(task="تحقیق و پژوهش علمی"))
     assert coding_result[0].model_id == "coding.agent"
     assert research_result[0].model_id == "research.agent"
+
+
+
+def test_sequential_fallback_stops_after_first_success():
+    async def run():
+        registry = AIRegistry([
+            entry(id="primary", name="Primary", provider="ProviderA"),
+            entry(id="backup", name="Backup", provider="ProviderB"),
+            entry(id="unused", name="Unused", provider="ProviderC"),
+        ])
+        calls = []
+
+        async def fail_adapter(model, task):
+            calls.append(model.id)
+            raise RuntimeError("provider unavailable")
+
+        async def success_adapter(model, task):
+            calls.append(model.id)
+            return {"text": task, "provider": model.provider}
+
+        manager = AIExecutionManager(
+            registry,
+            {"primary": fail_adapter, "backup": success_adapter, "unused": success_adapter},
+        )
+        result = await manager.execute_with_fallback(
+            ["primary", "backup", "unused"], "hello"
+        )
+        assert result["ok"] is True
+        assert result["selected_model_id"] == "backup"
+        assert result["attempted_model_ids"] == ["primary", "backup"]
+        assert result["fallback_used"] is True
+        assert [item["ok"] for item in result["results"]] == [False, True]
+        assert calls == ["primary", "backup"]
+
+    asyncio.run(run())
+
+
+def test_sequential_fallback_reports_all_failures_without_hiding_error_categories():
+    async def run():
+        registry = AIRegistry([entry(id="first", name="First"), entry(id="second", name="Second")])
+
+        async def unavailable(model, task):
+            raise TimeoutError("provider timeout")
+
+        manager = AIExecutionManager(
+            registry, {"first": unavailable, "second": unavailable}
+        )
+        result = await manager.execute_with_fallback(["first", "second"], "hello")
+        assert result["ok"] is False
+        assert result["error"] == "all_candidates_failed"
+        assert result["selected_model_id"] is None
+        assert result["attempted_model_ids"] == ["first", "second"]
+        assert result["fallback_used"] is True
+        assert [item["error"] for item in result["results"]] == ["TimeoutError", "TimeoutError"]
+
+    asyncio.run(run())
+
+
+def test_sequential_fallback_rejects_duplicate_candidates():
+    manager = AIExecutionManager(AIRegistry([entry()]), {})
+    with pytest.raises(ValueError):
+        asyncio.run(manager.execute_with_fallback(["local.llama", "local.llama"], "hello"))
