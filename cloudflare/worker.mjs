@@ -3,8 +3,10 @@ const JSON_HEADERS = {
   "cache-control": "no-store",
   "x-content-type-options": "nosniff",
 };
-const MAX_BODY_BYTES = 16 * 1024;
+const MAX_BODY_BYTES = 64 * 1024;
 const MAX_PROMPT_CHARS = 12_000;
+const MAX_CONVERSATION_MESSAGES = 20;
+const MAX_CONVERSATION_CHARS = 16_000;
 const MAX_COMPLETION_TOKENS = 600;
 const DEFAULT_MODEL = "@cf/zai-org/glm-4.7-flash";
 
@@ -72,6 +74,38 @@ async function readLimitedText(request, limit) {
   return new TextDecoder().decode(merged);
 }
 
+function normalizeMessages(body) {
+  let messages;
+  if (Array.isArray(body?.messages)) {
+    messages = body.messages;
+  } else if (typeof body?.prompt === "string") {
+    messages = [{ role: "user", content: body.prompt }];
+  } else {
+    return null;
+  }
+
+  if (messages.length === 0 || messages.length > MAX_CONVERSATION_MESSAGES) return null;
+
+  let totalChars = 0;
+  const normalized = [];
+  for (const message of messages) {
+    if (
+      !message ||
+      (message.role !== "user" && message.role !== "assistant") ||
+      typeof message.content !== "string"
+    ) return null;
+
+    const content = message.content.trim();
+    if (!content || content.length > MAX_PROMPT_CHARS) return null;
+    totalChars += content.length;
+    if (totalChars > MAX_CONVERSATION_CHARS) return null;
+    normalized.push({ role: message.role, content });
+  }
+
+  if (normalized[normalized.length - 1].role !== "user") return null;
+  return normalized;
+}
+
 function extractText(result) {
   const content = result?.choices?.[0]?.message?.content;
   if (typeof content === "string" && content.trim()) return content.trim();
@@ -129,9 +163,9 @@ export default {
       return json({ ok: false, error: "invalid_json" }, 400, cors);
     }
 
-    const prompt = body && typeof body.prompt === "string" ? body.prompt.trim() : "";
-    if (!prompt || prompt.length > MAX_PROMPT_CHARS) {
-      return json({ ok: false, error: "invalid_prompt" }, 422, cors);
+    const messages = normalizeMessages(body);
+    if (!messages) {
+      return json({ ok: false, error: "invalid_messages" }, 422, cors);
     }
 
     if (!env.AI || typeof env.AI.run !== "function") {
@@ -146,7 +180,7 @@ export default {
             role: "system",
             content: "You are MEHR AI STUDIO, a precise and helpful assistant. Reply in the user's language. Be transparent about uncertainty and never invent completed actions.",
           },
-          { role: "user", content: prompt },
+          ...messages,
         ],
         max_completion_tokens: MAX_COMPLETION_TOKENS,
         temperature: 0.35,
