@@ -236,6 +236,25 @@ body.dark .ready{background:#1d4236;color:#a7dfc4}
 html[dir=rtl] .brandcopy{letter-spacing:0}
 @media(max-width:700px){.sidebar{background:#111a2b}.content{padding-top:30px}.composer{border-radius:17px}.card{border-radius:14px}}
 
+
+.live-room{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,.8fr);gap:16px;align-items:start}
+.live-stage,.live-side{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+.live-video-wrap{position:relative;aspect-ratio:16/9;background:#17251f;border-radius:13px;overflow:hidden;display:grid;place-items:center;color:#dce8df}
+.live-video-wrap video{width:100%;height:100%;object-fit:cover}
+.live-video-placeholder{position:absolute;text-align:center;padding:20px;color:#dce8df;font-size:12px;line-height:1.8}
+.live-status{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px;margin:0 0 14px}
+.live-status i{width:8px;height:8px;border-radius:50%;background:#c69a54}
+.live-controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.live-controls button{border:1px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--text);padding:10px 13px;cursor:pointer;font-size:11px}
+.live-controls button:disabled{opacity:.45;cursor:not-allowed}
+.live-note{font-size:10px;color:var(--muted);line-height:1.8;margin:13px 0 0}
+.live-device{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);font-size:11px}
+.live-device:last-child{border-bottom:0}
+.live-device span:last-child{color:var(--muted)}
+.live-transcript{min-height:135px;border:1px solid var(--line);border-radius:12px;background:var(--surface2);padding:13px;color:var(--muted);font-size:11px;line-height:1.9}
+.live-title{font-size:19px;margin:0 0 8px;color:var(--text)}
+.live-subtitle{font-size:11px;color:var(--muted);line-height:1.8;margin:0 0 20px}
+@media(max-width:800px){.live-room{grid-template-columns:1fr}.live-stage,.live-side{padding:14px}.live-title{font-size:17px}}
 </style></head>
 <body><div class="shell">
 <aside class="sidebar" id="sidebar"><a class="brand" href="#"><span class="mark">M</span><span class="brandcopy"><b>MEHR</b><small>AI STUDIO</small></span></a>
@@ -244,7 +263,7 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
 <button class="active" data-page="home"><span class="ico">⌂</span><span data-k="home">Overview</span></button>
 <button data-page="projects"><span class="ico">▦</span><span data-k="projects">Projects</span></button>
 <button data-page="automations"><span class="ico">⌘</span><span data-k="automations">Automations</span></button>
-<button data-page="agents"><span class="ico">✳</span><span data-k="agents">AI assistants</span></button>
+<button data-page="agents"><span class="ico">✳</span><span data-k="agents">AI assistants</span></button><button data-page="live"><span class="ico">◉</span><span data-k="live">Live voice & vision</span><span class="count">NEW</span></button>
 <button data-page="files"><span class="ico">▤</span><span data-k="files">Files</span></button></nav>
 <div class="navlabel" data-k="manage">MANAGE</div><nav class="nav"><button data-page="activity"><span class="ico">◷</span><span data-k="activity">Activity</span></button><button data-page="settings"><span class="ico">⚙</span><span data-k="settings">Settings</span></button></nav>
 <div class="bottom"><div class="help"><b data-k="needHelp">Need a hand?</b><p data-k="helpText">Explore the quick guide to get started.</p><button id="guide" data-k="openGuide">Open quick guide ↗</button></div><div class="profile"><div class="avatar">M</div><div class="profilecopy"><b>Mehran</b><small data-k="owner">Workspace owner</small></div></div></div></aside>
@@ -262,6 +281,38 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
 <div class="section recent"><div><h2 data-k="recentProjects">Recent projects</h2><p data-k="recentSub">Pick up where you left off.</p></div><button class="linkbtn" data-goto="projects" data-k="allProjects">All projects ↗</button></div>
 <div class="list"><div class="row"><span class="projecticon">▤</span><div class="projectinfo"><b data-k="sampleProject">Construction reporting pilot</b><small data-k="updatedToday">Updated just now</small></div><span class="state" data-k="draft">Draft</span></div><div class="row"><span class="projecticon" style="background:#e9f3ff;color:#4385d0">▧</span><div class="projectinfo"><b data-k="sampleProject2">Project document review</b><small data-k="updatedYesterday">Updated yesterday</small></div><span class="state ready" data-k="ready">Ready</span></div></div>
 <div class="footer"><span>MEHR AI STUDIO · <span data-k="previewLabel">Early access preview</span></span><span data-k="humanReview">AI outputs should be reviewed before use.</span></div></section>
+<section class="content" id="livePanel" hidden>
+  <div class="eyebrow">MEHR LIVE · VOICE & VISION</div>
+  <h1 class="live-title">اتاق ارتباط زنده</h1>
+  <p class="live-subtitle">آزمایش میکروفون و دوربین روی همین دستگاه. در این مرحله رسانه فقط در مرورگر محلی است و هنوز به ایجنت یا سرور ارسال نمی‌شود.</p>
+  <a class="primary" href="./live-room.html" style="display:inline-flex;width:max-content;text-decoration:none;margin:12px 0">باز کردن M.B Live Room فشرده ↗</a>
+  <div class="live-room">
+    <div class="live-stage">
+      <div class="live-status"><i></i><span id="liveStatus">آماده آزمایش تجهیزات · ارتباط هوش مصنوعی متصل نیست</span></div>
+      <div class="live-video-wrap">
+        <video id="liveCameraPreview" autoplay playsinline muted hidden></video>
+        <div class="live-video-placeholder" id="liveVideoPlaceholder">◉<br>پیش‌نمایش دوربین پس از اجازه شما اینجا نمایش داده می‌شود</div>
+      </div>
+      <div class="live-controls">
+        <button type="button" id="liveMicStart">فعال‌سازی میکروفون</button>
+        <button type="button" id="liveMicToggle" disabled>قطع میکروفون</button>
+        <button type="button" id="liveCameraStart">فعال‌سازی دوربین</button>
+        <button type="button" id="liveCameraStop" disabled>توقف دوربین</button>
+        <button type="button" id="liveStopAll">پایان آزمایش</button>
+      </div>
+      <p class="live-note">هیچ صدا یا تصویری ضبط یا ارسال نمی‌شود. برای خروج، «پایان آزمایش» را بزنید.</p>
+    </div>
+    <aside class="live-side">
+      <h2 class="live-title" style="font-size:15px">وضعیت دستگاه‌ها</h2>
+      <div class="live-device"><span>میکروفون</span><span id="liveMicState">خاموش</span></div>
+      <div class="live-device"><span>دوربین</span><span id="liveCameraState">خاموش</span></div>
+      <div class="live-device"><span>اتصال به ایجنت</span><span>هنوز پیاده‌سازی نشده</span></div>
+      <h2 class="live-title" style="font-size:15px;margin-top:20px">رونوشت مکالمه</h2>
+      <div class="live-transcript" id="liveTranscript">پس از اتصال موتور گفت‌وگوی بلادرنگ، متن مکالمه و رویدادهای ایجنت در این بخش نمایش داده می‌شود.</div>
+      <p class="live-note">مرحله بعد: اتصال امن OIDC، ساخت نشست کوتاه‌عمر، WebRTC صوت و ارسال فریم‌های تصویری با رضایت کاربر.</p>
+    </aside>
+  </div>
+</section>
 <section class="content placeholder" id="settingsPanel" hidden>
 <div class="orb" style="width:58px;height:58px;font-size:25px">⚙</div>
 <div class="eyebrow">MEHR AI STUDIO</div>
@@ -281,13 +332,13 @@ html[dir=rtl] .brandcopy{letter-spacing:0}
 </main></div><div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 const words={
-en:{workspace:"Personal workspace",workspacePreview:"Workspace preview",workspaceNav:"WORKSPACE",home:"Overview",projects:"Projects",automations:"Automations",agents:"AI assistants",files:"Files",manage:"MANAGE",activity:"Activity",settings:"Settings",needHelp:"Need a hand?",helpText:"A calm place to start. You can explore at your own pace.",openGuide:"Open quick guide ↗",owner:"Workspace owner",allSystems:"Preview mode · backend not connected",goodDay:"YOUR WORKSPACE",welcome:"Make room for <em>great work.</em>",welcomeSub:"Take a breath. Tell us what you need, and we’ll help you shape the next step.",newProject:"New project",askMehr:"Ask MEHR",askSub:"Start with a rough idea. You do not need the perfect prompt — we’ll help you organize it.",promptPlaceholder:"Tell MEHR what you need...",addFile:"Add file",useTemplate:"Use a template",startTask:"Start task",quickStart:"A good place to start",quickSub:"Simple starting points. Choose one, or describe your own task above.",viewAll:"View all ↗",dailyReport:"Daily site report",dailyReportSub:"Turn site notes into a clear report.",documentReview:"Document review",documentReviewSub:"Summarize and organize project files.",actionTracker:"Action tracker",actionTrackerSub:"Extract decisions, owners and next steps.",customWorkflow:"Custom workflow",customWorkflowSub:"Build a process around your needs.",recentProjects:"Recent projects",recentSub:"Pick up where you left off.",allProjects:"All projects ↗",sampleProject:"Example · Construction reporting",updatedToday:"Sample data · not connected",draft:"Draft",sampleProject2:"Example · Project document review",updatedYesterday:"Sample data · not connected",ready:"Ready",previewLabel:"Early access preview",humanReview:"AI outputs should be reviewed before use.",backHome:"Back to overview",pageText:"This section is included in the navigation prototype. Its real data view will be connected in a later step.",empty:"Describe the task first.",captured:"Demo only: task text captured. The workflow engine is not connected yet.",filesAdded:"file(s) attached",templateAdded:"Template inserted into the prompt.",newProjectToast:"Project creation will be connected in the next integration step.",guideToast:"Quick guide will be added during onboarding."},
-fa:{workspace:"فضای کاری شخصی",workspacePreview:"پیش‌نمایش فضای کاری",workspaceNav:"فضای کاری",home:"نمای کلی",projects:"پروژه‌ها",automations:"اتوماسیون‌ها",agents:"دستیارهای هوشمند",files:"فایل‌ها",manage:"مدیریت",activity:"فعالیت‌ها",settings:"تنظیمات",needHelp:"راهنما می‌خواهید؟",helpText:"اینجا می‌توانید بدون عجله و به‌سادگی شروع کنید.",openGuide:"مشاهده راهنمای سریع ↗",owner:"مدیر فضای کاری",allSystems:"حالت پیش‌نمایش · موتور هنوز متصل نیست",goodDay:"فضای کاری شما",welcome:"برای <em>کارهای بزرگ</em> آماده‌اید؟",welcomeSub:"با خیال راحت شروع کنید؛ درخواستتان را بنویسید تا قدم بعدی را با هم مشخص کنیم.",newProject:"پروژه جدید",askMehr:"از مهر بپرسید",askSub:"لازم نیست درخواستتان از ابتدا کامل باشد؛ ایده خام را بنویسید تا آن را مرتب و روشن کنیم.",promptPlaceholder:"درخواست خود را برای مهر بنویسید...",addFile:"افزودن فایل",useTemplate:"استفاده از الگو",startTask:"شروع کار",quickStart:"از اینجا شروع کنید",quickSub:"برای شروع یکی را انتخاب کنید یا درخواست دلخواهتان را در کادر بالا بنویسید.",viewAll:"مشاهده همه ↗",dailyReport:"گزارش روزانه کارگاه",dailyReportSub:"یادداشت‌های کارگاه را به گزارش تبدیل کنید.",documentReview:"بررسی اسناد",documentReviewSub:"اسناد پروژه را خلاصه و دسته‌بندی کنید.",actionTracker:"پیگیری اقدامات",actionTrackerSub:"تصمیم‌ها، مسئولان و گام‌های بعدی را استخراج کنید.",customWorkflow:"گردش‌کار اختصاصی",customWorkflowSub:"فرایندی متناسب با نیاز خود بسازید.",recentProjects:"پروژه‌های اخیر",recentSub:"کارهای قبلی خود را ادامه دهید.",allProjects:"همه پروژه‌ها ↗",sampleProject:"نمونه · گزارش کارگاه",updatedToday:"داده نمونه · متصل نیست",draft:"پیش‌نویس",sampleProject2:"نمونه · بررسی اسناد پروژه",updatedYesterday:"داده نمونه · متصل نیست",ready:"آماده",previewLabel:"پیش‌نمایش دسترسی زودهنگام",humanReview:"خروجی هوش مصنوعی پیش از استفاده باید بررسی شود.",backHome:"بازگشت به نمای کلی",pageText:"این بخش در نمونه رابط قرار دارد و در مرحله بعد به داده‌های واقعی متصل می‌شود.",empty:"ابتدا درخواست خود را بنویسید.",captured:"فقط نمونه رابط: درخواست ثبت شد؛ موتور گردش‌کار هنوز متصل نیست.",filesAdded:"فایل پیوست شد",templateAdded:"الگو به متن درخواست اضافه شد.",newProjectToast:"ایجاد پروژه در مرحله اتصال بعدی فعال می‌شود.",guideToast:"راهنمای سریع در مرحله راه‌اندازی اضافه خواهد شد."}
+en:{workspace:"Personal workspace",workspacePreview:"Workspace preview",workspaceNav:"WORKSPACE",home:"Overview",projects:"Projects",automations:"Automations",agents:"AI assistants",live:"Live voice & vision",files:"Files",manage:"MANAGE",activity:"Activity",settings:"Settings",needHelp:"Need a hand?",helpText:"A calm place to start. You can explore at your own pace.",openGuide:"Open quick guide ↗",owner:"Workspace owner",allSystems:"Preview mode · backend not connected",goodDay:"YOUR WORKSPACE",welcome:"Make room for <em>great work.</em>",welcomeSub:"Take a breath. Tell us what you need, and we’ll help you shape the next step.",newProject:"New project",askMehr:"Ask MEHR",askSub:"Start with a rough idea. You do not need the perfect prompt — we’ll help you organize it.",promptPlaceholder:"Tell MEHR what you need...",addFile:"Add file",useTemplate:"Use a template",startTask:"Start task",quickStart:"A good place to start",quickSub:"Simple starting points. Choose one, or describe your own task above.",viewAll:"View all ↗",dailyReport:"Daily site report",dailyReportSub:"Turn site notes into a clear report.",documentReview:"Document review",documentReviewSub:"Summarize and organize project files.",actionTracker:"Action tracker",actionTrackerSub:"Extract decisions, owners and next steps.",customWorkflow:"Custom workflow",customWorkflowSub:"Build a process around your needs.",recentProjects:"Recent projects",recentSub:"Pick up where you left off.",allProjects:"All projects ↗",sampleProject:"Example · Construction reporting",updatedToday:"Sample data · not connected",draft:"Draft",sampleProject2:"Example · Project document review",updatedYesterday:"Sample data · not connected",ready:"Ready",previewLabel:"Early access preview",humanReview:"AI outputs should be reviewed before use.",backHome:"Back to overview",pageText:"This section is included in the navigation prototype. Its real data view will be connected in a later step.",empty:"Describe the task first.",captured:"Demo only: task text captured. The workflow engine is not connected yet.",filesAdded:"file(s) attached",templateAdded:"Template inserted into the prompt.",newProjectToast:"Project creation will be connected in the next integration step.",guideToast:"Quick guide will be added during onboarding."},
+fa:{workspace:"فضای کاری شخصی",workspacePreview:"پیش‌نمایش فضای کاری",workspaceNav:"فضای کاری",home:"نمای کلی",projects:"پروژه‌ها",automations:"اتوماسیون‌ها",agents:"دستیارهای هوشمند",live:"ارتباط صوتی و تصویری",files:"فایل‌ها",manage:"مدیریت",activity:"فعالیت‌ها",settings:"تنظیمات",needHelp:"راهنما می‌خواهید؟",helpText:"اینجا می‌توانید بدون عجله و به‌سادگی شروع کنید.",openGuide:"مشاهده راهنمای سریع ↗",owner:"مدیر فضای کاری",allSystems:"حالت پیش‌نمایش · موتور هنوز متصل نیست",goodDay:"فضای کاری شما",welcome:"برای <em>کارهای بزرگ</em> آماده‌اید؟",welcomeSub:"با خیال راحت شروع کنید؛ درخواستتان را بنویسید تا قدم بعدی را با هم مشخص کنیم.",newProject:"پروژه جدید",askMehr:"از مهر بپرسید",askSub:"لازم نیست درخواستتان از ابتدا کامل باشد؛ ایده خام را بنویسید تا آن را مرتب و روشن کنیم.",promptPlaceholder:"درخواست خود را برای مهر بنویسید...",addFile:"افزودن فایل",useTemplate:"استفاده از الگو",startTask:"شروع کار",quickStart:"از اینجا شروع کنید",quickSub:"برای شروع یکی را انتخاب کنید یا درخواست دلخواهتان را در کادر بالا بنویسید.",viewAll:"مشاهده همه ↗",dailyReport:"گزارش روزانه کارگاه",dailyReportSub:"یادداشت‌های کارگاه را به گزارش تبدیل کنید.",documentReview:"بررسی اسناد",documentReviewSub:"اسناد پروژه را خلاصه و دسته‌بندی کنید.",actionTracker:"پیگیری اقدامات",actionTrackerSub:"تصمیم‌ها، مسئولان و گام‌های بعدی را استخراج کنید.",customWorkflow:"گردش‌کار اختصاصی",customWorkflowSub:"فرایندی متناسب با نیاز خود بسازید.",recentProjects:"پروژه‌های اخیر",recentSub:"کارهای قبلی خود را ادامه دهید.",allProjects:"همه پروژه‌ها ↗",sampleProject:"نمونه · گزارش کارگاه",updatedToday:"داده نمونه · متصل نیست",draft:"پیش‌نویس",sampleProject2:"نمونه · بررسی اسناد پروژه",updatedYesterday:"داده نمونه · متصل نیست",ready:"آماده",previewLabel:"پیش‌نمایش دسترسی زودهنگام",humanReview:"خروجی هوش مصنوعی پیش از استفاده باید بررسی شود.",backHome:"بازگشت به نمای کلی",pageText:"این بخش در نمونه رابط قرار دارد و در مرحله بعد به داده‌های واقعی متصل می‌شود.",empty:"ابتدا درخواست خود را بنویسید.",captured:"فقط نمونه رابط: درخواست ثبت شد؛ موتور گردش‌کار هنوز متصل نیست.",filesAdded:"فایل پیوست شد",templateAdded:"الگو به متن درخواست اضافه شد.",newProjectToast:"ایجاد پروژه در مرحله اتصال بعدی فعال می‌شود.",guideToast:"راهنمای سریع در مرحله راه‌اندازی اضافه خواهد شد."}
 };
 let lang="en",timer;const $=s=>document.querySelector(s);function tr(k){return words[lang][k]||k}
 function say(msg){$("#toast").textContent=msg;$("#toast").classList.add("show");clearTimeout(timer);timer=setTimeout(()=>$("#toast").classList.remove("show"),2700)}
 function language(next){lang=next;document.documentElement.lang=lang;document.documentElement.dir=lang==="fa"?"rtl":"ltr";document.querySelectorAll("[data-k]").forEach(el=>{const v=tr(el.dataset.k);el.innerHTML=v});document.querySelectorAll("[data-placeholder]").forEach(el=>el.placeholder=tr(el.dataset.placeholder));$("#lang").textContent=lang==="en"?"فا":"EN";$("#crumb").textContent=tr($("#crumb").dataset.key||"home")}
-function page(p){$("#home").hidden=p!=="home";$("#settingsPanel").hidden=p!=="settings";$("#other").hidden=p==="home"||p==="settings";document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===p));$("#crumb").textContent=tr(p);$("#crumb").dataset.key=p;if(p!=="home"&&p!=="settings")$("#otherTitle").textContent=tr(p);if(p==="settings"){const c=getConnection();$("#apiUrl").value=c.url;$("#apiToken").value=c.token;}}
+function page(p){if(p!=="live"&&typeof stopLiveDevices==="function")stopLiveDevices();$("#home").hidden=p!=="home";$("#livePanel").hidden=p!=="live";$("#settingsPanel").hidden=p!=="settings";$("#other").hidden=p==="home"||p==="settings"||p==="live";document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===p));$("#crumb").textContent=tr(p);$("#crumb").dataset.key=p;if(p!=="home"&&p!=="settings"&&p!=="live")$("#otherTitle").textContent=tr(p);if(p==="settings"){const c=getConnection();$("#apiUrl").value=c.url;$("#apiToken").value=c.token;}}
 document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>{page(b.dataset.page);$("#sidebar").classList.remove("open")}));
 document.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>page(b.dataset.goto)));$("#back").onclick=()=>page("home");$("#settingsBack").onclick=()=>page("home");$("#menu").onclick=()=>$("#sidebar").classList.toggle("open");
 $("#lang").onclick=()=>language(lang==="en"?"fa":"en");$("#theme").onclick=()=>{document.body.classList.toggle("dark");localStorage.setItem("mehr-theme",document.body.classList.contains("dark")?"dark":"light")};if(localStorage.getItem("mehr-theme")==="dark")document.body.classList.add("dark");
@@ -302,6 +353,36 @@ async function callHealth(){const c=getConnection();if(!c.url||!c.token)throw ne
 $("#connectionForm").addEventListener("submit",e=>{e.preventDefault();const url=$("#apiUrl").value.trim().replace(/\/+$/,"");const token=$("#apiToken").value.trim();try{const parsed=new URL(url);if(parsed.protocol!=="https:")throw new Error("HTTPS is required.");if(token.length<32)throw new Error("Token must contain at least 32 characters.");sessionStorage.setItem("mehr-api-url",url);sessionStorage.setItem("mehr-api-token",token);$("#connectionStatus").textContent="Saved in this browser session. Use Test to verify.";say("Connection settings saved for this session.");}catch(err){$("#connectionStatus").textContent=err.message;}});
 $("#testConnection").addEventListener("click",async()=>{const status=$("#connectionStatus");status.textContent="Testing connection…";try{const url=$("#apiUrl").value.trim().replace(/\/+$/,"");const token=$("#apiToken").value.trim();const parsed=new URL(url);if(parsed.protocol!=="https:"||token.length<32)throw new Error("Enter a valid HTTPS Worker URL and a token of at least 32 characters.");const r=await fetch(url+"/api/health",{headers:{Authorization:"Bearer "+token}});if(!r.ok)throw new Error("Health check failed (HTTP "+r.status+").");const data=await r.json();status.textContent=data.provider_configured?"Connected. Provider settings detected.":"Worker reachable, but AI provider secrets are not configured.";if(data.provider_configured)document.querySelector(".status span").textContent="API connected";}catch(err){status.textContent=err.message;}});
 $("#form").addEventListener("submit",async e=>{e.preventDefault();const prompt=$("#prompt").value.trim();if(!prompt){say(tr("empty"));$("#prompt").focus();return;}const c=getConnection();if(!c.url||!c.token){page("settings");say("Configure the private API connection first.");return;}const send=$("#form button[type=submit]");send.disabled=true;send.style.opacity=".6";showResult("Working…");try{const r=await fetch(c.url+"/api/generate",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+c.token},body:JSON.stringify({prompt})});const data=await r.json();if(!r.ok||!data.ok)throw new Error(data.error||("Request failed (HTTP "+r.status+")."));showResult(data.generated.text);document.querySelector(".status span").textContent="API connected";say("Generation completed.");}catch(err){showResult("Connection error: "+err.message,true);say("The request could not be completed.");}finally{send.disabled=false;send.style.opacity="";}});
+
+
+const liveState={mic:null,camera:null,muted:false};
+function updateLiveState(){
+ const micOn=!!liveState.mic?.getAudioTracks().some(t=>t.readyState==="live");
+ const camOn=!!liveState.camera?.getVideoTracks().some(t=>t.readyState==="live");
+ $("#liveMicState").textContent=micOn?(liveState.muted?"بی‌صدا":"فعال"):"خاموش";
+ $("#liveCameraState").textContent=camOn?"فعال":"خاموش";
+ $("#liveMicToggle").disabled=!micOn;
+ $("#liveCameraStop").disabled=!camOn;
+ $("#liveStatus").textContent=micOn||camOn?"تجهیزات محلی فعال · هیچ داده‌ای ارسال نمی‌شود":"آماده آزمایش تجهیزات · ارتباط هوش مصنوعی متصل نیست";
+}
+$("#liveMicStart").addEventListener("click",async()=>{
+ try{if(!navigator.mediaDevices?.getUserMedia)throw new Error("مرورگر یا اتصال امن از دسترسی رسانه پشتیبانی نمی‌کند.");if(liveState.mic)liveState.mic.getTracks().forEach(t=>t.stop());liveState.mic=await navigator.mediaDevices.getUserMedia({audio:true,video:false});liveState.muted=false;updateLiveState();say("میکروفون محلی فعال شد؛ ارسال شبکه‌ای انجام نمی‌شود.");}
+ catch(err){say("دسترسی میکروفون ناموفق: "+err.message);}
+});
+$("#liveMicToggle").addEventListener("click",()=>{
+ if(!liveState.mic)return;liveState.muted=!liveState.muted;liveState.mic.getAudioTracks().forEach(t=>t.enabled=!liveState.muted);updateLiveState();
+});
+$("#liveCameraStart").addEventListener("click",async()=>{
+ try{if(!navigator.mediaDevices?.getUserMedia)throw new Error("مرورگر یا اتصال امن از دسترسی رسانه پشتیبانی نمی‌کند.");if(liveState.camera)liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}}});$("#liveCameraPreview").srcObject=liveState.camera;$("#liveCameraPreview").hidden=false;$("#liveVideoPlaceholder").hidden=true;await $("#liveCameraPreview").play();updateLiveState();say("پیش‌نمایش دوربین فعال شد؛ تصویر ارسال یا ضبط نمی‌شود.");}
+ catch(err){say("دسترسی دوربین ناموفق: "+err.message);}
+});
+function stopLiveDevices(){
+ for(const key of ["mic","camera"]){if(liveState[key]){liveState[key].getTracks().forEach(t=>t.stop());liveState[key]=null;}}
+ $("#liveCameraPreview").srcObject=null;$("#liveCameraPreview").hidden=true;$("#liveVideoPlaceholder").hidden=false;liveState.muted=false;updateLiveState();
+}
+$("#liveCameraStop").addEventListener("click",()=>{if(liveState.camera){liveState.camera.getTracks().forEach(t=>t.stop());liveState.camera=null;}$("#liveCameraPreview").srcObject=null;$("#liveCameraPreview").hidden=true;$("#liveVideoPlaceholder").hidden=false;updateLiveState();});
+$("#liveStopAll").addEventListener("click",()=>{stopLiveDevices();say("تمام دسترسی‌های رسانه متوقف شد.");});
+window.addEventListener("pagehide",stopLiveDevices);
 
 language("fa");
 </script></body></html>
