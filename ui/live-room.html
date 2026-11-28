@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0f17">
+<title>M.B Studio — MEHR AI</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0f17;--surface:#131a26;--surface2:#1a2436;--text:#f8fafc;--muted:#94a3b8;--cyan:#38bdf8;--green:#10b981;--line:#334155}
+*{box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;min-height:100%;background:var(--bg);color:var(--text)}
+body{min-height:100dvh}.app{min-height:100dvh;display:grid;grid-template-rows:56px 1fr 62px}
+.bar{display:grid;gap:8px;padding:8px 10px;background:var(--surface)}
+.top{grid-template-columns:1fr auto;border-bottom:1px solid var(--line)}
+.bottom{grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}
+button{min-width:0;min-height:38px;border:1px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--text);font-weight:700;font-size:12px;padding:0 10px;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--cyan);color:#06101a;border-color:var(--cyan)}
+button.active{border-color:#10b98188;background:#10b98120;color:#a7f3d0}
+main{padding:10px;display:grid;grid-template-rows:minmax(220px,1fr) auto auto;gap:9px;min-height:0}
+.stage{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:15px;background:radial-gradient(circle at 50% 35%,#38bdf822,#131a26 72%);padding:10px;display:flex;flex-direction:column;justify-content:space-between;min-height:220px}
+#cam{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.7;display:none}
+.hud{position:relative;z-index:2;display:flex;justify-content:space-between;gap:8px}
+.pill{max-width:49%;padding:5px 9px;border:1px solid var(--line);border-radius:30px;background:#0b0f17dd;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#orb{position:relative;z-index:2;margin:auto;width:76px;height:76px;border-radius:50%;border:2px solid #38bdf877;display:grid;place-items:center;background:#131a26cc;color:var(--cyan);font-size:27px}
+#orb.active{border-color:var(--green);color:var(--green);box-shadow:0 0 0 8px #10b98120}
+.notice{border:1px solid #f59e0b66;background:#f59e0b12;color:#fde68a;border-radius:10px;padding:9px 11px;font-size:11px;line-height:1.5}
+.composer{display:grid;grid-template-columns:1fr auto;gap:7px}
+input{min-width:0;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);padding:0 11px;font-size:12px}
+.output{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:9px 11px;color:#bae6fd;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.modal{position:fixed;inset:0;z-index:10;background:#060a11dd;display:none;align-items:center;justify-content:center;padding:12px}
+.modal.open{display:flex}.sheet{width:100%;max-width:480px;max-height:85dvh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:13px;display:grid;gap:10px}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.group{border:1px solid var(--line);border-radius:10px;padding:10px}.group b{display:block;font-size:12px;margin-bottom:8px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:6px}.choices button{font-size:11px;text-align:start}
+.small{color:var(--muted);font-size:10px;line-height:1.55}
+@media(min-width:760px){.app{max-width:760px;margin:auto;border-inline:1px solid #33415555}main{padding:14px}.stage{min-height:420px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="bar top">
+<button id="liveBtn" type="button">شروع پیش‌نمایش صوت/تصویر</button>
+<button id="hubBtn" type="button">هاب مدل‌ها</button>
+</header>
+<main>
+<section class="stage" aria-label="فضای جلسه">
+<video id="cam" autoplay playsinline muted></video>
+<div class="hud"><span class="pill" id="state">آماده • M.B Studio</span><span class="pill" id="mode">FA / RTL</span></div>
+<div id="orb" aria-hidden="true">◉</div>
+<div class="hud"><span class="pill" id="mediaState">دوربین و میکروفون خاموش</span><span class="pill" id="frameCount">فریم: ۰</span></div>
+</section>
+<div class="notice" id="capabilityNotice">چت متنی از طریق موتور Cloudflare AI پس از ثبت توکن مالک در تنظیمات داشبورد فعال است. دوربین و میکروفون در این صفحه فقط پیش‌نمایش محلی هستند و به مدل ارسال نمی‌شوند.</div>
+<div class="composer"><input id="command" type="text" placeholder="فرمان یا پیام برای عامل M.B..." autocomplete="off"><button class="primary" id="sendBtn" type="button">ارسال</button></div>
+<div class="output" id="output" role="status" aria-live="polite">M.B Studio آماده است. اتصال هوش مصنوعی هنوز پیکربندی نشده.</div>
+</main>
+<nav class="bar bottom" aria-label="کنترل‌ها">
+<button id="voiceBtn" type="button">میکروفون</button>
+<button id="cameraBtn" type="button">دوربین</button>
+<button id="stopBtn" type="button">توقف رسانه</button>
+<button id="businessBtn" type="button">پلن‌ها</button>
+</nav>
+</div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+<div class="sheet">
+<div class="sheet-head"><strong id="modalTitle">هاب M.B</strong><button id="closeBtn" type="button">بستن</button></div>
+<div class="group"><b>موتور هوش مصنوعی</b><p class="small">Cloudflare Workers AI • GLM-4.7 Flash</p><p class="small">مدل از سمت سرور انتخاب می‌شود؛ کلیدهای سرویس در مرورگر قرار نمی‌گیرند.</p></div>
+<div class="group"><b>زبان رابط</b><div class="choices"><button data-lang="fa" type="button">فارسی</button><button data-lang="en" type="button">English</button></div></div>
+</div>
+</div>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  let stream = null;
+  let language = "fa";
+  let frames = 0;
+  let audioEnabled = false;
+  function message(text){ $("output").textContent = text; }
+  function setState(text){ $("state").textContent = text; }
+  function updateMedia(){
+    const videoOn = Boolean(stream && stream.getVideoTracks().some(t=>t.readyState==="live" && t.enabled));
+    const audioOn = Boolean(stream && stream.getAudioTracks().some(t=>t.readyState==="live" && t.enabled));
+    $("mediaState").textContent = (videoOn?"دوربین روشن":"دوربین خاموش")+" • "+(audioOn?"میکروفون مجاز":"میکروفون خاموش");
+    $("orb").classList.toggle("active",videoOn||audioOn);
+    $("cam").style.display = videoOn ? "block" : "none";
+    $("cameraBtn").classList.toggle("active",videoOn);
+    $("voiceBtn").classList.toggle("active",audioOn);
+  }
+  async function startMedia({video=true,audio=false}={}){
+    if(!navigator.mediaDevices?.getUserMedia){
+      message("مرورگر یا بستر فعلی دسترسی امن به رسانه را پشتیبانی نمی‌کند. از HTTPS استفاده کنید.");
+      return;
+    }
+    try{
+      if(stream) stream.getTracks().forEach(t=>t.stop());
+      stream = await navigator.mediaDevices.getUserMedia({video,audio});
+      $("cam").srcObject=stream;
+      frames += video ? 1 : 0;
+      $("frameCount").textContent="فریم: "+frames;
+      setState("پیش‌نمایش محلی فعال");
+      message("رسانه فقط در همین مرورگر فعال است؛ هنوز تماس هوش مصنوعی برقرار نشده.");
+      updateMedia();
+    }catch(error){
+      stream=null;
+      $("cam").srcObject=null;
+      updateMedia();
+      const denied=error?.name==="NotAllowedError"||error?.name==="PermissionDeniedError";
+      setState("رسانه فعال نشد");
+      message(denied?"مجوز دوربین/میکروفون داده نشد. از تنظیمات مرورگر مجوز را بررسی کنید.":"خطا در دسترسی رسانه: "+(error?.name||"unknown"));
+    }
+  }
+  function stopMedia(){
+    if(stream) stream.getTracks().forEach(t=>t.stop());
+    stream=null;
+    $("cam").srcObject=null;
+    audioEnabled=false;
+    setState("آماده • M.B Studio");
+    updateMedia();
+    message("تمام مسیرهای رسانه متوقف شدند.");
+  }
+  $("liveBtn").addEventListener("click",()=>startMedia({video:true,audio:true}));
+  $("cameraBtn").addEventListener("click",()=>startMedia({video:true,audio:false}));
+  $("voiceBtn").addEventListener("click",()=>startMedia({video:false,audio:true}));
+  $("stopBtn").addEventListener("click",stopMedia);
+  $("sendBtn").addEventListener("click", async ()=>{
+    const prompt=$("command").value.trim();
+    if(!prompt){message("ابتدا متن فرمان را وارد کنید.");return;}
+    const apiUrl=sessionStorage.getItem("mehr-api-url") || "https://mehr-ai-studio.mehran-baharlo58.workers.dev";
+    const token=sessionStorage.getItem("mehr-api-token") || "";
+    if(!token){
+      message("ابتدا در داشبورد اصلی > Settings، توکن خصوصی مالک را ثبت و اتصال را آزمایش کنید.");
+      return;
+    }
+    const button=$("sendBtn");
+    button.disabled=true;
+    message("در حال دریافت پاسخ از MEHR AI...");
+    try{
+      const response=await fetch(apiUrl.replace(/\\/+$/,"")+"/api/generate",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+        body:JSON.stringify({prompt})
+      });
+      const data=await response.json();
+      if(!response.ok || !data.ok) throw new Error(data.error || ("HTTP "+response.status));
+      message(data.generated.text);
+      setState("اتصال هوش مصنوعی فعال");
+    }catch(error){
+      message("خطای اتصال: "+(error?.message || "unknown"));
+    }finally{
+      button.disabled=false;
+    }
+  });
+  $("command").addEventListener("keydown",e=>{if(e.key==="Enter") $("sendBtn").click();});
+  $("hubBtn").addEventListener("click",()=>{$("modal").classList.add("open");});
+  $("closeBtn").addEventListener("click",()=>$("modal").classList.remove("open"));
+  $("modal").addEventListener("click",e=>{if(e.target===$("modal")) $("modal").classList.remove("open");});
+  document.querySelectorAll("[data-lang]").forEach(btn=>btn.addEventListener("click",()=>{
+    language=btn.dataset.lang;
+    document.documentElement.lang=language;
+    document.documentElement.dir=language==="fa"?"rtl":"ltr";
+    $("mode").textContent=language==="fa"?"FA / RTL":"EN / LTR";
+    message(language==="fa"?"زبان فارسی انتخاب شد.":"English selected.");
+  }));
+  $("businessBtn").addEventListener("click",()=>message("پلن‌های تجاری و پرداخت پس از تکمیل احراز هویت، سهمیه و زیرساخت صورتحساب فعال می‌شوند."));
+  window.addEventListener("pagehide",stopMedia);
+  updateMedia();
+})();
+</script>
+</body>
+</html>
