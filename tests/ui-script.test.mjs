@@ -73,3 +73,8 @@ test("M.B Live Room handles denied permissions and stops media on page exit", ()
   assert.ok(liveScript.includes('window.addEventListener("pagehide",stopMedia)'));
   assert.ok(liveScript.includes('navigator.mediaDevices?.getUserMedia'));
 });
+
+test("dashboard links to the compact M.B Live Room page", () => {
+  assert.ok(html.includes('href="./live-room.html"'));
+  assert.ok(html.includes("باز کردن M.B Live Room فشرده"));
+});
