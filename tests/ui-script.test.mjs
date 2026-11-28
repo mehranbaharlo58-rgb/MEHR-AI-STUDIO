@@ -21,6 +21,12 @@ test("dashboard keeps API credentials in session-only browser storage", () => {
   assert.ok(html.includes('Authorization:"Bearer "+c.token'));
 });
 
+test("dashboard sends prior successful turns as bounded in-memory conversation history", () => {
+  assert.ok(html.includes('let lang="en",timer,conversationHistory=[];'));
+  assert.ok(html.includes('const messages=[...conversationHistory,{role:"user",content:prompt}]'));
+  assert.ok(html.includes('conversationHistory=[...conversationHistory,{role:"user",content:prompt},{role:"assistant",content:data.generated.text}].slice(-18)'));
+});
+
 test("dashboard warns that file selection is not a real upload", () => {
   assert.ok(html.includes("File names shown only; upload/content processing is not implemented yet"));
 });
