@@ -125,7 +125,8 @@ input{min-width:0;height:40px;border:1px solid var(--line);border-radius:10px;ba
   $("sendBtn").addEventListener("click", async ()=>{
     const prompt=$("command").value.trim();
     if(!prompt){message("ابتدا متن فرمان را وارد کنید.");return;}
-    const apiUrl=sessionStorage.getItem("mehr-api-url") || "https://mehr-ai-studio.mehran-baharlo58.workers.dev";
+    let apiUrl=sessionStorage.getItem("mehr-api-url") || "https://mehr-ai-studio.mehran-baharlo58.workers.dev";
+    while(apiUrl.endsWith("/")) apiUrl=apiUrl.slice(0,-1);
     const token=sessionStorage.getItem("mehr-api-token") || "";
     if(!token){
       message("ابتدا در داشبورد اصلی > Settings، توکن خصوصی مالک را ثبت و اتصال را آزمایش کنید.");
@@ -135,7 +136,7 @@ input{min-width:0;height:40px;border:1px solid var(--line);border-radius:10px;ba
     button.disabled=true;
     message("در حال دریافت پاسخ از MEHR AI...");
     try{
-      const response=await fetch(apiUrl.replace(/\\/+$/,"")+"/api/generate",{
+      const response=await fetch(apiUrl+"/api/generate",{
         method:"POST",
         headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
         body:JSON.stringify({prompt})
